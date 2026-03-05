@@ -1,4 +1,4 @@
-﻿namespace Reminder.Tests;
+﻿namespace ReminderApp.Common;
 
 public static class DateTimeExtensions
 {

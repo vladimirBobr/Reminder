@@ -2,7 +2,6 @@
 using ReminderApp.EventProcessing;
 using ReminderApp.Events;
 using ReminderApp.EventScheduling;
-using ReminderApp.FileStorage;
 
 namespace Reminder.Tests.EventProcessing.Helpers;
 
@@ -13,7 +12,7 @@ public static class EventRunnerTestHelper
         List<EventData>? events = null,
         Dictionary<string, DateTime>? processed = null,
         INotifier? notifier = null,
-        IFileStorage? fileStorage = null,
+        InMemoryFileStorage? fileStorage = null,
         IEventScheduler? scheduler = null)
     {
         // Устанавливаем значения по умолчанию
@@ -31,7 +30,7 @@ public static class EventRunnerTestHelper
         eventReader.SetEvents(events);
 
         // Устанавливаем processed в fileStorage
-        (fileStorage as InMemoryFileStorage)?.SetProcessed(processed);
+        fileStorage.SetProcessed(processed);
 
         var eventRunner = new EventRunner(
             scheduler,

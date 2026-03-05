@@ -1,4 +1,5 @@
 ﻿using Reminder.Tests.EventProcessing.Helpers;
+using ReminderApp.Common;
 using ReminderApp.Events;
 using static Reminder.Tests.EventProcessing.Helpers.EventRunnerTestHelper;
 
@@ -7,7 +8,7 @@ namespace Reminder.Tests.EventProcessing;
 public class EventRunnerTests
 {
     [Fact]
-    public async Task CheckAndNotifyAsync_WhenEventDue_CallsNotifier()
+    public async Task CheckAndNotifyAsync_WhenEventDue_CallsNotifierAndSavesProcessed()
     {
         // Arrange
         var now = DateTime.Now.RoundToStartOfMinute();
@@ -18,12 +19,14 @@ public class EventRunnerTests
             Description = "Описание"
         };
 
-        var notifier = new TestNotifier(); // ← передаём по ссылке
+        var notifier = new TestNotifier();
+        var fileStorage = new InMemoryFileStorage();
 
         var eventRunner = CreateEventRunner(
             now: now,
             events: new List<EventData> { eventData },
-            notifier: notifier); // ← передаём
+            notifier: notifier,
+            fileStorage: fileStorage);
 
         // Act
         await eventRunner.CheckAndNotifyAsync(CancellationToken.None);
@@ -31,13 +34,18 @@ public class EventRunnerTests
         // Assert
         Assert.NotNull(notifier.LastNotifiedEvent);
         Assert.Equal(eventData.Subject, notifier.LastNotifiedEvent?.Subject);
+
+        var savedProcessed = fileStorage.GetProcessed();
+        var notifyKey = $"notify-{eventData.Time:yyyyMMddHHmmss}-{eventData.Subject}";
+        Assert.True(savedProcessed.ContainsKey(notifyKey));
+        Assert.Equal(now, savedProcessed[notifyKey]);
     }
 
     [Fact]
     public async Task CheckAndNotifyAsync_WhenEventInFuture_DoesNotCallNotifier()
     {
         // Arrange
-        var now = DateTime.Now;
+        var now = DateTime.Now.RoundToStartOfMinute();
         var eventData = new EventData
         {
             Time = now.AddSeconds(10),
@@ -45,12 +53,14 @@ public class EventRunnerTests
             Description = "Описание"
         };
 
-        var notifier = new TestNotifier(); // ← передаём по ссылке
+        var notifier = new TestNotifier();
+        var fileStorage = new InMemoryFileStorage();
 
         var eventRunner = CreateEventRunner(
             now: now,
             events: new List<EventData> { eventData },
-            notifier: notifier); // ← передаём
+            notifier: notifier,
+            fileStorage: fileStorage);
 
         // Act
         await eventRunner.CheckAndNotifyAsync(CancellationToken.None);
@@ -58,6 +68,10 @@ public class EventRunnerTests
         // Assert
         Assert.Null(notifier.LastNotifiedEvent);
         Assert.Empty(notifier.NotifiedEvents);
+
+        var savedProcessed = fileStorage.GetProcessed();
+        var notifyKey = $"notify-{eventData.Time:yyyyMMddHHmmss}-{eventData.Subject}";
+        Assert.False(savedProcessed.ContainsKey(notifyKey));
     }
 
     [Fact]
@@ -77,13 +91,15 @@ public class EventRunnerTests
             [$"notify-{eventData.Time:yyyyMMddHHmmss}-{eventData.Subject}"] = now
         };
 
-        var notifier = new TestNotifier(); // ← передаём по ссылке
+        var notifier = new TestNotifier();
+        var fileStorage = new InMemoryFileStorage();
 
         var eventRunner = CreateEventRunner(
             now: now,
             events: new List<EventData> { eventData },
             processed: processed,
-            notifier: notifier); // ← передаём
+            notifier: notifier,
+            fileStorage: fileStorage);
 
         // Act
         await eventRunner.CheckAndNotifyAsync(CancellationToken.None);
@@ -91,69 +107,14 @@ public class EventRunnerTests
         // Assert
         Assert.Null(notifier.LastNotifiedEvent);
         Assert.Empty(notifier.NotifiedEvents);
-    }
 
-    [Fact]
-    public async Task CheckAndNotifyAsync_WhenEventDue_SavesProcessed()
-    {
-        // Arrange
-        var now = DateTime.Now.RoundToStartOfMinute();
-        var eventData = new EventData
-        {
-            Time = now,
-            Subject = "Тестовое событие",
-            Description = "Описание"
-        };
-
-        var notifier = new TestNotifier();
-        var fileStorage = new InMemoryFileStorage(); // ← передаём по ссылке
-
-        var eventRunner = CreateEventRunner(
-            now: now,
-            events: new List<EventData> { eventData },
-            notifier: notifier,
-            fileStorage: fileStorage); // ← передаём
-
-        // Act
-        await eventRunner.CheckAndNotifyAsync(CancellationToken.None);
-
-        // Assert
-        var savedProcessed = fileStorage.GetProcessed(); // ← проверяем состояние
+        var savedProcessed = fileStorage.GetProcessed();
         var notifyKey = $"notify-{eventData.Time:yyyyMMddHHmmss}-{eventData.Subject}";
-        Assert.True(savedProcessed.ContainsKey(notifyKey));
-        Assert.Equal(now, savedProcessed[notifyKey]);
+        Assert.True(savedProcessed.ContainsKey(notifyKey)); // ← уже было сохранено
     }
 
     [Fact]
-    public async Task CheckAndNotifyAsync_WhenNotifierThrows_ExceptionIsHandled()
-    {
-        // Arrange
-        var now = DateTime.Now;
-        var eventData = new EventData
-        {
-            Time = now,
-            Subject = "Тестовое событие",
-            Description = "Описание"
-        };
-
-        var notifier = new ThrowingNotifier(); // ← передаём по ссылке
-
-        var eventRunner = CreateEventRunner(
-            now: now,
-            events: new List<EventData> { eventData },
-            notifier: notifier); // ← передаём
-
-        // Act
-        await eventRunner.CheckAndNotifyAsync(CancellationToken.None);
-
-        // Assert
-        // Проверяем, что метод не упал — тест прошёл
-        // Дополнительно можно проверить, что в консоль вывелось сообщение об ошибке
-        // Но в данном случае — достаточно, что тест не упал
-    }
-
-    [Fact]
-    public async Task CheckAndNotifyAsync_WhenEventDue_SetsProcessedWithCorrectTime()
+    public async Task CheckAndNotifyAsync_WhenNotifierThrows_DoesNotSaveProcessed()
     {
         // Arrange
         var now = DateTime.Now.RoundToStartOfMinute();
@@ -164,51 +125,20 @@ public class EventRunnerTests
             Description = "Описание"
         };
 
-        var notifier = new TestNotifier();
-        var fileStorage = new InMemoryFileStorage(); // ← передаём по ссылке
+        var notifier = new ThrowingNotifier();
+        var fileStorage = new InMemoryFileStorage();
 
         var eventRunner = CreateEventRunner(
             now: now,
             events: new List<EventData> { eventData },
             notifier: notifier,
-            fileStorage: fileStorage); // ← передаём
+            fileStorage: fileStorage);
 
         // Act
         await eventRunner.CheckAndNotifyAsync(CancellationToken.None);
 
         // Assert
-        var savedProcessed = fileStorage.GetProcessed(); // ← проверяем состояние
-        var notifyKey = $"notify-{eventData.Time:yyyyMMddHHmmss}-{eventData.Subject}";
-        Assert.True(savedProcessed.ContainsKey(notifyKey));
-        Assert.Equal(now, savedProcessed[notifyKey]);
-    }
-
-    [Fact]
-    public async Task CheckAndNotifyAsync_WhenEventDueButNotifierFails_DoesNotSaveProcessed()
-    {
-        // Arrange
-        var now = DateTime.Now.RoundToStartOfMinute();
-        var eventData = new EventData
-        {
-            Time = now,
-            Subject = "Тестовое событие",
-            Description = "Описание"
-        };
-
-        var notifier = new ThrowingNotifier(); // ← передаём по ссылке
-        var fileStorage = new InMemoryFileStorage(); // ← передаём по ссылке
-
-        var eventRunner = CreateEventRunner(
-            now: now,
-            events: new List<EventData> { eventData },
-            notifier: notifier,
-            fileStorage: fileStorage); // ← передаём
-
-        // Act
-        await eventRunner.CheckAndNotifyAsync(CancellationToken.None);
-
-        // Assert
-        var savedProcessed = fileStorage.GetProcessed(); // ← проверяем состояние
+        var savedProcessed = fileStorage.GetProcessed();
         var notifyKey = $"notify-{eventData.Time:yyyyMMddHHmmss}-{eventData.Subject}";
         Assert.False(savedProcessed.ContainsKey(notifyKey));
     }
@@ -217,7 +147,7 @@ public class EventRunnerTests
     public async Task CheckAndNotifyAsync_WhenMultipleEventsDue_AllAreNotified()
     {
         // Arrange
-        var now = DateTime.Now;
+        var now = DateTime.Now.RoundToStartOfMinute();
         var eventData1 = new EventData
         {
             Time = now,
@@ -232,12 +162,14 @@ public class EventRunnerTests
             Description = "Описание 2"
         };
 
-        var notifier = new TestNotifier(); // ← передаём по ссылке
+        var notifier = new TestNotifier();
+        var fileStorage = new InMemoryFileStorage();
 
         var eventRunner = CreateEventRunner(
             now: now,
             events: new List<EventData> { eventData1, eventData2 },
-            notifier: notifier); // ← передаём
+            notifier: notifier,
+            fileStorage: fileStorage);
 
         // Act
         await eventRunner.CheckAndNotifyAsync(CancellationToken.None);
@@ -246,5 +178,70 @@ public class EventRunnerTests
         Assert.Equal(2, notifier.NotifiedEvents.Count);
         Assert.Contains(notifier.NotifiedEvents, e => e.Subject == "Событие 1");
         Assert.Contains(notifier.NotifiedEvents, e => e.Subject == "Событие 2");
+
+        var savedProcessed = fileStorage.GetProcessed();
+        var notifyKey1 = $"notify-{eventData1.Time:yyyyMMddHHmmss}-{eventData1.Subject}";
+        var notifyKey2 = $"notify-{eventData2.Time:yyyyMMddHHmmss}-{eventData2.Subject}";
+        Assert.True(savedProcessed.ContainsKey(notifyKey1));
+        Assert.True(savedProcessed.ContainsKey(notifyKey2));
+    }
+
+    [Fact]
+    public async Task CheckAndNotifyAsync_WhenEventReaderReturnsEmptyList_DoesNotCallNotifier()
+    {
+        // Arrange
+        var now = DateTime.Now.RoundToStartOfMinute();
+        var notifier = new TestNotifier();
+        var fileStorage = new InMemoryFileStorage();
+
+        var eventRunner = CreateEventRunner(
+            now: now,
+            events: new List<EventData>(),
+            notifier: notifier,
+            fileStorage: fileStorage);
+
+        // Act
+        await eventRunner.CheckAndNotifyAsync(CancellationToken.None);
+
+        // Assert
+        Assert.Null(notifier.LastNotifiedEvent);
+        Assert.Empty(notifier.NotifiedEvents);
+
+        var savedProcessed = fileStorage.GetProcessed();
+        Assert.Empty(savedProcessed);
+    }
+
+    [Fact]
+    public async Task CheckAndNotifyAsync_WhenEventInPast_CallsNotifierAndSavesProcessed()
+    {
+        // Arrange
+        var now = DateTime.Now.RoundToStartOfMinute();
+        var eventData = new EventData
+        {
+            Time = now.AddSeconds(-5),
+            Subject = "Прошлое событие",
+            Description = "Описание"
+        };
+
+        var notifier = new TestNotifier();
+        var fileStorage = new InMemoryFileStorage();
+
+        var eventRunner = CreateEventRunner(
+            now: now,
+            events: new List<EventData> { eventData },
+            notifier: notifier,
+            fileStorage: fileStorage);
+
+        // Act
+        await eventRunner.CheckAndNotifyAsync(CancellationToken.None);
+
+        // Assert
+        Assert.NotNull(notifier.LastNotifiedEvent);
+        Assert.Equal(eventData.Subject, notifier.LastNotifiedEvent?.Subject);
+
+        var savedProcessed = fileStorage.GetProcessed();
+        var notifyKey = $"notify-{eventData.Time:yyyyMMddHHmmss}-{eventData.Subject}";
+        Assert.True(savedProcessed.ContainsKey(notifyKey));
+        Assert.Equal(now, savedProcessed[notifyKey]);
     }
 }
