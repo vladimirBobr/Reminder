@@ -16,7 +16,6 @@ public class EventRunner : IEventRunner
     private CancellationTokenSource? _cts;
     private bool _isRunning = false;
 
-    private Dictionary<string, DateTime> _processed = new();
     private const string ProcessedFilePath = "processed.json";
 
     public EventRunner(
@@ -36,8 +35,6 @@ public class EventRunner : IEventRunner
     public async Task StartAsync()
     {
         if (_isRunning) return;
-
-        _processed = await _fileStorage.LoadProcessedAsync(ProcessedFilePath);
 
         _isRunning = true;
         _cts = new CancellationTokenSource();
@@ -80,9 +77,11 @@ public class EventRunner : IEventRunner
 
     internal async Task CheckAndNotifyAsync(CancellationToken ct)
     {
+        var processed = await _fileStorage.LoadProcessedAsync(ProcessedFilePath);
+
         var now = _dateTimeProvider.Now;
         var events = await _eventReader.ReadEventsAsync();
-        var dueEvents = _scheduler.GetDueEvents(events, _processed, now);
+        var dueEvents = _scheduler.GetDueEvents(events, processed, now);
 
         foreach (var eventData in dueEvents)
         {
@@ -93,9 +92,9 @@ public class EventRunner : IEventRunner
                 _notifier.Notify(eventData);
 
                 var notifyKey = $"notify-{eventData.Time:yyyyMMddHHmmss}-{eventData.Subject}";
-                _processed[notifyKey] = now;
+                processed[notifyKey] = now;
 
-                await _fileStorage.SaveProcessedAsync(ProcessedFilePath, _processed);
+                await _fileStorage.SaveProcessedAsync(ProcessedFilePath, processed);
             }
             catch (Exception ex)
             {
