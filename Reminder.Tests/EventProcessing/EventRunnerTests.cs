@@ -1,6 +1,5 @@
 ﻿using Reminder.Tests.EventProcessing.Helpers;
 using ReminderApp.Common;
-using ReminderApp.Events;
 using static Reminder.Tests.EventProcessing.Helpers.EventRunnerTestHelper;
 
 namespace Reminder.Tests.EventProcessing;

@@ -1,4 +1,4 @@
-﻿using ReminderApp.Events;
+﻿using ReminderApp.Common;
 
 namespace ReminderApp.EventNotification;
 

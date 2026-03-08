@@ -1,6 +1,6 @@
-﻿using ReminderApp.EventNotification;
+﻿using ReminderApp.Common;
+using ReminderApp.EventNotification;
 using ReminderApp.EventProcessing;
-using ReminderApp.Events;
 using ReminderApp.EventScheduling;
 
 namespace Reminder.Tests.EventProcessing.Helpers;

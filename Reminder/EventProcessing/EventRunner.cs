@@ -39,9 +39,34 @@ public class EventRunner : IEventRunner
         _isRunning = true;
         _cts = new CancellationTokenSource();
 
-        _ = RunLoopAsync(_cts.Token);
-
         Console.WriteLine("▶️ EventRunner запущен. Проверка каждые 5 секунд.");
+
+        // Выводим все события из файла при старте
+        await LogAllEventsAsync();
+
+        _ = RunLoopAsync(_cts.Token);
+    }
+
+    private async Task LogAllEventsAsync()
+    {
+        var events = await _eventReader.ReadEventsAsync();
+
+        if (events.Count == 0)
+        {
+            Console.WriteLine("📝 Файл событий пуст или не найден.");
+            return;
+        }
+
+        Console.WriteLine("📋 Загружено событий из файла:");
+        Console.WriteLine("---");
+
+        foreach (var eventData in events)
+        {
+            Console.WriteLine($"📅 {eventData.Time:dd.MM.yyyy HH:mm}");
+            Console.WriteLine($"📌 {eventData.Subject}");
+            Console.WriteLine($"📝 {eventData.Description}");
+            Console.WriteLine("---");
+        }
     }
 
     public void Stop()
