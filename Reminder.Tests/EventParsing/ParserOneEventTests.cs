@@ -332,7 +332,7 @@ public class ParserOneEventTests
     [Fact]
     public void ParseEventBlock_WhenNullString_ThrowsException()
     {
-        Assert.Throws<Exception>(() => _parser.ParseEventBlock(null));
+        Assert.Throws<Exception>(() => _parser.ParseEventBlock(null!));
     }
 
     [Fact]

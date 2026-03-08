@@ -1,6 +1,7 @@
 ﻿
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
+using ReminderApp.EventPrinter;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventReading;
 using ReminderApp.EventScheduling;
@@ -14,13 +15,16 @@ internal class Program
     private static readonly IEventScheduler _scheduler = new EventScheduler();
     private static readonly IFileStorage _fileStorage = new JsonFileStorage();
     private static readonly IEventReader _eventReader = new EventReader();
-    private static readonly INotifier _notifier = new ConsoleNotifier();
+    private static readonly INotifier _notifier = new ConsoleNotifier(); //ConsoleNotifier/TelegramNotifier
+    private static readonly IEventPrinter _eventPrinter = new EventPrinter.EventPrinter();
+
     private static readonly IEventRunner _runner = new EventRunner(
         _scheduler,
         _dateTimeProvider,
         _fileStorage,
         _eventReader,
-        _notifier);
+        _notifier,
+        _eventPrinter);
 
     static async Task Main(string[] args)
     {

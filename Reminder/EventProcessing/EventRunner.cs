@@ -1,5 +1,7 @@
-﻿using ReminderApp.DateTimeProviding;
+﻿using ReminderApp.Common;
+using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
+using ReminderApp.EventPrinter;
 using ReminderApp.EventReading;
 using ReminderApp.EventScheduling;
 using ReminderApp.FileStorage;
@@ -13,6 +15,7 @@ public class EventRunner : IEventRunner
     private readonly IFileStorage _fileStorage;
     private readonly IEventReader _eventReader;
     private readonly INotifier _notifier;
+    private readonly IEventPrinter _eventPrinter;
     private CancellationTokenSource? _cts;
     private bool _isRunning = false;
 
@@ -23,13 +26,15 @@ public class EventRunner : IEventRunner
         IDateTimeProvider dateTimeProvider,
         IFileStorage fileStorage,
         IEventReader eventReader,
-        INotifier notifier)
+        INotifier notifier,
+        IEventPrinter eventPrinter)
     {
         _scheduler = scheduler;
         _dateTimeProvider = dateTimeProvider;
         _fileStorage = fileStorage;
         _eventReader = eventReader;
         _notifier = notifier;
+        _eventPrinter = eventPrinter;
     }
 
     public async Task StartAsync()
@@ -41,32 +46,7 @@ public class EventRunner : IEventRunner
 
         Console.WriteLine("▶️ EventRunner запущен. Проверка каждые 5 секунд.");
 
-        // Выводим все события из файла при старте
-        await LogAllEventsAsync();
-
         _ = RunLoopAsync(_cts.Token);
-    }
-
-    private async Task LogAllEventsAsync()
-    {
-        var events = await _eventReader.ReadEventsAsync();
-
-        if (events.Count == 0)
-        {
-            Console.WriteLine("📝 Файл событий пуст или не найден.");
-            return;
-        }
-
-        Console.WriteLine("📋 Загружено событий из файла:");
-        Console.WriteLine("---");
-
-        foreach (var eventData in events)
-        {
-            Console.WriteLine($"📅 {eventData.Time:dd.MM.yyyy HH:mm}");
-            Console.WriteLine($"📌 {eventData.Subject}");
-            Console.WriteLine($"📝 {eventData.Description}");
-            Console.WriteLine("---");
-        }
     }
 
     public void Stop()
@@ -105,7 +85,11 @@ public class EventRunner : IEventRunner
         var processed = await _fileStorage.LoadProcessedAsync(ProcessedFilePath);
 
         var now = _dateTimeProvider.Now;
+
         var events = await _eventReader.ReadEventsAsync();
+
+        _eventPrinter.PrintEvents(events);
+
         var dueEvents = _scheduler.GetDueEvents(events, processed, now);
 
         foreach (var eventData in dueEvents)
