@@ -24,8 +24,8 @@ internal class Program
         var githubUrl = Console.ReadLine() ?? "";
         
         // Read GitHub token from console
-        Console.Write("Enter GitHub Personal Access Token (press Enter to skip): ");
-        var githubToken = Console.ReadLine();
+        Console.Write("Enter GitHub Personal Access Token: ");
+        var githubToken = Console.ReadLine() ?? "";
         
         // Create GitHubEventReader from URL
         try

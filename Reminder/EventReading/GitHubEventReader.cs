@@ -41,9 +41,12 @@ public class GitHubEventReader : EventReaderBase
     /// <summary>
     /// Creates GitHubEventReader from a GitHub URL
     /// </summary>
-    /// <exception cref="ArgumentException">Thrown when URL is invalid</exception>
-    public static GitHubEventReader FromUrl(string url, string? token = null)
+    /// <exception cref="ArgumentException">Thrown when URL or token is invalid</exception>
+    public static GitHubEventReader FromUrl(string url, string token)
     {
+        if (string.IsNullOrWhiteSpace(token))
+            throw new ArgumentException("Token cannot be empty", nameof(token));
+        
         var parsed = ParseGitHubUrl(url);
         
         var reader = new GitHubEventReader(
@@ -52,10 +55,7 @@ public class GitHubEventReader : EventReaderBase
             filePath: parsed.FilePath,
             branch: parsed.Branch);
         
-        if (!string.IsNullOrWhiteSpace(token))
-        {
-            reader.SetAuthentication(token);
-        }
+        reader.SetAuthentication(token);
         
         return reader;
     }
