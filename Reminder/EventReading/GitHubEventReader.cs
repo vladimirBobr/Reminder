@@ -4,6 +4,17 @@ using System.Text;
 namespace ReminderApp.EventReading;
 
 /// <summary>
+/// DTO for parsed GitHub URL components
+/// </summary>
+public class GitHubUrlParts
+{
+    public string Owner { get; set; } = string.Empty;
+    public string Repo { get; set; } = string.Empty;
+    public string FilePath { get; set; } = string.Empty;
+    public string Branch { get; set; } = string.Empty;
+}
+
+/// <summary>
 /// Reads events from a text file stored on GitHub
 /// </summary>
 public class GitHubEventReader : EventReaderBase
@@ -14,7 +25,7 @@ public class GitHubEventReader : EventReaderBase
     private readonly string _filePath;
     private readonly string _branch;
 
-    public GitHubEventReader(string owner, string repo, string filePath = "events.txt", string branch = "main")
+    public GitHubEventReader(string owner, string repo, string filePath, string branch)
     {
         _httpClient = new HttpClient();
         _httpClient.BaseAddress = new Uri("https://api.github.com");
@@ -35,7 +46,11 @@ public class GitHubEventReader : EventReaderBase
     {
         var parsed = ParseGitHubUrl(url);
         
-        var reader = new GitHubEventReader(owner: parsed.Item1, repo: parsed.Item2, filePath: parsed.Item3, branch: parsed.Item4);
+        var reader = new GitHubEventReader(
+            owner: parsed.Owner,
+            repo: parsed.Repo,
+            filePath: parsed.FilePath,
+            branch: parsed.Branch);
         
         if (!string.IsNullOrWhiteSpace(token))
         {
@@ -98,7 +113,7 @@ public class GitHubEventReader : EventReaderBase
     /// Parses GitHub URL to extract owner, repo, file path, and branch
     /// </summary>
     /// <exception cref="ArgumentException">Thrown when URL is invalid</exception>
-    public static (string, string, string, string) ParseGitHubUrl(string url)
+    public static GitHubUrlParts ParseGitHubUrl(string url)
     {
         if (string.IsNullOrWhiteSpace(url))
             throw new ArgumentException("URL cannot be empty", nameof(url));
@@ -120,10 +135,10 @@ public class GitHubEventReader : EventReaderBase
                 if (string.IsNullOrEmpty(owner) || string.IsNullOrEmpty(repo))
                     throw new ArgumentException($"Invalid URL format: {url}", nameof(url));
                 
-                filePath = parts.Length > 2 ? string.Join("/", parts.Skip(2)) : "events.txt";
-                branch = "main";
+                filePath = parts.Length > 2 ? string.Join("/", parts.Skip(2)) : "";
+                branch = "";
                 
-                return (owner, repo, filePath, branch);
+                return new GitHubUrlParts { Owner = owner, Repo = repo, FilePath = filePath, Branch = branch };
             }
         }
         
@@ -143,8 +158,8 @@ public class GitHubEventReader : EventReaderBase
             throw new ArgumentException($"Invalid repository: {url}", nameof(url));
         
         // Check for /blob/ branch/filepath
-        filePath = "events.txt";
-        branch = "main";
+        filePath = "";
+        branch = "";
         
         var blobIndex = Array.IndexOf(pathParts, "blob");
         if (blobIndex >= 0 && blobIndex + 2 < pathParts.Length)
@@ -153,7 +168,7 @@ public class GitHubEventReader : EventReaderBase
             filePath = string.Join("/", pathParts.Skip(blobIndex + 2));
         }
         
-        return (owner, repo, filePath, branch);
+        return new GitHubUrlParts { Owner = owner, Repo = repo, FilePath = filePath, Branch = branch };
     }
 }
 
