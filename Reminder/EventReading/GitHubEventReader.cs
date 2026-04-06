@@ -1,6 +1,5 @@
 using System.Net.Http.Headers;
 using System.Text;
-using ReminderApp.Common;
 using ReminderApp.EventParsing;
 
 namespace ReminderApp.EventReading;
@@ -8,14 +7,13 @@ namespace ReminderApp.EventReading;
 /// <summary>
 /// Reads events from a text file stored on GitHub
 /// </summary>
-public class GitHubEventReader : IEventReader
+public class GitHubEventReader : EventReaderBase
 {
     private readonly HttpClient _httpClient;
     private readonly string _owner;
     private readonly string _repo;
     private readonly string _filePath;
     private readonly string _branch;
-    private readonly Parser _parser = new();
 
     public GitHubEventReader(string owner, string repo, string filePath = "events.txt", string branch = "main")
     {
@@ -38,7 +36,7 @@ public class GitHubEventReader : IEventReader
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
-    public async Task<List<EventData>> ReadEventsAsync()
+    protected override async Task<string?> ReadContentAsync()
     {
         try
         {
@@ -48,7 +46,7 @@ public class GitHubEventReader : IEventReader
             if (!response.IsSuccessStatusCode)
             {
                 Console.WriteLine($"❌ GitHub API error: {response.StatusCode}");
-                return new List<EventData>();
+                return null;
             }
             
             var jsonContent = await response.Content.ReadAsStringAsync();
@@ -59,7 +57,7 @@ public class GitHubEventReader : IEventReader
             if (githubContent == null || string.IsNullOrEmpty(githubContent.content))
             {
                 Console.WriteLine("❌ Could not read file content from GitHub.");
-                return new List<EventData>();
+                return null;
             }
             
             // Decode base64 content
@@ -70,13 +68,12 @@ public class GitHubEventReader : IEventReader
             
             Console.WriteLine($"📄 Read content from GitHub: {_owner}/{_repo}/{_filePath}");
             
-            // Pass content to the existing parser
-            return _parser.ParseEvents(decodedContent);
+            return decodedContent;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"❌ Error fetching from GitHub: {ex.Message}");
-            return new List<EventData>();
+            return null;
         }
     }
 }

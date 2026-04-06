@@ -2,7 +2,7 @@
 
 namespace ReminderApp.EventParsing;
 
-internal class Parser
+public class Parser
 {
     private const string ActualLineSeparator = "actual line:===============================================================";
     internal const string ErrorSubject = "[parsing error]";

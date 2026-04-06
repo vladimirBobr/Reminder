@@ -26,6 +26,10 @@ internal class Program
         GitHubRepo,
         GitHubFilePath,
         GitHubBranch);
+
+    // Or use local file reader:
+    // private static readonly IEventReader _eventReader = new FileEventReader("path/to/events.txt");
+    
     private static readonly INotifier _notifier = new ConsoleNotifier(); //ConsoleNotifier/TelegramNotifier
     private static readonly IEventPrinter _eventPrinter = new EventPrinter.EventPrinter();
 
