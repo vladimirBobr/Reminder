@@ -13,19 +13,73 @@ internal class Program
     private static readonly IDateTimeProvider _dateTimeProvider = new DateTimeProvider();
     private static readonly IEventScheduler _eventScheduler = new EventScheduler();
     private static readonly IFileStorage _fileStorage = new JsonFileStorage();
+    private static readonly GitHubConfigStorage _configStorage = new GitHubConfigStorage();
     private static IEventReader _eventReader = null!;
 
     static async Task Main(string[] args)
     {
         Console.WriteLine("▶️ Starting Reminder");
         
-        // Read GitHub URL from console
-        Console.Write("Enter GitHub file URL (e.g., https://github.com/owner/repo/blob/main/events.txt): ");
-        var githubUrl = Console.ReadLine() ?? "";
+        // Try to load saved config
+        var config = _configStorage.Load();
         
-        // Read GitHub token from console
-        Console.Write("Enter GitHub Personal Access Token: ");
-        var githubToken = Console.ReadLine() ?? "";
+        string githubUrl;
+        string githubToken;
+        
+        if (config != null)
+        {
+            // Ask if user wants to use saved config
+            Console.WriteLine($"Saved URL found: {config.GithubUrl}");
+            Console.Write("Use saved credentials? (y/n): ");
+            var useSaved = Console.ReadLine()?.ToLower() == "y";
+            
+            if (useSaved)
+            {
+                githubUrl = config.GithubUrl;
+                githubToken = _configStorage.GetDecryptedToken(config.EncryptedToken) ?? "";
+                
+                if (string.IsNullOrEmpty(githubToken))
+                {
+                    Console.WriteLine("❌ Failed to decrypt saved token. Please enter new credentials.");
+                    Console.Write("Enter GitHub file URL: ");
+                    githubUrl = Console.ReadLine() ?? "";
+                    Console.Write("Enter GitHub Personal Access Token: ");
+                    githubToken = Console.ReadLine() ?? "";
+                    _configStorage.Save(githubUrl, githubToken);
+                }
+            }
+            else
+            {
+                Console.Write("Enter GitHub file URL: ");
+                githubUrl = Console.ReadLine() ?? "";
+                Console.Write("Enter GitHub Personal Access Token: ");
+                githubToken = Console.ReadLine() ?? "";
+                
+                Console.Write("Save credentials? (y/n): ");
+                var save = Console.ReadLine()?.ToLower() == "y";
+                if (save)
+                {
+                    _configStorage.Save(githubUrl, githubToken);
+                    Console.WriteLine("✅ Credentials saved.");
+                }
+            }
+        }
+        else
+        {
+            // First time - ask for credentials
+            Console.Write("Enter GitHub file URL (e.g., https://github.com/owner/repo/blob/main/events.txt): ");
+            githubUrl = Console.ReadLine() ?? "";
+            Console.Write("Enter GitHub Personal Access Token: ");
+            githubToken = Console.ReadLine() ?? "";
+            
+            Console.Write("Save credentials? (y/n): ");
+            var save = Console.ReadLine()?.ToLower() == "y";
+            if (save)
+            {
+                _configStorage.Save(githubUrl, githubToken);
+                Console.WriteLine("✅ Credentials saved.");
+            }
+        }
         
         // Create GitHubEventReader from URL
         try
