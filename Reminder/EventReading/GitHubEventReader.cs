@@ -4,17 +4,6 @@ using System.Text;
 namespace ReminderApp.EventReading;
 
 /// <summary>
-/// DTO for parsed GitHub URL components
-/// </summary>
-public class GitHubUrlParts
-{
-    public string Owner { get; set; } = string.Empty;
-    public string Repo { get; set; } = string.Empty;
-    public string FilePath { get; set; } = string.Empty;
-    public string Branch { get; set; } = string.Empty;
-}
-
-/// <summary>
 /// Reads events from a text file stored on GitHub
 /// </summary>
 public class GitHubEventReader : EventReaderBase
@@ -36,28 +25,6 @@ public class GitHubEventReader : EventReaderBase
         _repo = repo;
         _filePath = filePath;
         _branch = branch;
-    }
-
-    /// <summary>
-    /// Creates GitHubEventReader from a GitHub URL
-    /// </summary>
-    /// <exception cref="ArgumentException">Thrown when URL or token is invalid</exception>
-    public static GitHubEventReader FromUrl(string url, string token)
-    {
-        if (string.IsNullOrWhiteSpace(token))
-            throw new ArgumentException("Token cannot be empty", nameof(token));
-        
-        var parsed = ParseGitHubUrl(url);
-        
-        var reader = new GitHubEventReader(
-            owner: parsed.Owner,
-            repo: parsed.Repo,
-            filePath: parsed.FilePath,
-            branch: parsed.Branch);
-        
-        reader.SetAuthentication(token);
-        
-        return reader;
     }
 
     /// <summary>
@@ -107,73 +74,11 @@ public class GitHubEventReader : EventReaderBase
     }
 
     /// <summary>
-    /// Parses GitHub URL to extract owner, repo, file path, and branch
+    /// Represents GitHub API response for file contents
     /// </summary>
-    /// <exception cref="ArgumentException">Thrown when URL is invalid</exception>
-    public static GitHubUrlParts ParseGitHubUrl(string url)
+    public class GitHubFileContent
     {
-        if (string.IsNullOrWhiteSpace(url))
-            throw new ArgumentException("URL cannot be empty", nameof(url));
-        
-        string owner;
-        string repo;
-        string filePath;
-        string branch;
-        
-        // Check for shorthand format (owner/repo)
-        if (!url.Contains("github.com"))
-        {
-            var parts = url.Split('/');
-            if (parts.Length >= 2)
-            {
-                owner = parts[0].Trim();
-                repo = parts[1].Trim();
-                
-                if (string.IsNullOrEmpty(owner) || string.IsNullOrEmpty(repo))
-                    throw new ArgumentException($"Invalid URL format: {url}", nameof(url));
-                
-                filePath = parts.Length > 2 ? string.Join("/", parts.Skip(2)) : "";
-                branch = "";
-                
-                return new GitHubUrlParts { Owner = owner, Repo = repo, FilePath = filePath, Branch = branch };
-            }
-        }
-        
-        // Parse full GitHub URL
-        var uri = new Uri(url);
-        if (uri.Host != "github.com" && !uri.Host.EndsWith("github.com"))
-            throw new ArgumentException($"Invalid GitHub host: {uri.Host}", nameof(url));
-            
-        var pathParts = uri.AbsolutePath.Trim('/').Split('/');
-        if (pathParts.Length < 2)
-            throw new ArgumentException($"Invalid GitHub URL path: {uri.AbsolutePath}", nameof(url));
-            
-        owner = pathParts[0];
-        repo = pathParts[1];
-        
-        if (string.IsNullOrEmpty(owner) || string.IsNullOrEmpty(repo))
-            throw new ArgumentException($"Invalid repository: {url}", nameof(url));
-        
-        // Check for /blob/ branch/filepath
-        filePath = "";
-        branch = "";
-        
-        var blobIndex = Array.IndexOf(pathParts, "blob");
-        if (blobIndex >= 0 && blobIndex + 2 < pathParts.Length)
-        {
-            branch = pathParts[blobIndex + 1];
-            filePath = string.Join("/", pathParts.Skip(blobIndex + 2));
-        }
-        
-        return new GitHubUrlParts { Owner = owner, Repo = repo, FilePath = filePath, Branch = branch };
+        public string content { get; set; } = string.Empty;
+        public string encoding { get; set; } = string.Empty;
     }
-}
-
-/// <summary>
-/// Represents GitHub API response for file contents
-/// </summary>
-public class GitHubFileContent
-{
-    public string content { get; set; } = string.Empty;
-    public string encoding { get; set; } = string.Empty;
 }
