@@ -28,7 +28,15 @@ internal class Program
         var githubToken = Console.ReadLine();
         
         // Create GitHubEventReader from URL
-        _eventReader = GitHubEventReader.FromUrl(githubUrl, githubToken);
+        try
+        {
+            _eventReader = GitHubEventReader.FromUrl(githubUrl, githubToken);
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"❌ {ex.Message}");
+            return;
+        }
         
         var _notifier = new ConsoleNotifier(); //ConsoleNotifier/TelegramNotifier
         var _eventPrinter = new EventPrinter.EventPrinter();
