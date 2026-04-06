@@ -20,66 +20,7 @@ internal class Program
     {
         Console.WriteLine("▶️ Starting Reminder");
         
-        // Try to load saved config
-        var config = _configStorage.Load();
-        
-        string githubUrl;
-        string githubToken;
-        
-        if (config != null)
-        {
-            // Ask if user wants to use saved config
-            Console.WriteLine($"Saved URL found: {config.GithubUrl}");
-            Console.Write("Use saved credentials? (y/n): ");
-            var useSaved = Console.ReadLine()?.ToLower() == "y";
-            
-            if (useSaved)
-            {
-                githubUrl = config.GithubUrl;
-                githubToken = _configStorage.GetDecryptedToken(config.EncryptedToken) ?? "";
-                
-                if (string.IsNullOrEmpty(githubToken))
-                {
-                    Console.WriteLine("❌ Failed to decrypt saved token. Please enter new credentials.");
-                    Console.Write("Enter GitHub file URL: ");
-                    githubUrl = Console.ReadLine() ?? "";
-                    Console.Write("Enter GitHub Personal Access Token: ");
-                    githubToken = Console.ReadLine() ?? "";
-                    _configStorage.Save(githubUrl, githubToken);
-                }
-            }
-            else
-            {
-                Console.Write("Enter GitHub file URL: ");
-                githubUrl = Console.ReadLine() ?? "";
-                Console.Write("Enter GitHub Personal Access Token: ");
-                githubToken = Console.ReadLine() ?? "";
-                
-                Console.Write("Save credentials? (y/n): ");
-                var save = Console.ReadLine()?.ToLower() == "y";
-                if (save)
-                {
-                    _configStorage.Save(githubUrl, githubToken);
-                    Console.WriteLine("✅ Credentials saved.");
-                }
-            }
-        }
-        else
-        {
-            // First time - ask for credentials
-            Console.Write("Enter GitHub file URL (e.g., https://github.com/owner/repo/blob/main/events.txt): ");
-            githubUrl = Console.ReadLine() ?? "";
-            Console.Write("Enter GitHub Personal Access Token: ");
-            githubToken = Console.ReadLine() ?? "";
-            
-            Console.Write("Save credentials? (y/n): ");
-            var save = Console.ReadLine()?.ToLower() == "y";
-            if (save)
-            {
-                _configStorage.Save(githubUrl, githubToken);
-                Console.WriteLine("✅ Credentials saved.");
-            }
-        }
+        var (githubUrl, githubToken) = GetGitHubCredentials();
         
         // Create GitHubEventReader from URL
         try
@@ -110,5 +51,60 @@ internal class Program
 
         _runner.Stop();
         Console.WriteLine("✅ Работа завершена.");
+    }
+    
+    private static (string url, string token) GetGitHubCredentials()
+    {
+        var config = _configStorage.Load();
+        
+        if (config != null)
+        {
+            return GetCredentialsFromSavedConfig(config);
+        }
+        
+        return GetCredentialsFromInput(savePrompt: true);
+    }
+    
+    private static (string url, string token) GetCredentialsFromSavedConfig(GitHubConfig config)
+    {
+        Console.WriteLine($"Saved URL found: {config.GithubUrl}");
+        Console.Write("Use saved credentials? (y/n): ");
+        var useSaved = Console.ReadLine()?.ToLower() == "y";
+        
+        if (useSaved)
+        {
+            var token = _configStorage.GetDecryptedToken(config.EncryptedToken) ?? "";
+            
+            if (string.IsNullOrEmpty(token))
+            {
+                Console.WriteLine("❌ Failed to decrypt saved token. Please enter new credentials.");
+                return GetCredentialsFromInput(savePrompt: false);
+            }
+            
+            return (config.GithubUrl, token);
+        }
+        
+        return GetCredentialsFromInput(savePrompt: true);
+    }
+    
+    private static (string url, string token) GetCredentialsFromInput(bool savePrompt)
+    {
+        Console.Write("Enter GitHub file URL (e.g., https://github.com/owner/repo/blob/main/events.txt): ");
+        var url = Console.ReadLine() ?? "";
+        Console.Write("Enter GitHub Personal Access Token: ");
+        var token = Console.ReadLine() ?? "";
+        
+        if (savePrompt)
+        {
+            Console.Write("Save credentials? (y/n): ");
+            var save = Console.ReadLine()?.ToLower() == "y";
+            if (save)
+            {
+                _configStorage.Save(url, token);
+                Console.WriteLine("✅ Credentials saved.");
+            }
+        }
+        
+        return (url, token);
     }
 }
