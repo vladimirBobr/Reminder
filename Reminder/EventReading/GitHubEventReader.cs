@@ -95,9 +95,6 @@ public class GitHubEventReader : EventReaderBase
             // Decode base64 content
             var decodedContent = Encoding.UTF8.GetString(Convert.FromBase64String(githubContent.content));
             
-            // Remove newlines from base64 string (GitHub adds them every 64 characters)
-            decodedContent = decodedContent.Replace("\n", "").Replace("\r", "");
-            
             Console.WriteLine($"📄 Read content from GitHub: {_owner}/{_repo}/{_filePath}");
             
             return decodedContent;
