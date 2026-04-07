@@ -32,100 +32,75 @@ internal class Parser
     internal EventData ParseEventBlock(string block)
     {
         if (string.IsNullOrEmpty(block))
-            throw new Exception();
+            throw new Exception("Empty event block");
 
         var lines = block.Split([Environment.NewLine], StringSplitOptions.None);
 
         var firstLine = lines.First(); // точно должна быть
         string description = string.Join(Environment.NewLine, lines.Skip(1));
 
-        (DateOnly date, TimeOnly? time, string? subject)? parsed = ParseFirstLine(firstLine);
-        if (parsed == null)
-            return CreateErrorEvent(block);
+        var (date, time, subject) = ParseFirstLine(firstLine);
 
-        var date = parsed.Value.date;
-        var time = parsed.Value.time;
-        var subject = parsed.Value.subject;
-
-        // Шаг 3: Формируем EventData
-        
-        var eventData = new EventData
+        return new EventData
         {
-            Time = date.ToDateTime(time ?? TimeOnly.MinValue),
+            Date = date,
+            Time = time,
             Subject = subject,
             Description = description
         };
-
-        return eventData;
     }
 
-    internal (DateOnly date, TimeOnly? time, string? subject)? ParseFirstLine(string firstLine)
+    private (DateOnly? Date, TimeOnly? Time, string? Subject)
+       ParseFirstLine(string firstLine)
     {
         if (string.IsNullOrWhiteSpace(firstLine))
-            throw new Exception();
+            throw new Exception("First line is empty");
 
         var parts = firstLine.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-        if (parts.Length == 0)
-            return null;
-
-        DateOnly date;
-        TimeOnly? time = null;
-        string? subject;
-
-        // Проверяем, является ли первый элемент датой
-        if (DateOnly.TryParseExact(parts[0],
-                "dd.MM.yyyy",
-                System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.None,
-                out DateOnly parsedDate))
+        // Пробуем распарсить первый элемент как дату
+        if (DateOnly.TryParseExact(parts[0], "dd.MM.yyyy",
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None,
+            out var dateOnly))
         {
-            // Первый элемент - дата
-            date = parsedDate;
+            // Есть дата
+            TimeOnly? time = null;
+            string? subject = null;
 
             // Проверяем второй элемент на время
-            if (parts.Length >= 2)
+            if (parts.Length >= 2 && TimeOnly.TryParse(parts[1], out var parsedTime))
             {
-                if (TimeOnly.TryParse(parts[1], out TimeOnly parsedTime))
-                {
-                    time = parsedTime;
-                    subject = parts.Length > 2 ? string.Join(" ", parts.Skip(2)) : null;
-                }
-                else
-                {
-                    subject = string.Join(" ", parts.Skip(1));
-                }
+                time = parsedTime;
+                // Остальное — subject (если есть)
+                subject = parts.Length > 2 ? string.Join(" ", parts.Skip(2)) : null;
             }
-            else
+            else if (parts.Length >= 2)
             {
-                subject = null;
+                // Второй элемент — не время, значит это начало subject
+                subject = string.Join(" ", parts.Skip(1));
             }
-        }
-        else if (TimeOnly.TryParse(parts[0], out TimeOnly parsedTime))
-        {
-            // Первый элемент - время (используем сегодняшнюю дату)
-            date = DateOnly.FromDateTime(DateTime.Today);
-            time = parsedTime;
-            subject = parts.Length > 1 ? string.Join(" ", parts.Skip(1)) : null;
-        }
-        else
-        {
-            // Первый элемент - не дата и не время (невалидная строка)
-            return null;
+            // else: только дата, без времени и subject
+
+            return (dateOnly, time, subject);
         }
 
-        return (date, time, subject);
-    }
-
-
-
-    private EventData CreateErrorEvent(string block)
-    {
-        return new EventData
+        // Пробуем распарсить первый элемент как время
+        if (TimeOnly.TryParse(parts[0], out var timeOnly))
         {
-            Time = DateTime.Today,
-            Subject = Parser.ErrorSubject, // "[parsing error]"
-            Description = block
-        };
+            // Есть время
+            string? subject = null;
+
+            // Остальное — subject (если есть)
+            if (parts.Length > 1)
+            {
+                subject = string.Join(" ", parts.Skip(1));
+            }
+
+            return (null, timeOnly, subject);
+        }
+
+        // Нет ни даты, ни времени — вся строка это subject
+        return (null, null, string.Join(" ", parts));
     }
 }

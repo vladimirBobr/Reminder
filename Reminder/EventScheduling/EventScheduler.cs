@@ -10,15 +10,33 @@ public class EventScheduler : IEventScheduler
 
         foreach (var eventData in events)
         {
-            var timeLeft = (eventData.Time - now).TotalSeconds;
-            var notifyKey = $"notify-{eventData.Time:yyyyMMddHHmmss}-{eventData.Subject}";
+            var key = eventData.GetKey();
 
-            if (timeLeft <= 0 && !processed.ContainsKey(notifyKey))
-            {
-                dueEvents.Add(eventData);
-            }
+            if (processed.ContainsKey(key))
+                continue;
+
+            if (!IsEventDue(eventData, now))
+                continue;
+
+            dueEvents.Add(eventData);
         }
 
         return dueEvents;
+    }
+    private bool IsEventDue(EventData eventData, DateTime now)
+    {
+        if (eventData.Date.HasValue)
+        {
+            var eventDateTime = eventData.Date.Value.ToDateTime(eventData.Time ?? TimeOnly.MinValue);
+            return eventDateTime <= now;
+        }
+
+        if (eventData.Time.HasValue)
+        {
+            var todayEventTime = DateTime.Today.Add(eventData.Time.Value.ToTimeSpan());
+            return todayEventTime <= now;
+        }
+
+        return false;
     }
 }

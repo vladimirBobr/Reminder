@@ -9,11 +9,17 @@ public class EventPrinter : IEventPrinter
     {
         foreach (var eventData in events)
         {
-            var eventKey = GetEventKey(eventData);
+            var eventKey = eventData.GetKey();
 
             if (!_seenEvents.Contains(eventKey))
             {
-                Console.WriteLine($"📅 Новое событие: {eventData.Time:dd.MM.yyyy HH:mm} {eventData.Subject}");
+                var timeStr = eventData.Date.HasValue
+                    ? eventData.Date.Value.ToDateTime(eventData.Time ?? TimeOnly.MinValue).ToString("dd.MM.yyyy HH:mm")
+                    : eventData.Time.HasValue
+                        ? eventData.Time.Value.ToString("HH:mm")
+                        : "без даты и времени";
+
+                Console.WriteLine($"📅 Новое событие: {timeStr} {eventData.Subject}");
                 if (eventData.Description != null)
                 {
                     Console.WriteLine($"📝 {eventData.Description}");
@@ -22,10 +28,5 @@ public class EventPrinter : IEventPrinter
                 _seenEvents.Add(eventKey);
             }
         }
-    }
-
-    private string GetEventKey(EventData eventData)
-    {
-        return $"{eventData.Time:yyyyMMddHHmmss}_{eventData.Subject}_{eventData.Description}";
     }
 }

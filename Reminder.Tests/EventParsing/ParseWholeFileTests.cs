@@ -2,7 +2,7 @@
 
 namespace Reminder.Tests.EventParsing;
 
-public class ParserFileTests
+public class ParseWholeFileTests
 {
     private readonly Parser _parser = new();
 
@@ -33,7 +33,8 @@ public class ParserFileTests
         Assert.Single(result);
         Helpers.AssertEventData(
             actual: result[0],
-            expectedTime: new DateTime(2026, 3, 24, 22, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 24),
+            expectedTime: new TimeOnly(22, 0),
             expectedSubject: "проверить автоплатежи",
             expectedDescription: "Описание события"
         );
@@ -56,14 +57,16 @@ public class ParserFileTests
 
         Helpers.AssertEventData(
             actual: result[0],
-            expectedTime: new DateTime(2026, 3, 24, 22, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 24),
+            expectedTime: new TimeOnly(22, 0),
             expectedSubject: "событие 1",
             expectedDescription: "Описание 1"
         );
 
         Helpers.AssertEventData(
             actual: result[1],
-            expectedTime: new DateTime(2026, 3, 25, 10, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 25),
+            expectedTime: new TimeOnly(10, 0),
             expectedSubject: "событие 2",
             expectedDescription: "Описание 2"
         );
@@ -91,21 +94,24 @@ public class ParserFileTests
 
         Helpers.AssertEventData(
             actual: result[0],
-            expectedTime: new DateTime(2026, 3, 24, 22, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 24),
+            expectedTime: new TimeOnly(22, 0),
             expectedSubject: "событие 1",
             expectedDescription: "Описание 1"
         );
 
         Helpers.AssertEventData(
             actual: result[1],
-            expectedTime: new DateTime(2026, 3, 25, 10, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 25),
+            expectedTime: new TimeOnly(10, 0),
             expectedSubject: "событие 2",
             expectedDescription: "Описание 2"
         );
 
         Helpers.AssertEventData(
             actual: result[2],
-            expectedTime: new DateTime(2026, 3, 26, 15, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 26),
+            expectedTime: new TimeOnly(15, 0),
             expectedSubject: "событие 3",
             expectedDescription: "Описание 3"
         );
@@ -128,11 +134,12 @@ public class ParserFileTests
 
         Assert.Single(result);
         Helpers.AssertEventData(
-            actual: result[0],
-            expectedTime: new DateTime(2026, 3, 24, 22, 0, 0),
-            expectedSubject: "событие 1",
-            expectedDescription: "Описание 1"
-        );
+              actual: result[0],
+              expectedDate: new DateOnly(2026, 3, 24),
+              expectedTime: new TimeOnly(22, 0),
+              expectedSubject: "событие 1",
+              expectedDescription: "Описание 1"
+          );
     }
 
     [Fact]
@@ -171,14 +178,16 @@ public class ParserFileTests
 
         Helpers.AssertEventData(
             actual: result[0],
-            expectedTime: new DateTime(2026, 3, 24, 22, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 24),
+            expectedTime: new TimeOnly(22, 0),
             expectedSubject: "событие 1",
             expectedDescription: "Описание 1"
         );
 
         Helpers.AssertEventData(
             actual: result[1],
-            expectedTime: new DateTime(2026, 3, 25, 10, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 25),
+            expectedTime: new TimeOnly(10, 0),
             expectedSubject: "событие 2",
             expectedDescription: "Описание 2"
         );
@@ -201,11 +210,12 @@ public class ParserFileTests
 
         Assert.Single(result);
         Helpers.AssertEventData(
-            actual: result[0],
-            expectedTime: new DateTime(2026, 3, 24, 22, 0, 0),
-            expectedSubject: "событие 1",
-            expectedDescription: "Описание 1"
-        );
+             actual: result[0],
+             expectedDate: new DateOnly(2026, 3, 24),
+             expectedTime: new TimeOnly(22, 0),
+             expectedSubject: "событие 1",
+             expectedDescription: "Описание 1"
+         );
     }
 
     [Fact]
@@ -226,7 +236,8 @@ public class ParserFileTests
         Assert.Single(result);
         Helpers.AssertEventData(
             actual: result[0],
-            expectedTime: new DateTime(2026, 3, 24, 22, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 24),
+            expectedTime: new TimeOnly(22, 0),
             expectedSubject: "событие 1",
             expectedDescription: "Описание 1"
         );
@@ -249,14 +260,16 @@ public class ParserFileTests
 
         Helpers.AssertEventData(
             actual: result[0],
-            expectedTime: new DateTime(2026, 3, 24, 22, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 24),
+            expectedTime: new TimeOnly(22, 0),
             expectedSubject: "событие 1",
             expectedDescription: "Описание 1"
         );
 
         Helpers.AssertEventData(
             actual: result[1],
-            expectedTime: new DateTime(2026, 3, 25, 10, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 25),
+            expectedTime: new TimeOnly(10, 0),
             expectedSubject: "событие 2",
             expectedDescription: "Описание 2"
         );
@@ -281,7 +294,8 @@ public class ParserFileTests
         Assert.Single(result);
         Helpers.AssertEventData(
             actual: result[0],
-            expectedTime: new DateTime(2026, 3, 24, 22, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 24),
+            expectedTime: new TimeOnly(22, 0),
             expectedSubject: "событие 1",
             expectedDescription: "Описание 1"
         );

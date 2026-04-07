@@ -18,7 +18,8 @@ public class ParserOneEventTests
 
         Helpers.AssertEventData(
             actual: eventData,
-            expectedTime: new DateTime(2026, 3, 24, 22, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 24),
+            expectedTime: new TimeOnly(22, 0),
             expectedSubject: "проверить автоплатежи",
             expectedDescription: "(не забыть про новый платёж тренеру)"
         );
@@ -36,7 +37,8 @@ public class ParserOneEventTests
 
         Helpers.AssertEventData(
             actual: eventData,
-            expectedTime: new DateTime(2026, 3, 24, 0, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 24),
+            expectedTime: null,
             expectedSubject: null,
             expectedDescription: "Просто напоминание без времени"
         );
@@ -55,7 +57,8 @@ public class ParserOneEventTests
 
         Helpers.AssertEventData(
             actual: eventData,
-            expectedTime: new DateTime(today.Year, today.Month, today.Day, 22, 0, 0),
+            expectedDate: null,
+            expectedTime: new TimeOnly(22, 0),
             expectedSubject: "проверить автоплатежи",
             expectedDescription: "(не забыть про новый платёж тренеру)"
         );
@@ -74,44 +77,13 @@ public class ParserOneEventTests
 
         Helpers.AssertEventData(
             actual: eventData,
-            expectedTime: new DateTime(today.Year, today.Month, today.Day, 22, 0, 0),
+            expectedDate: null,
+            expectedTime: new TimeOnly(22, 0),
             expectedSubject: null,
             expectedDescription: "Напоминание без subject в первой строке"
         );
     }
-
-    [Fact]
-    public void ParseEventBlock_WhenInvalidDate_ReturnsErrorEvent()
-    {
-        var block = """
-                    32.03.2026 22:00 проверить автоплатежи
-                    (не забыть про новый платёж тренеру)
-                    """;
-
-        var eventData = _parser.ParseEventBlock(block);
-
-        Helpers.AssertErrorEventData(
-            actual: eventData,
-            originalBlock: block
-        );
-    }
-
-    [Fact]
-    public void ParseEventBlock_WhenInvalidTimeFirst_ReturnsErrorEvent()
-    {
-        var block = """
-                    25:00 проверить автоплатежи
-                    (не забыть про новый платёж тренеру)
-                    """;
-
-        var eventData = _parser.ParseEventBlock(block);
-
-        Helpers.AssertErrorEventData(
-            actual: eventData,
-            originalBlock: block
-        );
-    }
-
+    
     [Fact]
     public void ParseEventBlock_WhenSubjectOnly_ReturnsErrorEvent()
     {
@@ -122,9 +94,12 @@ public class ParserOneEventTests
 
         var eventData = _parser.ParseEventBlock(block);
 
-        Helpers.AssertErrorEventData(
+        Helpers.AssertEventData(
             actual: eventData,
-            originalBlock: block
+            expectedDate: null,
+            expectedTime: null,
+            expectedSubject: "просто текст без даты и времени",
+            expectedDescription: "(не забыть про новый платёж тренеру)"
         );
     }
 
@@ -146,7 +121,8 @@ public class ParserOneEventTests
 
         Helpers.AssertEventData(
             actual: eventData,
-            expectedTime: new DateTime(2026, 3, 24, 22, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 24),
+            expectedTime: new TimeOnly(22, 0),
             expectedSubject: "проверить автоплатежи",
             expectedDescription: expectedDescription
         );
@@ -164,7 +140,8 @@ public class ParserOneEventTests
 
         Helpers.AssertEventData(
             actual: eventData,
-            expectedTime: new DateTime(2026, 3, 24, 22, 0, 30),
+            expectedDate: new DateOnly(2026, 3, 24),
+            expectedTime: new TimeOnly(22, 0, 30),
             expectedSubject: "проверить автоплатежи",
             expectedDescription: "Описание"
         );
@@ -179,11 +156,11 @@ public class ParserOneEventTests
                     """;
 
         var eventData = _parser.ParseEventBlock(block);
-        var today = DateTime.Today;
 
         Helpers.AssertEventData(
             actual: eventData,
-            expectedTime: new DateTime(today.Year, today.Month, today.Day, 22, 0, 30),
+            expectedDate: null,
+            expectedTime: new TimeOnly(22, 0, 30),
             expectedSubject: "проверить автоплатежи",
             expectedDescription: "Описание"
         );
@@ -201,7 +178,8 @@ public class ParserOneEventTests
 
         Helpers.AssertEventData(
             actual: eventData,
-            expectedTime: new DateTime(2026, 3, 5, 0, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 5),
+            expectedTime: null,
             expectedSubject: "проверить",
             expectedDescription: "Описание"
         );
@@ -220,7 +198,8 @@ public class ParserOneEventTests
 
         Helpers.AssertEventData(
             actual: eventData,
-            expectedTime: new DateTime(today.Year, today.Month, today.Day, 5, 5, 0),
+            expectedDate: null,
+            expectedTime: new TimeOnly(5, 5, 0),
             expectedSubject: "проверить",
             expectedDescription: "Описание"
         );
@@ -238,7 +217,8 @@ public class ParserOneEventTests
 
         Helpers.AssertEventData(
             actual: eventData,
-            expectedTime: new DateTime(2026, 3, 24, 22, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 24),
+            expectedTime: new TimeOnly(22, 0),
             expectedSubject: "проверить автоплатежи",
             expectedDescription: "Описание"
         );
@@ -257,7 +237,8 @@ public class ParserOneEventTests
 
         Helpers.AssertEventData(
             actual: eventData,
-            expectedTime: new DateTime(today.Year, today.Month, today.Day, 22, 0, 0),
+            expectedDate: null,
+            expectedTime: new TimeOnly(22, 0),
             expectedSubject: "позвонить по номеру 123-45-67",
             expectedDescription: "Описание"
         );
@@ -275,7 +256,8 @@ public class ParserOneEventTests
 
         Helpers.AssertEventData(
             actual: eventData,
-            expectedTime: new DateTime(2026, 3, 24, 0, 0, 0),
+            expectedDate: new DateOnly(2026, 3, 24),
+            expectedTime: null,
             expectedSubject: "встреча в 22:00",
             expectedDescription: "Описание"
         );
@@ -293,7 +275,8 @@ public class ParserOneEventTests
 
         Helpers.AssertEventData(
             actual: eventData,
-            expectedTime: new DateTime(1, 1, 1, 0, 0, 0),
+            expectedDate: new DateOnly(1, 1, 1),
+            expectedTime: null,
             expectedSubject: null,
             expectedDescription: "Описание"
         );
@@ -311,7 +294,8 @@ public class ParserOneEventTests
 
         Helpers.AssertEventData(
             actual: eventData,
-            expectedTime: new DateTime(9999, 12, 31, 0, 0, 0),
+            expectedDate: new DateOnly(9999, 12, 31),
+            expectedTime: null,
             expectedSubject: null,
             expectedDescription: "Описание"
         );
@@ -336,34 +320,82 @@ public class ParserOneEventTests
     }
 
     [Fact]
-    public void ParseEventBlock_WhenDateIsPartial_ReturnsErrorEvent()
+    public void ParseEventBlock_WhenInvalidDate_ReturnsEventDataWithSubjectOnly()
     {
         var block = """
-                    24.03.
-                    Описание
-                    """;
+                32.03.2026 22:00 проверить автоплатежи
+                (не забыть про новый платёж тренеру)
+                """;
 
         var eventData = _parser.ParseEventBlock(block);
 
-        Helpers.AssertErrorEventData(
+        // Невалидная дата → вся первая строка становится subject
+        Helpers.AssertEventData(
             actual: eventData,
-            originalBlock: block
+            expectedDate: null,
+            expectedTime: null,
+            expectedSubject: "32.03.2026 22:00 проверить автоплатежи",
+            expectedDescription: "(не забыть про новый платёж тренеру)"
         );
     }
 
     [Fact]
-    public void ParseEventBlock_WhenDateIsInvalidFormat_ReturnsErrorEvent()
+    public void ParseEventBlock_WhenInvalidTimeFirst_ReturnsEventDataWithSubjectOnly()
     {
         var block = """
-                    2026-03-24
-                    Описание
-                    """;
+                25:00 проверить автоплатежи
+                (не забыть про новый платёж тренеру)
+                """;
 
         var eventData = _parser.ParseEventBlock(block);
 
-        Helpers.AssertErrorEventData(
+        // 25:00 невалидное время → вся первая строка становится subject
+        Helpers.AssertEventData(
             actual: eventData,
-            originalBlock: block
+            expectedDate: null,
+            expectedTime: null,
+            expectedSubject: "25:00 проверить автоплатежи",
+            expectedDescription: "(не забыть про новый платёж тренеру)"
+        );
+    }
+
+    [Fact]
+    public void ParseEventBlock_WhenDateIsPartial_ReturnsEventDataWithSubjectOnly()
+    {
+        var block = """
+                24.03.
+                Описание
+                """;
+
+        var eventData = _parser.ParseEventBlock(block);
+
+        // "24.03." не парсится как дата → вся первая строка в subject
+        Helpers.AssertEventData(
+            actual: eventData,
+            expectedDate: null,
+            expectedTime: null,
+            expectedSubject: "24.03.",
+            expectedDescription: "Описание"
+        );
+    }
+
+    [Fact]
+    public void ParseEventBlock_WhenDateIsInvalidFormat_ReturnsEventDataWithSubjectOnly()
+    {
+        var block = """
+                2026-03-24
+                Описание
+                """;
+
+        var eventData = _parser.ParseEventBlock(block);
+
+        // "2026-03-24" не парсится как dd.MM.yyyy → вся первая строка в subject
+        Helpers.AssertEventData(
+            actual: eventData,
+            expectedDate: null,
+            expectedTime: null,
+            expectedSubject: "2026-03-24",
+            expectedDescription: "Описание"
         );
     }
 
@@ -379,7 +411,8 @@ public class ParserOneEventTests
 
         Helpers.AssertEventData(
             actual: eventData,
-            expectedTime: new DateTime(2026, 3, 24, 0, 0, 0), // дата без времени
+            expectedDate: new DateOnly(2026, 3, 24),
+            expectedTime: null, // дата без времени
             expectedSubject: "25:00 проверить",
             expectedDescription: "Описание"
         );

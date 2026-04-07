@@ -13,7 +13,8 @@ public class EventRunnerTests
         var now = DateTime.Now.RoundToStartOfMinute();
         var eventData = new EventData
         {
-            Time = now,
+            Date = DateOnly.FromDateTime(now),
+            Time = new TimeOnly(now.Hour, now.Minute, now.Second),
             Subject = "Тестовое событие",
             Description = "Описание"
         };
@@ -35,7 +36,7 @@ public class EventRunnerTests
         Assert.Equal(eventData.Subject, notifier.LastNotifiedEvent?.Subject);
 
         var savedProcessed = fileStorage.GetProcessed();
-        var notifyKey = $"notify-{eventData.Time:yyyyMMddHHmmss}-{eventData.Subject}";
+        var notifyKey = eventData.GetKey();
         Assert.True(savedProcessed.ContainsKey(notifyKey));
         Assert.Equal(now, savedProcessed[notifyKey]);
     }
@@ -45,9 +46,11 @@ public class EventRunnerTests
     {
         // Arrange
         var now = DateTime.Now.RoundToStartOfMinute();
+        var futureTime = now.AddSeconds(10);
         var eventData = new EventData
         {
-            Time = now.AddSeconds(10),
+            Date = DateOnly.FromDateTime(futureTime),
+            Time = new TimeOnly(futureTime.Hour, futureTime.Minute, futureTime.Second),
             Subject = "Будущее событие",
             Description = "Описание"
         };
@@ -69,7 +72,7 @@ public class EventRunnerTests
         Assert.Empty(notifier.NotifiedEvents);
 
         var savedProcessed = fileStorage.GetProcessed();
-        var notifyKey = $"notify-{eventData.Time:yyyyMMddHHmmss}-{eventData.Subject}";
+        var notifyKey = eventData.GetKey();
         Assert.False(savedProcessed.ContainsKey(notifyKey));
     }
 
@@ -80,14 +83,15 @@ public class EventRunnerTests
         var now = DateTime.Now.RoundToStartOfMinute();
         var eventData = new EventData
         {
-            Time = now,
+            Date = DateOnly.FromDateTime(now),
+            Time = new TimeOnly(now.Hour, now.Minute, now.Second),
             Subject = "Тестовое событие",
             Description = "Описание"
         };
 
         var processed = new Dictionary<string, DateTime>
         {
-            [$"notify-{eventData.Time:yyyyMMddHHmmss}-{eventData.Subject}"] = now
+            [eventData.GetKey()] = now
         };
 
         var notifier = new TestNotifier();
@@ -108,7 +112,7 @@ public class EventRunnerTests
         Assert.Empty(notifier.NotifiedEvents);
 
         var savedProcessed = fileStorage.GetProcessed();
-        var notifyKey = $"notify-{eventData.Time:yyyyMMddHHmmss}-{eventData.Subject}";
+        var notifyKey = eventData.GetKey();
         Assert.True(savedProcessed.ContainsKey(notifyKey)); // ← уже было сохранено
     }
 
@@ -119,7 +123,8 @@ public class EventRunnerTests
         var now = DateTime.Now.RoundToStartOfMinute();
         var eventData = new EventData
         {
-            Time = now,
+            Date = DateOnly.FromDateTime(now),
+            Time = new TimeOnly(now.Hour, now.Minute, now.Second),
             Subject = "Тестовое событие",
             Description = "Описание"
         };
@@ -138,7 +143,7 @@ public class EventRunnerTests
 
         // Assert
         var savedProcessed = fileStorage.GetProcessed();
-        var notifyKey = $"notify-{eventData.Time:yyyyMMddHHmmss}-{eventData.Subject}";
+        var notifyKey = eventData.GetKey();
         Assert.False(savedProcessed.ContainsKey(notifyKey));
     }
 
@@ -149,14 +154,16 @@ public class EventRunnerTests
         var now = DateTime.Now.RoundToStartOfMinute();
         var eventData1 = new EventData
         {
-            Time = now,
+            Date = DateOnly.FromDateTime(now),
+            Time = new TimeOnly(now.Hour, now.Minute, now.Second),
             Subject = "Событие 1",
             Description = "Описание 1"
         };
 
         var eventData2 = new EventData
         {
-            Time = now,
+            Date = DateOnly.FromDateTime(now),
+            Time = new TimeOnly(now.Hour, now.Minute, now.Second),
             Subject = "Событие 2",
             Description = "Описание 2"
         };
@@ -179,8 +186,8 @@ public class EventRunnerTests
         Assert.Contains(notifier.NotifiedEvents, e => e.Subject == "Событие 2");
 
         var savedProcessed = fileStorage.GetProcessed();
-        var notifyKey1 = $"notify-{eventData1.Time:yyyyMMddHHmmss}-{eventData1.Subject}";
-        var notifyKey2 = $"notify-{eventData2.Time:yyyyMMddHHmmss}-{eventData2.Subject}";
+        var notifyKey1 = eventData1.GetKey(); ;
+        var notifyKey2 = eventData2.GetKey(); ;
         Assert.True(savedProcessed.ContainsKey(notifyKey1));
         Assert.True(savedProcessed.ContainsKey(notifyKey2));
     }
@@ -215,9 +222,11 @@ public class EventRunnerTests
     {
         // Arrange
         var now = DateTime.Now.RoundToStartOfMinute();
+        var pastTime = now.AddSeconds(-5);
         var eventData = new EventData
         {
-            Time = now.AddSeconds(-5),
+            Date = DateOnly.FromDateTime(pastTime),
+            Time = new TimeOnly(pastTime.Hour, pastTime.Minute, pastTime.Second),
             Subject = "Прошлое событие",
             Description = "Описание"
         };
@@ -239,7 +248,7 @@ public class EventRunnerTests
         Assert.Equal(eventData.Subject, notifier.LastNotifiedEvent?.Subject);
 
         var savedProcessed = fileStorage.GetProcessed();
-        var notifyKey = $"notify-{eventData.Time:yyyyMMddHHmmss}-{eventData.Subject}";
+        var notifyKey = eventData.GetKey();
         Assert.True(savedProcessed.ContainsKey(notifyKey));
         Assert.Equal(now, savedProcessed[notifyKey]);
     }
