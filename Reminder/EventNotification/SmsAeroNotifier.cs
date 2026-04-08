@@ -1,9 +1,7 @@
-using System.Net;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ReminderApp.Common;
-using ReminderApp.FileStorage;
 
 namespace ReminderApp.EventNotification;
 
@@ -20,12 +18,14 @@ public class SmsAeroNotifier : INotifier
         _email = email;
         _apiToken = apiToken;
         _sign = sign;
-        
-        var handler = new HttpClientHandler
+
+        var handler = new HttpClientHandler();
+        var proxy = ProxyHelper.CreateProxy();
+        if (proxy != null)
         {
-            Proxy = ProxyHelper.CreateProxy(),
-            UseProxy = true
-        };
+            handler.Proxy = proxy;
+            handler.UseProxy = true;
+        }
 
         _httpClient = new HttpClient(handler);
     }

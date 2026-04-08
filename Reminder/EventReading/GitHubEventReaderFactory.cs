@@ -1,4 +1,4 @@
-using ReminderApp.FileStorage;
+﻿using ReminderApp.FileStorage;
 
 namespace ReminderApp.EventReading;
 
@@ -147,15 +147,13 @@ public class GitHubEventReaderFactory
 
         if (useSaved)
         {
-            var token = _configStorage.GetDecryptedToken(config.EncryptedToken) ?? "";
-
-            if (string.IsNullOrEmpty(token))
+            if (string.IsNullOrEmpty(config.Token))
             {
                 Console.WriteLine("❌ Failed to decrypt saved token. Please enter new credentials.");
                 return GetCredentialsFromInput(savePrompt: false);
             }
 
-            return (config.GithubUrl, token);
+            return (config.GithubUrl, config.Token);
         }
 
         return GetCredentialsFromInput(savePrompt: true);

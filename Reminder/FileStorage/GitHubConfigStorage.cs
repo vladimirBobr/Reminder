@@ -1,5 +1,6 @@
-using System.Text.Json;
-using System.IO;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace ReminderApp.FileStorage;
 
@@ -9,13 +10,18 @@ namespace ReminderApp.FileStorage;
 public class GitHubConfigStorage
 {
     private readonly string _configPath;
-    
+    private readonly IDataProtector _protector;
+
     public GitHubConfigStorage()
     {
         var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var configDir = Path.Combine(userProfile, ".reminder");
         Directory.CreateDirectory(configDir);
         _configPath = Path.Combine(configDir, "github-config.json");
+
+        var dataProtectionProvider = DataProtectionProvider.Create(
+            new DirectoryInfo(Path.Combine(configDir, "keys")));
+        _protector = dataProtectionProvider.CreateProtector("GitHubConfig");
     }
 
     public GitHubConfig? Load()
@@ -26,7 +32,14 @@ public class GitHubConfigStorage
         try
         {
             var json = File.ReadAllText(_configPath);
-            return JsonSerializer.Deserialize<GitHubConfig>(json);
+            var config = JsonSerializer.Deserialize<GitHubConfig>(json);
+
+            if (config != null && !string.IsNullOrEmpty(config.EncryptedToken))
+            {
+                config.Token = _protector.Unprotect(config.EncryptedToken);
+            }
+
+            return config;
         }
         catch
         {
@@ -34,47 +47,18 @@ public class GitHubConfigStorage
         }
     }
 
-    public void Save(string githubUrl, string githubToken)
+    public void Save(string githubUrl, string token)
     {
-        var encryptedToken = EncryptToken(githubToken);
-        
+        var encryptedToken = _protector.Protect(token);
+
         var config = new GitHubConfig
         {
             GithubUrl = githubUrl,
-            EncryptedToken = encryptedToken
+            Token = encryptedToken
         };
         
         var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(_configPath, json);
-    }
-    
-    public string? GetDecryptedToken(string encryptedToken)
-    {
-        if (string.IsNullOrEmpty(encryptedToken))
-            return null;
-            
-        try
-        {
-            return DecryptToken(encryptedToken);
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private string EncryptToken(string token)
-    {
-        var tokenBytes = System.Text.Encoding.UTF8.GetBytes(token);
-        var encryptedBytes = System.Security.Cryptography.ProtectedData.Protect(tokenBytes, null, System.Security.Cryptography.DataProtectionScope.CurrentUser);
-        return Convert.ToBase64String(encryptedBytes);
-    }
-
-    private string DecryptToken(string encryptedToken)
-    {
-        var encryptedBytes = Convert.FromBase64String(encryptedToken);
-        var decryptedBytes = System.Security.Cryptography.ProtectedData.Unprotect(encryptedBytes, null, System.Security.Cryptography.DataProtectionScope.CurrentUser);
-        return System.Text.Encoding.UTF8.GetString(decryptedBytes);
     }
 }
 
@@ -82,4 +66,6 @@ public class GitHubConfig
 {
     public string GithubUrl { get; set; } = string.Empty;
     public string EncryptedToken { get; set; } = string.Empty;
+    [JsonIgnore]
+    public string Token { get; set; } = string.Empty;
 }

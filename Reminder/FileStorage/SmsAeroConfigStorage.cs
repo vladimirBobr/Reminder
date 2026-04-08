@@ -1,7 +1,5 @@
-using System.Text.Json;
-using System.IO;
-using System.Security.Cryptography;
-using System.Text;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace ReminderApp.FileStorage;
 
@@ -11,24 +9,37 @@ namespace ReminderApp.FileStorage;
 public class SmsAeroConfigStorage
 {
     private readonly string _configPath;
-    
+    private readonly IDataProtector _protector;
+
     public SmsAeroConfigStorage()
     {
         var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var configDir = Path.Combine(userProfile, ".reminder");
         Directory.CreateDirectory(configDir);
         _configPath = Path.Combine(configDir, "smsaero-config.json");
+
+        var dataProtectionProvider = DataProtectionProvider.Create(
+            new DirectoryInfo(Path.Combine(configDir, "keys")));
+        _protector = dataProtectionProvider.CreateProtector("SmsAeroConfig");
     }
 
     public SmsAeroConfig? Load()
     {
         if (!File.Exists(_configPath))
             return null;
-            
+
         try
         {
             var json = File.ReadAllText(_configPath);
-            return JsonSerializer.Deserialize<SmsAeroConfig>(json);
+            var config = JsonSerializer.Deserialize<SmsAeroConfig>(json);
+
+            if (config != null && !string.IsNullOrEmpty(config.Token))
+            {
+                // Расшифровываем токен сразу при загрузке
+                config.Token = _protector.Unprotect(config.Token);
+            }
+
+            return config;
         }
         catch
         {
@@ -38,52 +49,23 @@ public class SmsAeroConfigStorage
 
     public void Save(string email, string apiToken, string sign)
     {
-        var encryptedToken = EncryptToken(apiToken);
-        
-        var config = new SmsAeroConfig
+        var encryptedToken = _protector.Protect(apiToken);
+
+        var config = new
         {
             Email = email,
-            EncryptedToken = encryptedToken,
+            Token = encryptedToken,
             Sign = sign
         };
         
         var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(_configPath, json);
     }
-    
-    public string? GetDecryptedToken(string encryptedToken)
-    {
-        if (string.IsNullOrEmpty(encryptedToken))
-            return null;
-            
-        try
-        {
-            return DecryptToken(encryptedToken);
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private string EncryptToken(string token)
-    {
-        var tokenBytes = Encoding.UTF8.GetBytes(token);
-        var encryptedBytes = ProtectedData.Protect(tokenBytes, null, DataProtectionScope.CurrentUser);
-        return Convert.ToBase64String(encryptedBytes);
-    }
-
-    private string DecryptToken(string encryptedToken)
-    {
-        var encryptedBytes = Convert.FromBase64String(encryptedToken);
-        var decryptedBytes = ProtectedData.Unprotect(encryptedBytes, null, DataProtectionScope.CurrentUser);
-        return Encoding.UTF8.GetString(decryptedBytes);
-    }
 }
 
 public class SmsAeroConfig
 {
     public string Email { get; set; } = string.Empty;
-    public string EncryptedToken { get; set; } = string.Empty;
+    public string Token { get; set; } = string.Empty;
     public string Sign { get; set; } = "SMS Aero";
 }

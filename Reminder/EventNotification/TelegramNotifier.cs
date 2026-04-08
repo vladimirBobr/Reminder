@@ -1,5 +1,4 @@
-﻿using System.Net;
-using System.Text;
+﻿using System.Text;
 using ReminderApp.Common;
 
 namespace ReminderApp.EventNotification;
@@ -12,11 +11,13 @@ public class TelegramNotifier : INotifier
 
     public TelegramNotifier()
     {
-        var handler = new HttpClientHandler
+        var handler = new HttpClientHandler();
+        var proxy = ProxyHelper.CreateProxy();
+        if (proxy != null)
         {
-            Proxy = ProxyHelper.CreateProxy(),
-            UseProxy = true
-        };
+            handler.Proxy = proxy;
+            handler.UseProxy = true;
+        }
 
         _httpClient = new HttpClient(handler);
         _httpClient.BaseAddress = new Uri($"https://api.telegram.org/bot{BOT_TOKEN}/");
@@ -57,25 +58,5 @@ public class TelegramNotifier : INotifier
             sb.AppendLine($"📝 {eventData.Description}");
 
         return sb.ToString();
-    }
-}
-
-public static class ProxyHelper
-{
-    public static void ConfigProxy()
-    {
-        WebRequest.DefaultWebProxy = CreateProxy();
-    }
-
-    public static WebProxy CreateProxy()
-    {
-#if DEBUG
-        var webProxy = new WebProxy("", 9090);
-#else
-        
-#endif
-
-        webProxy.UseDefaultCredentials = true;
-        return webProxy;
     }
 }

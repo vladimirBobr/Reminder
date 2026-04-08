@@ -1,6 +1,5 @@
 ﻿using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
-using ReminderApp.EventPrinter;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventReading;
 using ReminderApp.EventScheduling;
@@ -63,19 +62,15 @@ internal class Program
         string sign;
         string? phoneNumber;
         
-        if (config != null && !string.IsNullOrEmpty(config.EncryptedToken))
+        if (config != null && !string.IsNullOrEmpty(config.Token))
         {
-            var decryptedToken = _smsAeroConfigStorage.GetDecryptedToken(config.EncryptedToken);
-            if (decryptedToken != null)
-            {
-                Console.WriteLine("✅ Загружены сохраненные SMSAero настройки");
+            Console.WriteLine("✅ Загружены сохраненные SMSAero настройки");
                 
-                // Ask for phone number if not stored
-                Console.Write("Введите номер телефона для SMS уведомлений (в формате 79000000000): ");
-                phoneNumber = Console.ReadLine()?.Trim();
+            // Ask for phone number if not stored
+            Console.Write("Введите номер телефона для SMS уведомлений (в формате 79000000000): ");
+            phoneNumber = Console.ReadLine()?.Trim();
                 
-                return (config.Email, decryptedToken, config.Sign, phoneNumber);
-            }
+            return (config.Email, config.Token, config.Sign, phoneNumber);
         }
 
         // Ask for credentials from console
