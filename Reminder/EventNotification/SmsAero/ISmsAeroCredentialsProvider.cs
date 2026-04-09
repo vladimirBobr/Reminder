@@ -1,4 +1,4 @@
-namespace ReminderApp.EventNotification.Credentials;
+namespace ReminderApp.EventNotification.SmsAero;
 
 /// <summary>
 /// DTO для настроек SmsAero

@@ -1,4 +1,4 @@
-namespace ReminderApp.EventReading.Credentials;
+namespace ReminderApp.EventReading.GitHub;
 
 /// <summary>
 /// DTO для настроек GitHub

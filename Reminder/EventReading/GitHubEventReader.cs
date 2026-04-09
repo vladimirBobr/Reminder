@@ -1,6 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text;
-using ReminderApp.EventReading.Credentials;
+using ReminderApp.EventReading.GitHub;
 
 namespace ReminderApp.EventReading;
 

@@ -1,9 +1,9 @@
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
-using ReminderApp.EventNotification.Credentials;
+using ReminderApp.EventNotification.SmsAero;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventReading;
-using ReminderApp.EventReading.Credentials;
+using ReminderApp.EventReading.GitHub;
 using ReminderApp.EventScheduling;
 using ReminderApp.FileStorage;
 
