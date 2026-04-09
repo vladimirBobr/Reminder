@@ -6,46 +6,34 @@ namespace ReminderApp.EventReading;
 /// Реализация провайдера credentials для GitHub
 /// </summary>
 public class GitHubCredentialsProvider : 
-    EncryptedConfigCredentialsProvider<GitHubConfig, GitHubSettings>, 
+    EncryptedConfigCredentialsProvider<GitHubSettings>, 
     IGitHubCredentialsProvider
 {
+    // DTO для хранения в файле (с зашифрованным токеном)
+    private class GitHubStoredSettings
+    {
+        public string GithubUrl { get; set; } = string.Empty;
+        public string EncryptedToken { get; set; } = string.Empty;
+    }
+
     public GitHubCredentialsProvider() 
         : base("github-config.json", "GitHubConfig")
     {
     }
 
-    protected override bool HasValidConfig(GitHubConfig config)
+    protected override bool HasValidSettings(GitHubSettings settings)
     {
-        return !string.IsNullOrEmpty(config.GithubUrl);
+        return !string.IsNullOrEmpty(settings.Url);
     }
 
-    protected override GitHubSettings ConvertToSettings(GitHubConfig config)
+    protected override void DecryptSettings(GitHubSettings settings)
     {
-        Console.WriteLine($"Saved URL found: {config.GithubUrl}");
-        Console.Write("Use saved credentials? (y/n): ");
-        var useSaved = Console.ReadLine()?.ToLower() == "y";
+        settings.Token = UnprotectToken(settings.Token);
+    }
 
-        if (useSaved)
-        {
-            var token = UnprotectToken(config.EncryptedToken);
-            if (string.IsNullOrEmpty(token))
-            {
-                Console.WriteLine("❌ Failed to decrypt saved token. Please enter new credentials.");
-                return RequestFromConsole();
-            }
-
-            var parsed = ParseGitHubUrl(config.GithubUrl);
-            return new GitHubSettings(
-                config.GithubUrl,
-                token,
-                parsed.Owner,
-                parsed.Repo,
-                parsed.FilePath,
-                parsed.Branch
-            );
-        }
-
-        return RequestFromConsole();
+    protected override void EncryptSettings(GitHubSettings settings)
+    {
+        settings.Token = ProtectToken(settings.Token);
     }
 
     protected override GitHubSettings RequestFromConsole()
@@ -57,27 +45,66 @@ public class GitHubCredentialsProvider :
 
         Console.Write("Save credentials? (y/n): ");
         var save = Console.ReadLine()?.ToLower() == "y";
+        
         if (save)
         {
-            var parsed = ParseGitHubUrl(url);
-            var settings = new GitHubSettings(url, token, parsed.Owner, parsed.Repo, parsed.FilePath, parsed.Branch);
-            SaveToSettings(settings);
             Console.WriteLine("✅ Credentials saved.");
         }
 
-        var parsedResult = ParseGitHubUrl(url);
-        return new GitHubSettings(url, token, parsedResult.Owner, parsedResult.Repo, parsedResult.FilePath, parsedResult.Branch);
+        var parsed = ParseGitHubUrl(url);
+        return new GitHubSettings
+        {
+            Url = url,
+            Token = token,
+            Owner = parsed.Owner,
+            Repo = parsed.Repo,
+            FilePath = parsed.FilePath,
+            Branch = parsed.Branch
+        };
     }
 
-    protected override void SaveToSettings(GitHubSettings settings)
+    protected override sealed GitHubSettings? LoadFromFile()
     {
-        var config = new GitHubConfig
-        {
-            GithubUrl = settings.Url,
-            EncryptedToken = ProtectToken(settings.Token)
-        };
+        if (!File.Exists(_configPath))
+            return null;
 
-        SaveToFile(config);
+        try
+        {
+            var json = File.ReadAllText(_configPath);
+            var stored = System.Text.Json.JsonSerializer.Deserialize<GitHubStoredSettings>(json);
+            
+            if (stored == null)
+                return null;
+
+            Console.WriteLine($"Saved URL found: {stored.GithubUrl}");
+            Console.Write("Use saved credentials? (y/n): ");
+            var useSaved = Console.ReadLine()?.ToLower() == "y";
+
+            if (!useSaved)
+                return null;
+
+            var decryptedToken = UnprotectToken(stored.EncryptedToken);
+            if (string.IsNullOrEmpty(decryptedToken))
+            {
+                Console.WriteLine("❌ Failed to decrypt saved token. Please enter new credentials.");
+                return null;
+            }
+
+            var parsed = ParseGitHubUrl(stored.GithubUrl);
+            return new GitHubSettings
+            {
+                Url = stored.GithubUrl,
+                Token = decryptedToken,
+                Owner = parsed.Owner,
+                Repo = parsed.Repo,
+                FilePath = parsed.FilePath,
+                Branch = parsed.Branch
+            };
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private GitHubUrlParts ParseGitHubUrl(string url)
@@ -136,12 +163,9 @@ public class GitHubCredentialsProvider :
     }
 }
 
-public class GitHubConfig
-{
-    public string GithubUrl { get; set; } = string.Empty;
-    public string EncryptedToken { get; set; } = string.Empty;
-}
-
+/// <summary>
+/// DTO for parsed GitHub URL components
+/// </summary>
 public class GitHubUrlParts
 {
     public string Owner { get; set; } = string.Empty;

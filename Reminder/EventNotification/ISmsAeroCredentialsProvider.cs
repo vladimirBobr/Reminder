@@ -3,12 +3,13 @@ namespace ReminderApp.EventNotification;
 /// <summary>
 /// DTO для настроек SmsAero
 /// </summary>
-public record SmsAeroSettings(
-    string Email,
-    string ApiToken,
-    string Sign,
-    string? PhoneNumber
-);
+public record SmsAeroSettings
+{
+    public string Email { get; set; } = string.Empty;
+    public string ApiToken { get; set; } = string.Empty;
+    public string Sign { get; set; } = "SMS Aero";
+    public string? PhoneNumber { get; set; }
+}
 
 /// <summary>
 /// Интерфейс для получения настроек SmsAero

@@ -6,28 +6,35 @@ namespace ReminderApp.EventNotification;
 /// Реализация провайдера credentials для SmsAero
 /// </summary>
 public class SmsAeroCredentialsProvider : 
-    EncryptedConfigCredentialsProvider<SmsAeroConfig, SmsAeroSettings>, 
+    EncryptedConfigCredentialsProvider<SmsAeroSettings>, 
     ISmsAeroCredentialsProvider
 {
+    // DTO для хранения в файле (с зашифрованным токеном)
+    private class SmsAeroStoredSettings
+    {
+        public string Email { get; set; } = string.Empty;
+        public string EncryptedToken { get; set; } = string.Empty;
+        public string Sign { get; set; } = "SMS Aero";
+    }
+
     public SmsAeroCredentialsProvider() 
         : base("smsaero-config.json", "SmsAeroConfig")
     {
     }
 
-    protected override bool HasValidConfig(SmsAeroConfig config)
+    protected override bool HasValidSettings(SmsAeroSettings settings)
     {
-        return !string.IsNullOrEmpty(config.Token);
+        return !string.IsNullOrEmpty(settings.ApiToken);
     }
 
-    protected override SmsAeroSettings ConvertToSettings(SmsAeroConfig config)
+    protected override void DecryptSettings(SmsAeroSettings settings)
     {
-        config.Token = UnprotectToken(config.Token);
-        Console.WriteLine("✅ Загружены сохраненные SMSAero настройки");
+        // Token уже дешифрован при загрузке
+    }
 
-        Console.Write("Введите номер телефона для SMS уведомлений (в формате 79000000000): ");
-        var phoneNumber = Console.ReadLine()?.Trim();
-
-        return new SmsAeroSettings(config.Email, config.Token, config.Sign, phoneNumber);
+    protected override void EncryptSettings(SmsAeroSettings settings)
+    {
+        settings.ApiToken = ProtectToken(settings.ApiToken);
     }
 
     protected override SmsAeroSettings RequestFromConsole()
@@ -47,29 +54,41 @@ public class SmsAeroCredentialsProvider :
 
         if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(apiToken))
         {
-            SaveToSettings(new SmsAeroSettings(email, apiToken, sign, phoneNumber));
             Console.WriteLine("✅ SMSAero настройки сохранены");
         }
 
-        return new SmsAeroSettings(email, apiToken, sign, phoneNumber);
+        return new SmsAeroSettings { Email = email, ApiToken = apiToken, Sign = sign, PhoneNumber = phoneNumber };
     }
 
-    protected override void SaveToSettings(SmsAeroSettings settings)
+    protected override sealed SmsAeroSettings? LoadFromFile()
     {
-        var config = new SmsAeroConfig
+        if (!File.Exists(_configPath))
+            return null;
+
+        try
         {
-            Email = settings.Email,
-            Token = ProtectToken(settings.ApiToken),
-            Sign = settings.Sign
-        };
+            var json = File.ReadAllText(_configPath);
+            var stored = System.Text.Json.JsonSerializer.Deserialize<SmsAeroStoredSettings>(json);
+            
+            if (stored == null)
+                return null;
 
-        SaveToFile(config);
+            Console.WriteLine("✅ Загружены сохраненные SMSAero настройки");
+            
+            Console.Write("Введите номер телефона для SMS уведомлений (в формате 79000000000): ");
+            var phoneNumber = Console.ReadLine()?.Trim();
+
+            return new SmsAeroSettings
+            {
+                Email = stored.Email,
+                ApiToken = UnprotectToken(stored.EncryptedToken),
+                Sign = stored.Sign,
+                PhoneNumber = phoneNumber
+            };
+        }
+        catch
+        {
+            return null;
+        }
     }
-}
-
-public class SmsAeroConfig
-{
-    public string Email { get; set; } = string.Empty;
-    public string Token { get; set; } = string.Empty;
-    public string Sign { get; set; } = "SMS Aero";
 }

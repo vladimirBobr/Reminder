@@ -6,9 +6,7 @@ namespace ReminderApp.Common;
 /// <summary>
 /// Базовый класс провайдера credentials с шифрованием конфига
 /// </summary>
-public abstract class EncryptedConfigCredentialsProvider<TConfig, TSettings> 
-    where TConfig : class, new()
-    where TSettings : class
+public abstract class EncryptedConfigCredentialsProvider<TSettings> where TSettings : class
 {
     protected readonly string _configPath;
     protected readonly IDataProtector _protector;
@@ -30,43 +28,44 @@ public abstract class EncryptedConfigCredentialsProvider<TConfig, TSettings>
     /// </summary>
     public TSettings GetCredentials()
     {
-        var config = LoadFromFile();
+        var settings = LoadFromFile();
 
-        if (config != null && HasValidConfig(config))
+        if (settings != null && HasValidSettings(settings))
         {
-            return ConvertToSettings(config);
+            DecryptSettings(settings);
+            return settings;
         }
 
-        var settings = RequestFromConsole();
-        SaveToSettings(settings);
+        settings = RequestFromConsole();
+        SaveToFile(settings);
         
         return settings;
     }
 
     /// <summary>
-    /// Проверить, есть ли валидный конфиг в файле
+    /// Проверить, есть ли валидные настройки
     /// </summary>
-    protected abstract bool HasValidConfig(TConfig config);
+    protected abstract bool HasValidSettings(TSettings settings);
 
     /// <summary>
-    /// Преобразовать конфиг в DTO настроек
+    /// Расшифровать токены в настройках
     /// </summary>
-    protected abstract TSettings ConvertToSettings(TConfig config);
+    protected abstract void DecryptSettings(TSettings settings);
 
     /// <summary>
-    /// Запросить настройки из консоли и сохранить в файл
+    /// Зашифровать токены в настройках перед сохранением
+    /// </summary>
+    protected abstract void EncryptSettings(TSettings settings);
+
+    /// <summary>
+    /// Запросить настройки из консоли
     /// </summary>
     protected abstract TSettings RequestFromConsole();
 
     /// <summary>
-    /// Сохранить настройки в файл (токены зашифрованы)
+    /// Загрузить настройки из файла (переопределяется для кастомной десериализации)
     /// </summary>
-    protected abstract void SaveToSettings(TSettings settings);
-
-    /// <summary>
-    /// Загрузить конфиг из файла (токен зашифрован)
-    /// </summary>
-    protected TConfig? LoadFromFile()
+    protected virtual TSettings? LoadFromFile()
     {
         if (!File.Exists(_configPath))
             return null;
@@ -74,12 +73,24 @@ public abstract class EncryptedConfigCredentialsProvider<TConfig, TSettings>
         try
         {
             var json = File.ReadAllText(_configPath);
-            return JsonSerializer.Deserialize<TConfig>(json);
+            return JsonSerializer.Deserialize<TSettings>(json);
         }
         catch
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// Сохранить настройки в файл
+    /// </summary>
+    protected void SaveToFile(TSettings settings)
+    {
+        EncryptSettings(settings);
+        var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText(_configPath, json);
+        // После сохранения расшифровываем обратно для использования
+        DecryptSettings(settings);
     }
 
     /// <summary>
@@ -99,14 +110,5 @@ public abstract class EncryptedConfigCredentialsProvider<TConfig, TSettings>
     protected string ProtectToken(string token)
     {
         return _protector.Protect(token);
-    }
-
-    /// <summary>
-    /// Сохранить конфиг в файл
-    /// </summary>
-    protected void SaveToFile(TConfig config)
-    {
-        var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(_configPath, json);
     }
 }

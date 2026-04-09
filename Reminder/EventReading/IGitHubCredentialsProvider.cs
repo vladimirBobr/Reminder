@@ -1,18 +1,17 @@
-using ReminderApp.EventReading;
-
 namespace ReminderApp.EventReading;
 
 /// <summary>
 /// DTO для настроек GitHub
 /// </summary>
-public record GitHubSettings(
-    string Url,
-    string Token,
-    string Owner,
-    string Repo,
-    string FilePath,
-    string Branch
-);
+public record GitHubSettings
+{
+    public string Url { get; set; } = string.Empty;
+    public string Token { get; set; } = string.Empty;
+    public string Owner { get; set; } = string.Empty;
+    public string Repo { get; set; } = string.Empty;
+    public string FilePath { get; set; } = string.Empty;
+    public string Branch { get; set; } = string.Empty;
+}
 
 /// <summary>
 /// Интерфейс для получения настроек GitHub
