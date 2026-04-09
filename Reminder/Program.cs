@@ -1,4 +1,4 @@
-﻿using ReminderApp.DateTimeProviding;
+using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventReading;
@@ -13,7 +13,6 @@ internal class Program
     private static readonly IEventScheduler _eventScheduler = new EventScheduler();
     private static readonly IFileStorage _fileStorage = new JsonFileStorage();
     private static readonly GitHubConfigStorage _configStorage = new GitHubConfigStorage();
-    private static readonly SmsAeroConfigStorage _smsAeroConfigStorage = new SmsAeroConfigStorage();
 
     static async Task Main(string[] args)
     {
@@ -23,17 +22,9 @@ internal class Program
         if (eventReader == null)
             return;
 
-        // Get SMSAero credentials (ask from console or load from storage)
-        var (email, apiToken, sign, phoneNumber) = GetSmsAeroCredentials();
-        
-        // Initialize SMSAero notifier
-        var notifier = new SmsAeroNotifier(email, apiToken, sign);
-        
-        // Store phone number for later use in notifications
-        if (!string.IsNullOrEmpty(phoneNumber))
-        {
-            Environment.SetEnvironmentVariable("SMSAERO_DEFAULT_PHONE", phoneNumber);
-        }
+        // Initialize SMSAero notifier with credentials provider (asks from console or loads from encrypted file)
+        var credentialsProvider = new SmsAeroCredentialsProvider();
+        var notifier = new SmsAeroNotifier(credentialsProvider);
 
         var eventPrinter = new EventPrinter.EventPrinter();
 
@@ -52,48 +43,5 @@ internal class Program
 
         runner.Stop();
         Console.WriteLine("✅ Работа завершена.");
-    }
-
-    private static (string email, string apiToken, string sign, string? phoneNumber) GetSmsAeroCredentials()
-    {
-        var config = _smsAeroConfigStorage.Load();
-        string email;
-        string apiToken;
-        string sign;
-        string? phoneNumber;
-        
-        if (config != null && !string.IsNullOrEmpty(config.Token))
-        {
-            Console.WriteLine("✅ Загружены сохраненные SMSAero настройки");
-                
-            // Ask for phone number if not stored
-            Console.Write("Введите номер телефона для SMS уведомлений (в формате 79000000000): ");
-            phoneNumber = Console.ReadLine()?.Trim();
-                
-            return (config.Email, config.Token, config.Sign, phoneNumber);
-        }
-
-        // Ask for credentials from console
-        Console.WriteLine("Настройка SMSAero:");
-        Console.Write("Email: ");
-        email = Console.ReadLine()?.Trim() ?? "";
-        
-        Console.Write("API Token: ");
-        apiToken = Console.ReadLine()?.Trim() ?? "";
-        
-        Console.Write("Подпись (по умолчанию SMS Aero): ");
-        sign = Console.ReadLine()?.Trim() ?? "SMS Aero";
-            
-        Console.Write("Номер телефона для уведомлений (в формате 79000000000): ");
-        phoneNumber = Console.ReadLine()?.Trim();
-
-        // Save credentials (except phone number)
-        if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(apiToken))
-        {
-            _smsAeroConfigStorage.Save(email, apiToken, sign);
-            Console.WriteLine("✅ SMSAero настройки сохранены");
-        }
-        
-        return (email, apiToken, sign, phoneNumber);
     }
 }

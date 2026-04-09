@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ReminderApp.Common;
@@ -13,11 +13,19 @@ public class SmsAeroNotifier : INotifier
     private readonly string _sign;
     private const string BASE_URL = "https://gate.smsaero.ru/v2/sms/send";
 
-    public SmsAeroNotifier(string email, string apiToken, string sign = "SMS Aero")
+    public SmsAeroNotifier(ISmsAeroCredentialsProvider credentialsProvider)
     {
-        _email = email;
-        _apiToken = apiToken;
-        _sign = sign;
+        var settings = credentialsProvider.GetCredentials();
+        
+        _email = settings.Email;
+        _apiToken = settings.ApiToken;
+        _sign = settings.Sign;
+
+        // Сохраняем номер телефона для использования в уведомлениях
+        if (!string.IsNullOrEmpty(settings.PhoneNumber))
+        {
+            Environment.SetEnvironmentVariable("SMSAERO_DEFAULT_PHONE", settings.PhoneNumber);
+        }
 
         var handler = new HttpClientHandler();
         var proxy = ProxyHelper.CreateProxy();
