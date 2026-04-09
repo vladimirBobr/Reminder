@@ -101,6 +101,8 @@ public abstract class EncryptedConfigCredentialsProvider<TSettings> where TSetti
         EncryptSettings(settings);
         var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(_configPath, json);
+        // Дешифруем обратно для использования в приложении
+        DecryptSettings(settings);
     }
 
     /// <summary>
