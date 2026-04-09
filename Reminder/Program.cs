@@ -1,5 +1,6 @@
-using ReminderApp.DateTimeProviding;
+﻿using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
+using ReminderApp.EventNotification.ConsoleOutput;
 using ReminderApp.EventNotification.SmsAero;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventReading;
@@ -25,7 +26,8 @@ internal class Program
 
         // Initialize SMSAero notifier with credentials provider (asks from console or loads from encrypted file)
         var smsAeroCredentialsProvider = new SmsAeroCredentialsProvider();
-        var notifier = new SmsAeroNotifier(smsAeroCredentialsProvider);
+        //var notifier = new SmsAeroNotifier(smsAeroCredentialsProvider);
+        var notifier = new ConsoleNotifier();
 
         var eventPrinter = new EventPrinter.EventPrinter();
 
