@@ -14,25 +14,22 @@ public class GitHubEventReader : EventReaderBase
     private readonly string _filePath;
     private readonly string _branch;
 
-    public GitHubEventReader(string owner, string repo, string filePath, string branch)
+    public GitHubEventReader(IGitHubCredentialsProvider credentialsProvider)
     {
+        var settings = credentialsProvider.GetCredentials();
+        
         _httpClient = new HttpClient();
         _httpClient.BaseAddress = new Uri("https://api.github.com");
         _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("ReminderApp", "1.0"));
         _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
         
-        _owner = owner;
-        _repo = repo;
-        _filePath = filePath;
-        _branch = branch;
-    }
-
-    /// <summary>
-    /// Sets the Personal Access Token for authentication
-    /// </summary>
-    public void SetAuthentication(string token)
-    {
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        _owner = settings.Owner;
+        _repo = settings.Repo;
+        _filePath = settings.FilePath;
+        _branch = settings.Branch;
+        
+        // Set authentication token
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", settings.Token);
     }
 
     protected override async Task<string?> ReadContentAsync()

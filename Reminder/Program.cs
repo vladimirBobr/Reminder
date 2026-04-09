@@ -12,19 +12,18 @@ internal class Program
     private static readonly IDateTimeProvider _dateTimeProvider = new DateTimeProvider();
     private static readonly IEventScheduler _eventScheduler = new EventScheduler();
     private static readonly IFileStorage _fileStorage = new JsonFileStorage();
-    private static readonly GitHubConfigStorage _configStorage = new GitHubConfigStorage();
 
     static async Task Main(string[] args)
     {
         Console.WriteLine("▶️ Starting Reminder");
 
-        var eventReader = new GitHubEventReaderFactory(_configStorage).Create();
-        if (eventReader == null)
-            return;
+        // Initialize GitHub event reader with credentials provider (asks from console or loads from encrypted file)
+        var githubCredentialsProvider = new GitHubCredentialsProvider();
+        var eventReader = new GitHubEventReader(githubCredentialsProvider);
 
         // Initialize SMSAero notifier with credentials provider (asks from console or loads from encrypted file)
-        var credentialsProvider = new SmsAeroCredentialsProvider();
-        var notifier = new SmsAeroNotifier(credentialsProvider);
+        var smsAeroCredentialsProvider = new SmsAeroCredentialsProvider();
+        var notifier = new SmsAeroNotifier(smsAeroCredentialsProvider);
 
         var eventPrinter = new EventPrinter.EventPrinter();
 
