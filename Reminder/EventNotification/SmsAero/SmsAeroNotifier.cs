@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 using ReminderApp.Common;
 using ReminderApp.EventNotification.SmsAero;
 
-namespace ReminderApp.EventNotification;
+namespace ReminderApp.EventNotification.SmsAero;
 
 public class SmsAeroNotifier : INotifier
 {

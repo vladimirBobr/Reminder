@@ -2,7 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using ReminderApp.EventReading.GitHub;
 
-namespace ReminderApp.EventReading;
+namespace ReminderApp.EventReading.GitHub;
 
 /// <summary>
 /// Reads events from a text file stored on GitHub
