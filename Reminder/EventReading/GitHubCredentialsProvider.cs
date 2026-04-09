@@ -1,32 +1,25 @@
-using System.Text.Json;
 using ReminderApp.Common;
 
 namespace ReminderApp.EventReading;
 
 /// <summary>
 /// Реализация провайдера credentials для GitHub
-/// Читает из зашифрованного файла, а если файла нет - запрашивает через консоль
 /// </summary>
-public class GitHubCredentialsProvider : EncryptedConfigCredentialsProvider<GitHubConfig>, IGitHubCredentialsProvider
+public class GitHubCredentialsProvider : 
+    EncryptedConfigCredentialsProvider<GitHubConfig, GitHubSettings>, 
+    IGitHubCredentialsProvider
 {
-    public GitHubCredentialsProvider()
+    public GitHubCredentialsProvider() 
         : base("github-config.json", "GitHubConfig")
     {
     }
 
-    public GitHubSettings GetCredentials()
+    protected override bool HasValidConfig(GitHubConfig config)
     {
-        var config = LoadFromFile();
-
-        if (config != null)
-        {
-            return GetCredentialsFromSavedConfig(config);
-        }
-
-        return GetCredentialsFromInput(savePrompt: true);
+        return !string.IsNullOrEmpty(config.GithubUrl);
     }
 
-    private GitHubSettings GetCredentialsFromSavedConfig(GitHubConfig config)
+    protected override GitHubSettings ConvertToSettings(GitHubConfig config)
     {
         Console.WriteLine($"Saved URL found: {config.GithubUrl}");
         Console.Write("Use saved credentials? (y/n): ");
@@ -34,18 +27,17 @@ public class GitHubCredentialsProvider : EncryptedConfigCredentialsProvider<GitH
 
         if (useSaved)
         {
-            var decryptedToken = UnprotectToken(config.EncryptedToken);
-            
-            if (string.IsNullOrEmpty(decryptedToken))
+            var token = UnprotectToken(config.EncryptedToken);
+            if (string.IsNullOrEmpty(token))
             {
                 Console.WriteLine("❌ Failed to decrypt saved token. Please enter new credentials.");
-                return GetCredentialsFromInput(savePrompt: false);
+                return RequestFromConsole();
             }
 
             var parsed = ParseGitHubUrl(config.GithubUrl);
             return new GitHubSettings(
                 config.GithubUrl,
-                decryptedToken,
+                token,
                 parsed.Owner,
                 parsed.Repo,
                 parsed.FilePath,
@@ -53,47 +45,39 @@ public class GitHubCredentialsProvider : EncryptedConfigCredentialsProvider<GitH
             );
         }
 
-        return GetCredentialsFromInput(savePrompt: true);
+        return RequestFromConsole();
     }
 
-    private void SaveToFile(string githubUrl, string token)
-    {
-        var config = new GitHubConfig
-        {
-            GithubUrl = githubUrl,
-            EncryptedToken = ProtectToken(token)
-        };
-
-        SaveToFile(config);
-    }
-
-    private GitHubSettings GetCredentialsFromInput(bool savePrompt)
+    protected override GitHubSettings RequestFromConsole()
     {
         Console.Write("Enter GitHub file URL (e.g., https://github.com/owner/repo/blob/main/events.txt): ");
         var url = Console.ReadLine() ?? "";
         Console.Write("Enter GitHub Personal Access Token: ");
         var token = Console.ReadLine() ?? "";
 
-        if (savePrompt)
+        Console.Write("Save credentials? (y/n): ");
+        var save = Console.ReadLine()?.ToLower() == "y";
+        if (save)
         {
-            Console.Write("Save credentials? (y/n): ");
-            var save = Console.ReadLine()?.ToLower() == "y";
-            if (save)
-            {
-                SaveToFile(url, token);
-                Console.WriteLine("✅ Credentials saved.");
-            }
+            var parsed = ParseGitHubUrl(url);
+            var settings = new GitHubSettings(url, token, parsed.Owner, parsed.Repo, parsed.FilePath, parsed.Branch);
+            SaveToSettings(settings);
+            Console.WriteLine("✅ Credentials saved.");
         }
 
-        var parsed = ParseGitHubUrl(url);
-        return new GitHubSettings(
-            url,
-            token,
-            parsed.Owner,
-            parsed.Repo,
-            parsed.FilePath,
-            parsed.Branch
-        );
+        var parsedResult = ParseGitHubUrl(url);
+        return new GitHubSettings(url, token, parsedResult.Owner, parsedResult.Repo, parsedResult.FilePath, parsedResult.Branch);
+    }
+
+    protected override void SaveToSettings(GitHubSettings settings)
+    {
+        var config = new GitHubConfig
+        {
+            GithubUrl = settings.Url,
+            EncryptedToken = ProtectToken(settings.Token)
+        };
+
+        SaveToFile(config);
     }
 
     private GitHubUrlParts ParseGitHubUrl(string url)
@@ -106,7 +90,6 @@ public class GitHubCredentialsProvider : EncryptedConfigCredentialsProvider<GitH
         string filePath;
         string branch;
 
-        // Check for shorthand format (owner/repo)
         if (!url.Contains("github.com"))
         {
             var parts = url.Split('/');
@@ -125,7 +108,6 @@ public class GitHubCredentialsProvider : EncryptedConfigCredentialsProvider<GitH
             }
         }
 
-        // Parse full GitHub URL
         var uri = new Uri(url);
         if (uri.Host != "github.com" && !uri.Host.EndsWith("github.com"))
             throw new ArgumentException($"Invalid GitHub host: {uri.Host}", nameof(url));
@@ -140,7 +122,6 @@ public class GitHubCredentialsProvider : EncryptedConfigCredentialsProvider<GitH
         if (string.IsNullOrEmpty(owner) || string.IsNullOrEmpty(repo))
             throw new ArgumentException($"Invalid repository: {url}", nameof(url));
 
-        // Check for /blob/ branch/filepath
         filePath = "";
         branch = "";
 
@@ -155,22 +136,16 @@ public class GitHubCredentialsProvider : EncryptedConfigCredentialsProvider<GitH
     }
 }
 
-/// <summary>
-/// DTO for parsed GitHub URL components
-/// </summary>
+public class GitHubConfig
+{
+    public string GithubUrl { get; set; } = string.Empty;
+    public string EncryptedToken { get; set; } = string.Empty;
+}
+
 public class GitHubUrlParts
 {
     public string Owner { get; set; } = string.Empty;
     public string Repo { get; set; } = string.Empty;
     public string FilePath { get; set; } = string.Empty;
     public string Branch { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// Internal config class for file storage
-/// </summary>
-public class GitHubConfig
-{
-    public string GithubUrl { get; set; } = string.Empty;
-    public string EncryptedToken { get; set; } = string.Empty;
 }

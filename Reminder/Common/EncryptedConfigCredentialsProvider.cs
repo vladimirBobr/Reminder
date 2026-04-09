@@ -6,7 +6,9 @@ namespace ReminderApp.Common;
 /// <summary>
 /// Базовый класс провайдера credentials с шифрованием конфига
 /// </summary>
-public abstract class EncryptedConfigCredentialsProvider<TConfig> where TConfig : class, new()
+public abstract class EncryptedConfigCredentialsProvider<TConfig, TSettings> 
+    where TConfig : class, new()
+    where TSettings : class
 {
     protected readonly string _configPath;
     protected readonly IDataProtector _protector;
@@ -22,6 +24,44 @@ public abstract class EncryptedConfigCredentialsProvider<TConfig> where TConfig 
             new DirectoryInfo(Path.Combine(configDir, "keys")));
         _protector = dataProtectionProvider.CreateProtector(protectorPurpose);
     }
+
+    /// <summary>
+    /// Основной метод получения credentials
+    /// </summary>
+    public TSettings GetCredentials()
+    {
+        var config = LoadFromFile();
+
+        if (config != null && HasValidConfig(config))
+        {
+            return ConvertToSettings(config);
+        }
+
+        var settings = RequestFromConsole();
+        SaveToSettings(settings);
+        
+        return settings;
+    }
+
+    /// <summary>
+    /// Проверить, есть ли валидный конфиг в файле
+    /// </summary>
+    protected abstract bool HasValidConfig(TConfig config);
+
+    /// <summary>
+    /// Преобразовать конфиг в DTO настроек
+    /// </summary>
+    protected abstract TSettings ConvertToSettings(TConfig config);
+
+    /// <summary>
+    /// Запросить настройки из консоли и сохранить в файл
+    /// </summary>
+    protected abstract TSettings RequestFromConsole();
+
+    /// <summary>
+    /// Сохранить настройки в файл (токены зашифрованы)
+    /// </summary>
+    protected abstract void SaveToSettings(TSettings settings);
 
     /// <summary>
     /// Загрузить конфиг из файла (токен зашифрован)
