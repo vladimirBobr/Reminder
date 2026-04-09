@@ -49,21 +49,4 @@ public class SmsAeroCredentialsProvider :
             PhoneNumber = phoneNumber 
         };
     }
-
-    protected override SmsAeroSettings CloneSettings(SmsAeroSettings settings)
-    {
-        return new SmsAeroSettings
-        {
-            Email = settings.Email,
-            ApiToken = settings.ApiToken,
-            Sign = settings.Sign,
-            PhoneNumber = settings.PhoneNumber
-        };
-    }
-
-    protected override bool ShouldUseSavedSettings(SmsAeroSettings settings)
-    {
-        Console.WriteLine("✅ Загружены сохраненные SMSAero настройки");
-        return base.ShouldUseSavedSettings(settings);
-    }
 }

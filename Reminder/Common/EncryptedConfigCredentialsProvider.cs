@@ -28,20 +28,21 @@ public abstract class EncryptedConfigCredentialsProvider<TSettings> where TSetti
     /// </summary>
     public TSettings GetCredentials()
     {
-        // Пытаемся загрузить из файла
         var settings = LoadFromFile();
         
         if (settings != null)
         {
-            // Спрашиваем пользователя - использовать сохранённые или ввести новые
-            if (ShouldUseSavedSettings(settings))
+            // Показываем сохранённые настройки пользователю
+            ShowSavedSettings(settings);
+            
+            Console.Write("Использовать сохранённые настройки? (y/n): ");
+            if (Console.ReadLine()?.ToLower() == "y")
             {
                 DecryptSettings(settings);
                 return settings;
             }
         }
 
-        // Запрашиваем новые и сохраняем
         var newSettings = RequestFromConsole();
         SaveToFile(newSettings);
         
@@ -49,12 +50,13 @@ public abstract class EncryptedConfigCredentialsProvider<TSettings> where TSetti
     }
 
     /// <summary>
-    /// Спросить пользователя - использовать сохранённые настройки?
+    /// Показать сохранённые настройки пользователю
     /// </summary>
-    protected virtual bool ShouldUseSavedSettings(TSettings settings)
+    protected virtual void ShowSavedSettings(TSettings settings)
     {
-        Console.Write("Use saved credentials? (y/n): ");
-        return Console.ReadLine()?.ToLower() == "y";
+        var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+        Console.WriteLine("Сохранённые настройки:");
+        Console.WriteLine(json);
     }
 
     /// <summary>
@@ -77,12 +79,12 @@ public abstract class EncryptedConfigCredentialsProvider<TSettings> where TSetti
     }
 
     /// <summary>
-    /// Расшифровать токены в настройках (вызывается после загрузки)
+    /// Расшифровать токены в настройках
     /// </summary>
     protected abstract void DecryptSettings(TSettings settings);
 
     /// <summary>
-    /// Зашифровать токены в настройках перед сохранением
+    /// Зашифровать токены в настройках
     /// </summary>
     protected abstract void EncryptSettings(TSettings settings);
 
@@ -96,17 +98,10 @@ public abstract class EncryptedConfigCredentialsProvider<TSettings> where TSetti
     /// </summary>
     protected void SaveToFile(TSettings settings)
     {
-        // Клонируем чтобы не испортить оригинальный объект
-        var toSave = CloneSettings(settings);
-        EncryptSettings(toSave);
-        var json = JsonSerializer.Serialize(toSave, new JsonSerializerOptions { WriteIndented = true });
+        EncryptSettings(settings);
+        var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(_configPath, json);
     }
-
-    /// <summary>
-    /// Клонировать настройки (реализуется в производном классе)
-    /// </summary>
-    protected abstract TSettings CloneSettings(TSettings settings);
 
     /// <summary>
     /// Расшифровать токен

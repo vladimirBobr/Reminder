@@ -45,25 +45,6 @@ public class GitHubCredentialsProvider :
         };
     }
 
-    protected override GitHubSettings CloneSettings(GitHubSettings settings)
-    {
-        return new GitHubSettings
-        {
-            Url = settings.Url,
-            Token = settings.Token,
-            Owner = settings.Owner,
-            Repo = settings.Repo,
-            FilePath = settings.FilePath,
-            Branch = settings.Branch
-        };
-    }
-
-    protected override bool ShouldUseSavedSettings(GitHubSettings settings)
-    {
-        Console.WriteLine($"Saved URL found: {settings.Url}");
-        return base.ShouldUseSavedSettings(settings);
-    }
-
     private GitHubUrlParts ParseGitHubUrl(string url)
     {
         if (string.IsNullOrWhiteSpace(url))
