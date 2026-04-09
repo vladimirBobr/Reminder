@@ -1,4 +1,6 @@
-namespace ReminderApp.EventReading;
+using System.IO;
+
+namespace ReminderApp.EventReading.LocalFile;
 
 /// <summary>
 /// Reads events from a local text file

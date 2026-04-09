@@ -1,6 +1,6 @@
-﻿using ReminderApp.Common;
+using ReminderApp.Common;
 
-namespace ReminderApp.EventNotification;
+namespace ReminderApp.EventNotification.ConsoleOutput;
 
 public class ConsoleNotifier : INotifier
 {

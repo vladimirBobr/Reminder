@@ -1,7 +1,7 @@
 using ReminderApp.Common;
 using ReminderApp.EventParsing;
 
-namespace ReminderApp.EventReading;
+namespace ReminderApp.EventReading.LocalFile;
 
 /// <summary>
 /// Base class for event readers that provides common parsing functionality

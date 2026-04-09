@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using ReminderApp.Common;
 
-namespace ReminderApp.EventNotification;
+namespace ReminderApp.EventNotification.Telegram;
 
 public class TelegramNotifier : INotifier
 {

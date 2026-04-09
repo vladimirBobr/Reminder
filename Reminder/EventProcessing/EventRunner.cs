@@ -1,7 +1,9 @@
-﻿using ReminderApp.DateTimeProviding;
+using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.EventPrinter;
 using ReminderApp.EventReading;
+using ReminderApp.EventReading.LocalFile;
+using ReminderApp.EventReading.GitHub;
 using ReminderApp.EventScheduling;
 using ReminderApp.FileStorage;
 

@@ -1,5 +1,6 @@
-﻿using ReminderApp.Common;
+using ReminderApp.Common;
 using ReminderApp.EventNotification;
+using ReminderApp.EventNotification.Telegram;
 
 namespace Reminder.Tests._ForDebug;
 
