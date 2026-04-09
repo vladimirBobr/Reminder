@@ -28,44 +28,39 @@ public abstract class EncryptedConfigCredentialsProvider<TSettings> where TSetti
     /// </summary>
     public TSettings GetCredentials()
     {
+        // Пытаемся загрузить из файла
         var settings = LoadFromFile();
-
-        if (settings != null && HasValidSettings(settings))
+        
+        if (settings != null)
         {
-            DecryptSettings(settings);
-            return settings;
+            // Спрашиваем пользователя - использовать сохранённые или ввести новые
+            if (ShouldUseSavedSettings(settings))
+            {
+                DecryptSettings(settings);
+                return settings;
+            }
         }
 
-        settings = RequestFromConsole();
-        SaveToFile(settings);
+        // Запрашиваем новые и сохраняем
+        var newSettings = RequestFromConsole();
+        SaveToFile(newSettings);
         
-        return settings;
+        return newSettings;
     }
 
     /// <summary>
-    /// Проверить, есть ли валидные настройки
+    /// Спросить пользователя - использовать сохранённые настройки?
     /// </summary>
-    protected abstract bool HasValidSettings(TSettings settings);
+    protected virtual bool ShouldUseSavedSettings(TSettings settings)
+    {
+        Console.Write("Use saved credentials? (y/n): ");
+        return Console.ReadLine()?.ToLower() == "y";
+    }
 
     /// <summary>
-    /// Расшифровать токены в настройках
+    /// Загрузить настройки из файла
     /// </summary>
-    protected abstract void DecryptSettings(TSettings settings);
-
-    /// <summary>
-    /// Зашифровать токены в настройках перед сохранением
-    /// </summary>
-    protected abstract void EncryptSettings(TSettings settings);
-
-    /// <summary>
-    /// Запросить настройки из консоли
-    /// </summary>
-    protected abstract TSettings RequestFromConsole();
-
-    /// <summary>
-    /// Загрузить настройки из файла (переопределяется для кастомной десериализации)
-    /// </summary>
-    protected virtual TSettings? LoadFromFile()
+    protected TSettings? LoadFromFile()
     {
         if (!File.Exists(_configPath))
             return null;
@@ -82,16 +77,36 @@ public abstract class EncryptedConfigCredentialsProvider<TSettings> where TSetti
     }
 
     /// <summary>
-    /// Сохранить настройки в файл
+    /// Расшифровать токены в настройках (вызывается после загрузки)
+    /// </summary>
+    protected abstract void DecryptSettings(TSettings settings);
+
+    /// <summary>
+    /// Зашифровать токены в настройках перед сохранением
+    /// </summary>
+    protected abstract void EncryptSettings(TSettings settings);
+
+    /// <summary>
+    /// Запросить настройки из консоли
+    /// </summary>
+    protected abstract TSettings RequestFromConsole();
+
+    /// <summary>
+    /// Сохранить настройки в файл (с шифрованием)
     /// </summary>
     protected void SaveToFile(TSettings settings)
     {
-        EncryptSettings(settings);
-        var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+        // Клонируем чтобы не испортить оригинальный объект
+        var toSave = CloneSettings(settings);
+        EncryptSettings(toSave);
+        var json = JsonSerializer.Serialize(toSave, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(_configPath, json);
-        // После сохранения расшифровываем обратно для использования
-        DecryptSettings(settings);
     }
+
+    /// <summary>
+    /// Клонировать настройки (реализуется в производном классе)
+    /// </summary>
+    protected abstract TSettings CloneSettings(TSettings settings);
 
     /// <summary>
     /// Расшифровать токен

@@ -9,21 +9,9 @@ public class GitHubCredentialsProvider :
     EncryptedConfigCredentialsProvider<GitHubSettings>, 
     IGitHubCredentialsProvider
 {
-    // DTO для хранения в файле (с зашифрованным токеном)
-    private class GitHubStoredSettings
-    {
-        public string GithubUrl { get; set; } = string.Empty;
-        public string EncryptedToken { get; set; } = string.Empty;
-    }
-
     public GitHubCredentialsProvider() 
         : base("github-config.json", "GitHubConfig")
     {
-    }
-
-    protected override bool HasValidSettings(GitHubSettings settings)
-    {
-        return !string.IsNullOrEmpty(settings.Url);
     }
 
     protected override void DecryptSettings(GitHubSettings settings)
@@ -43,68 +31,37 @@ public class GitHubCredentialsProvider :
         Console.Write("Enter GitHub Personal Access Token: ");
         var token = Console.ReadLine() ?? "";
 
-        Console.Write("Save credentials? (y/n): ");
-        var save = Console.ReadLine()?.ToLower() == "y";
-        
-        if (save)
-        {
-            Console.WriteLine("✅ Credentials saved.");
-        }
+        Console.WriteLine("✅ Credentials saved.");
 
         var parsed = ParseGitHubUrl(url);
-        return new GitHubSettings
-        {
-            Url = url,
-            Token = token,
-            Owner = parsed.Owner,
-            Repo = parsed.Repo,
-            FilePath = parsed.FilePath,
-            Branch = parsed.Branch
+        return new GitHubSettings 
+        { 
+            Url = url, 
+            Token = token, 
+            Owner = parsed.Owner, 
+            Repo = parsed.Repo, 
+            FilePath = parsed.FilePath, 
+            Branch = parsed.Branch 
         };
     }
 
-    protected override sealed GitHubSettings? LoadFromFile()
+    protected override GitHubSettings CloneSettings(GitHubSettings settings)
     {
-        if (!File.Exists(_configPath))
-            return null;
-
-        try
+        return new GitHubSettings
         {
-            var json = File.ReadAllText(_configPath);
-            var stored = System.Text.Json.JsonSerializer.Deserialize<GitHubStoredSettings>(json);
-            
-            if (stored == null)
-                return null;
+            Url = settings.Url,
+            Token = settings.Token,
+            Owner = settings.Owner,
+            Repo = settings.Repo,
+            FilePath = settings.FilePath,
+            Branch = settings.Branch
+        };
+    }
 
-            Console.WriteLine($"Saved URL found: {stored.GithubUrl}");
-            Console.Write("Use saved credentials? (y/n): ");
-            var useSaved = Console.ReadLine()?.ToLower() == "y";
-
-            if (!useSaved)
-                return null;
-
-            var decryptedToken = UnprotectToken(stored.EncryptedToken);
-            if (string.IsNullOrEmpty(decryptedToken))
-            {
-                Console.WriteLine("❌ Failed to decrypt saved token. Please enter new credentials.");
-                return null;
-            }
-
-            var parsed = ParseGitHubUrl(stored.GithubUrl);
-            return new GitHubSettings
-            {
-                Url = stored.GithubUrl,
-                Token = decryptedToken,
-                Owner = parsed.Owner,
-                Repo = parsed.Repo,
-                FilePath = parsed.FilePath,
-                Branch = parsed.Branch
-            };
-        }
-        catch
-        {
-            return null;
-        }
+    protected override bool ShouldUseSavedSettings(GitHubSettings settings)
+    {
+        Console.WriteLine($"Saved URL found: {settings.Url}");
+        return base.ShouldUseSavedSettings(settings);
     }
 
     private GitHubUrlParts ParseGitHubUrl(string url)
