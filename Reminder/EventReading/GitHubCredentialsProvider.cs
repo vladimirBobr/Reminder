@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Microsoft.AspNetCore.DataProtection;
+using ReminderApp.Common;
 
 namespace ReminderApp.EventReading;
 
@@ -7,21 +7,11 @@ namespace ReminderApp.EventReading;
 /// Реализация провайдера credentials для GitHub
 /// Читает из зашифрованного файла, а если файла нет - запрашивает через консоль
 /// </summary>
-public class GitHubCredentialsProvider : IGitHubCredentialsProvider
+public class GitHubCredentialsProvider : EncryptedConfigCredentialsProvider<GitHubConfig>, IGitHubCredentialsProvider
 {
-    private readonly string _configPath;
-    private readonly IDataProtector _protector;
-
     public GitHubCredentialsProvider()
+        : base("github-config.json", "GitHubConfig")
     {
-        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var configDir = Path.Combine(userProfile, ".reminder");
-        Directory.CreateDirectory(configDir);
-        _configPath = Path.Combine(configDir, "github-config.json");
-
-        var dataProtectionProvider = DataProtectionProvider.Create(
-            new DirectoryInfo(Path.Combine(configDir, "keys")));
-        _protector = dataProtectionProvider.CreateProtector("GitHubConfig");
     }
 
     public GitHubSettings GetCredentials()
@@ -36,43 +26,6 @@ public class GitHubCredentialsProvider : IGitHubCredentialsProvider
         return GetCredentialsFromInput(savePrompt: true);
     }
 
-    private GitHubConfig? LoadFromFile()
-    {
-        if (!File.Exists(_configPath))
-            return null;
-
-        try
-        {
-            var json = File.ReadAllText(_configPath);
-            var config = JsonSerializer.Deserialize<GitHubConfig>(json);
-
-            if (config != null && !string.IsNullOrEmpty(config.EncryptedToken))
-            {
-                config.Token = _protector.Unprotect(config.EncryptedToken);
-            }
-
-            return config;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private void SaveToFile(string githubUrl, string token)
-    {
-        var encryptedToken = _protector.Protect(token);
-
-        var config = new GitHubConfig
-        {
-            GithubUrl = githubUrl,
-            EncryptedToken = encryptedToken
-        };
-
-        var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(_configPath, json);
-    }
-
     private GitHubSettings GetCredentialsFromSavedConfig(GitHubConfig config)
     {
         Console.WriteLine($"Saved URL found: {config.GithubUrl}");
@@ -81,7 +34,9 @@ public class GitHubCredentialsProvider : IGitHubCredentialsProvider
 
         if (useSaved)
         {
-            if (string.IsNullOrEmpty(config.Token))
+            var decryptedToken = UnprotectToken(config.EncryptedToken);
+            
+            if (string.IsNullOrEmpty(decryptedToken))
             {
                 Console.WriteLine("❌ Failed to decrypt saved token. Please enter new credentials.");
                 return GetCredentialsFromInput(savePrompt: false);
@@ -90,7 +45,7 @@ public class GitHubCredentialsProvider : IGitHubCredentialsProvider
             var parsed = ParseGitHubUrl(config.GithubUrl);
             return new GitHubSettings(
                 config.GithubUrl,
-                config.Token,
+                decryptedToken,
                 parsed.Owner,
                 parsed.Repo,
                 parsed.FilePath,
@@ -99,6 +54,17 @@ public class GitHubCredentialsProvider : IGitHubCredentialsProvider
         }
 
         return GetCredentialsFromInput(savePrompt: true);
+    }
+
+    private void SaveToFile(string githubUrl, string token)
+    {
+        var config = new GitHubConfig
+        {
+            GithubUrl = githubUrl,
+            EncryptedToken = ProtectToken(token)
+        };
+
+        SaveToFile(config);
     }
 
     private GitHubSettings GetCredentialsFromInput(bool savePrompt)
@@ -203,9 +169,8 @@ public class GitHubUrlParts
 /// <summary>
 /// Internal config class for file storage
 /// </summary>
-internal class GitHubConfig
+public class GitHubConfig
 {
     public string GithubUrl { get; set; } = string.Empty;
     public string EncryptedToken { get; set; } = string.Empty;
-    public string Token { get; set; } = string.Empty;
 }
