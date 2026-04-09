@@ -1,6 +1,6 @@
 using ReminderApp.Common;
 
-namespace ReminderApp.EventNotification;
+namespace ReminderApp.EventNotification.Credentials;
 
 /// <summary>
 /// Реализация провайдера credentials для SmsAero

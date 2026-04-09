@@ -1,6 +1,6 @@
 using ReminderApp.Common;
 
-namespace ReminderApp.EventReading;
+namespace ReminderApp.EventReading.Credentials;
 
 /// <summary>
 /// Реализация провайдера credentials для GitHub

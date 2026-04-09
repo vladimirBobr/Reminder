@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ReminderApp.Common;
+using ReminderApp.EventNotification.Credentials;
 
 namespace ReminderApp.EventNotification;
 
