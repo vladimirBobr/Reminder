@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Reminder.Tests/Reminder.Tests.csproj" />
+  <Project Path="Reminder/ReminderApp.csproj" />
+</Solution>
