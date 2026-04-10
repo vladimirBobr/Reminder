@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using ReminderApp.Common;
 
 namespace ReminderApp.EventNotification.Telegram;
@@ -6,11 +6,16 @@ namespace ReminderApp.EventNotification.Telegram;
 public class TelegramNotifier : INotifier
 {
     private readonly HttpClient _httpClient;
-    private const string BOT_TOKEN = "";
-    private const string CHAT_ID = ""; // 
+    private readonly string _botToken;
+    private readonly string _chatId;
 
-    public TelegramNotifier()
+    public TelegramNotifier(ITelegramCredentialsProvider credentialsProvider)
     {
+        var settings = credentialsProvider.GetCredentials();
+        
+        _botToken = settings.BotToken;
+        _chatId = settings.ChatId;
+
         var handler = new HttpClientHandler();
         var proxy = ProxyHelper.CreateProxy();
         if (proxy != null)
@@ -20,13 +25,13 @@ public class TelegramNotifier : INotifier
         }
 
         _httpClient = new HttpClient(handler);
-        _httpClient.BaseAddress = new Uri($"https://api.telegram.org/bot{BOT_TOKEN}/");
+        _httpClient.BaseAddress = new Uri($"https://api.telegram.org/bot{_botToken}/");
     }
 
     public void Notify(EventData eventData)
     {
         var message = FormatMessage(eventData);
-        var url = $"sendMessage?chat_id={CHAT_ID}&text={Uri.EscapeDataString(message)}&parse_mode=Markdown";
+        var url = $"sendMessage?chat_id={_chatId}&text={Uri.EscapeDataString(message)}&parse_mode=Markdown";
 
         try
         {

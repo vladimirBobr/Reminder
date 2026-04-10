@@ -11,7 +11,7 @@ public class TelegramNotificationDebug
     public void Notify_ShouldSendMessageToTelegram()
     {
         // Arrange
-        var notifier = new TelegramNotifier();
+        var notifier = new TelegramNotifier(new TelegramCredentialsProvider());
 
         var eventData = new EventData
         {

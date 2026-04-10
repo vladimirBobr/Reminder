@@ -2,6 +2,7 @@ using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.EventNotification.ConsoleOutput;
 using ReminderApp.EventNotification.SmsAero;
+using ReminderApp.EventNotification.Telegram;
 using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventReading;
@@ -22,7 +23,7 @@ internal class Program
             new DateTimeProvider(),
             new JsonFileStorage(),
             new GitHubEventReader(new GitHubCredentialsProvider()),
-            new SmsAeroNotifier(new SmsAeroCredentialsProvider()), //new ConsoleNotifier()
+            new TelegramNotifier(new TelegramCredentialsProvider()), //new SmsAeroNotifier(new SmsAeroCredentialsProvider())
             new EventOutputPrinter());
 
         await runner.StartAsync();
