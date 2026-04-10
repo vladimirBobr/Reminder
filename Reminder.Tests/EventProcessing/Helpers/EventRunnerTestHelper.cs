@@ -1,6 +1,6 @@
 ﻿using ReminderApp.Common;
 using ReminderApp.EventNotification;
-using ReminderApp.EventPrinter;
+using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventScheduling;
 
@@ -33,7 +33,7 @@ public static class EventRunnerTestHelper
         // Устанавливаем processed в fileStorage
         fileStorage.SetProcessed(processed);
 
-        var printer = new EventPrinter();
+        var printer = new EventOutputPrinter();
 
         var eventRunner = new EventRunner(
             scheduler,

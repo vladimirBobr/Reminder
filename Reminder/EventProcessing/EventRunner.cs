@@ -1,8 +1,7 @@
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
-using ReminderApp.EventPrinter;
+using ReminderApp.EventOutput;
 using ReminderApp.EventReading;
-using ReminderApp.EventReading.LocalFile;
 using ReminderApp.EventReading.GitHub;
 using ReminderApp.EventScheduling;
 using ReminderApp.FileStorage;
@@ -16,7 +15,7 @@ public class EventRunner : IEventRunner
     private readonly IFileStorage _fileStorage;
     private readonly IEventReader _eventReader;
     private readonly INotifier _notifier;
-    private readonly IEventPrinter _eventPrinter;
+    private readonly IEventOutputPrinter _eventPrinter;
     private CancellationTokenSource? _cts;
     private bool _isRunning = false;
 
@@ -28,7 +27,7 @@ public class EventRunner : IEventRunner
         IFileStorage fileStorage,
         IEventReader eventReader,
         INotifier notifier,
-        IEventPrinter eventPrinter)
+        IEventOutputPrinter eventPrinter)
     {
         _scheduler = scheduler;
         _dateTimeProvider = dateTimeProvider;

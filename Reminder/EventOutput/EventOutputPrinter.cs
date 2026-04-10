@@ -1,7 +1,7 @@
-﻿using ReminderApp.Common;
+using ReminderApp.Common;
 
-namespace ReminderApp.EventPrinter;
-public class EventPrinter : IEventPrinter
+namespace ReminderApp.EventOutput;
+public class EventOutputPrinter : IEventOutputPrinter
 {
     private readonly HashSet<string> _seenEvents = [];
 

@@ -1,6 +1,5 @@
-using ReminderApp.Common;
+﻿using ReminderApp.Common;
 using ReminderApp.EventReading;
-using ReminderApp.EventReading.LocalFile;
 
 namespace Reminder.Tests.EventProcessing.Helpers;
 

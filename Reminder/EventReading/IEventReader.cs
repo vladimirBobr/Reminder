@@ -1,6 +1,6 @@
-using ReminderApp.Common;
+﻿using ReminderApp.Common;
 
-namespace ReminderApp.EventReading.LocalFile;
+namespace ReminderApp.EventReading;
 
 public interface IEventReader
 {

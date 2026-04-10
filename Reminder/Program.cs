@@ -1,7 +1,8 @@
-﻿using ReminderApp.DateTimeProviding;
+using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.EventNotification.ConsoleOutput;
 using ReminderApp.EventNotification.SmsAero;
+using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventReading;
 using ReminderApp.EventReading.GitHub;
@@ -12,32 +13,17 @@ namespace ReminderApp;
 
 internal class Program
 {
-    private static readonly IDateTimeProvider _dateTimeProvider = new DateTimeProvider();
-    private static readonly IEventScheduler _eventScheduler = new EventScheduler();
-    private static readonly IFileStorage _fileStorage = new JsonFileStorage();
-
     static async Task Main(string[] args)
     {
         Console.WriteLine("▶️ Starting Reminder");
 
-        // Initialize GitHub event reader with credentials provider (asks from console or loads from encrypted file)
-        var githubCredentialsProvider = new GitHubCredentialsProvider();
-        var eventReader = new GitHubEventReader(githubCredentialsProvider);
-
-        // Initialize SMSAero notifier with credentials provider (asks from console or loads from encrypted file)
-        var smsAeroCredentialsProvider = new SmsAeroCredentialsProvider();
-        //var notifier = new SmsAeroNotifier(smsAeroCredentialsProvider);
-        var notifier = new ConsoleNotifier();
-
-        var eventPrinter = new EventPrinter.EventPrinter();
-
         var runner = new EventRunner(
-            _eventScheduler,
-            _dateTimeProvider,
-            _fileStorage,
-            eventReader,
-            notifier,
-            eventPrinter);
+            new EventScheduler(),
+            new DateTimeProvider(),
+            new JsonFileStorage(),
+            new GitHubEventReader(new GitHubCredentialsProvider()),
+            new SmsAeroNotifier(new SmsAeroCredentialsProvider()), //new ConsoleNotifier()
+            new EventOutputPrinter());
 
         await runner.StartAsync();
 
