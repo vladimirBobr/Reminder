@@ -1,11 +1,7 @@
-using ReminderApp.DateTimeProviding;
-using ReminderApp.EventNotification;
-using ReminderApp.EventNotification.ConsoleOutput;
-using ReminderApp.EventNotification.SmsAero;
+﻿using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification.Telegram;
 using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing;
-using ReminderApp.EventReading;
 using ReminderApp.EventReading.GitHub;
 using ReminderApp.EventScheduling;
 using ReminderApp.FileStorage;
