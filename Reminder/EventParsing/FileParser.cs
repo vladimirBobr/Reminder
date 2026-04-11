@@ -133,7 +133,114 @@ public class FileParser
         return blocks;
     }
 
-    internal List<EventData> ParseEvents(string content) => throw new NotImplementedException();
+    public List<EventData> ParseEvents(string content)
+    {
+        var parseResult = ParseFile(content);
+        var events = new List<EventData>();
+
+        // Обрабатываем DateSections
+        foreach (var section in parseResult.DateSections)
+        {
+            foreach (var block in section.EventBlocks)
+            {
+                var eventData = ParseEventBlock(block, section.Date);
+                events.Add(eventData);
+            }
+        }
+
+        // Можно также добавить обработку DifferentDatesSection и NotesSection
+        // но пока только DateSections согласно заданию
+
+        return events;
+    }
+
+    private EventData ParseEventBlock(string block, DateOnly date)
+    {
+        var result = new EventData { Date = date };
+        var lines = block.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
+
+        if (lines.Length == 0)
+            return result;
+
+        var firstLine = lines[0].Trim();
+
+        // Проверяем, начинается ли первая строка со времени в формате "HH:mm"
+        if (TryParseTime(firstLine, out var time))
+        {
+            result.Time = time;
+            // Остаток первой строки после времени - это начало текста
+            var timePrefixLength = firstLine.IndexOf(time.ToString("HH:mm"), StringComparison.Ordinal);
+            var remainingFirstLine = firstLine.Substring(timePrefixLength + 5).Trim();
+
+            if (remainingFirstLine.Length > 0)
+            {
+                // Если есть текст после времени - это subject
+                result.Subject = remainingFirstLine;
+                
+                // Остальные строки - это описание
+                var descriptionLines = lines.Skip(1).ToList();
+                if (descriptionLines.Count > 0)
+                {
+                    result.Description = string.Join(Environment.NewLine, descriptionLines);
+                }
+            }
+            else if (lines.Length > 1)
+            {
+                // Если после времени пусто, но есть еще строки - это всё описание
+                result.Subject = string.Join(Environment.NewLine, lines.Skip(1));
+            }
+        }
+        else
+        {
+            // Нет времени - весь блок это subject (или subject + description)
+            if (lines.Length == 1)
+            {
+                result.Subject = firstLine;
+            }
+            else
+            {
+                result.Subject = firstLine;
+                result.Description = string.Join(Environment.NewLine, lines.Skip(1));
+            }
+        }
+
+        return result;
+    }
+
+    private bool TryParseTime(string text, out TimeOnly time)
+    {
+        time = default;
+        
+        if (string.IsNullOrEmpty(text))
+            return false;
+
+        // Паттерн для времени в начале строки: "HH:mm" или "H:mm"
+        if (text.Length >= 4 && text[0] >= '0' && text[0] <= '9')
+        {
+            var colonIndex = text.IndexOf(':');
+            if (colonIndex > 0 && colonIndex <= 2)
+            {
+                var hourStr = text.Substring(0, colonIndex);
+                var minStart = colonIndex + 1;
+                if (minStart < text.Length && text[minStart] >= '0' && text[minStart] <= '9')
+                {
+                    var minEnd = Math.Min(minStart + 2, text.Length);
+                    var minStr = text.Substring(minStart, minEnd - minStart);
+                    
+                    if (int.TryParse(hourStr, out var hour) && int.TryParse(minStr, out var minute))
+                    {
+                        if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59)
+                        {
+                            time = new TimeOnly(hour, minute);
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
 
     private enum SectionType { Date, DifferentDates, Notes }
 }
