@@ -1,16 +1,15 @@
-﻿using ReminderApp.Common;
 using ReminderApp.EventNotification;
 
 namespace Reminder.Tests.EventProcessing.Helpers;
 
 public class TestNotifier : INotifier
 {
-    public EventData? LastNotifiedEvent { get; private set; }
-    public List<EventData> NotifiedEvents { get; } = new();
+    public string? LastNotifiedMessage { get; private set; }
+    public List<string> NotifiedMessages { get; } = new();
 
-    public void Notify(EventData eventData)
+    public void Notify(string message)
     {
-        LastNotifiedEvent = eventData;
-        NotifiedEvents.Add(eventData);
+        LastNotifiedMessage = message;
+        NotifiedMessages.Add(message);
     }
 }

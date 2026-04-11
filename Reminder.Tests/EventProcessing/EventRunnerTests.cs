@@ -28,7 +28,7 @@ public class EventRunnerTests
         await eventRunner.CheckAndSendDigestIfNeededAsync();
 
         // Assert
-        Assert.Null(notifier.LastNotifiedEvent);
+        Assert.Null(notifier.LastNotifiedMessage);
     }
 
     [Fact]
@@ -54,8 +54,8 @@ public class EventRunnerTests
         await eventRunner.CheckAndSendDigestIfNeededAsync();
 
         // Assert
-        Assert.NotNull(notifier.LastNotifiedEvent);
-        Assert.Equal("📅 Daily Digest", notifier.LastNotifiedEvent.Subject);
+        Assert.NotNull(notifier.LastNotifiedMessage);
+        Assert.Contains("Событие 1", notifier.LastNotifiedMessage);
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public class EventRunnerTests
         await eventRunner.CheckAndSendDigestIfNeededAsync();
 
         // Assert
-        Assert.NotNull(notifier.LastNotifiedEvent);
+        Assert.NotNull(notifier.LastNotifiedMessage);
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public class EventRunnerTests
         var events = new List<EventData>
         {
             new() { Date = new DateOnly(2026, 4, 11), Subject = "Сегодня" },
-            new() { Date = new DateOnly(2026, 4, 12), Subject = "Завтра" } // не сегодня
+            new() { Date = new DateOnly(2026, 4, 12), Subject = "Завтра" }
         };
 
         var notifier = new TestNotifier();
@@ -106,9 +106,9 @@ public class EventRunnerTests
         await eventRunner.CheckAndSendDigestIfNeededAsync();
 
         // Assert
-        var description = notifier.LastNotifiedEvent!.Description!;
-        Assert.Contains("Сегодня", description);
-        Assert.DoesNotContain("Завтра", description);
+        var message = notifier.LastNotifiedMessage!;
+        Assert.Contains("Сегодня", message);
+        Assert.DoesNotContain("Завтра", message);
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public class EventRunnerTests
         await eventRunner.CheckAndSendDigestIfNeededAsync();
 
         // Assert
-        Assert.Null(notifier.LastNotifiedEvent);
+        Assert.Null(notifier.LastNotifiedMessage);
     }
 
     [Fact]
@@ -164,9 +164,9 @@ public class EventRunnerTests
         await eventRunner.SendDailyDigestAsync(now);
 
         // Assert
-        var description = notifier.LastNotifiedEvent!.Description!;
-        Assert.Contains("10:30", description);
-        Assert.Contains("Встреча", description);
-        Assert.Contains("Обсудить проект", description);
+        var message = notifier.LastNotifiedMessage!;
+        Assert.Contains("10:30", message);
+        Assert.Contains("Встреча", message);
+        Assert.Contains("Обсудить проект", message);
     }
 }

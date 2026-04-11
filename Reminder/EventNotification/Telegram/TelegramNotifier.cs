@@ -1,6 +1,3 @@
-using System.Text;
-using ReminderApp.Common;
-
 namespace ReminderApp.EventNotification.Telegram;
 
 public class TelegramNotifier : INotifier
@@ -28,9 +25,8 @@ public class TelegramNotifier : INotifier
         _httpClient.BaseAddress = new Uri($"https://api.telegram.org/bot{_botToken}/");
     }
 
-    public void Notify(EventData eventData)
+    public void Notify(string message)
     {
-        var message = FormatMessage(eventData);
         var url = $"sendMessage?chat_id={_chatId}&text={Uri.EscapeDataString(message)}&parse_mode=Markdown";
 
         try
@@ -43,25 +39,12 @@ public class TelegramNotifier : INotifier
             }
             else
             {
-                Console.WriteLine($"✅ Уведомление отправлено в Telegram: {eventData.Subject}");
+                Console.WriteLine("✅ Уведомление отправлено в Telegram");
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"❌ Ошибка отправки в Telegram: {ex.Message}");
         }
-    }
-
-    private string FormatMessage(EventData eventData)
-    {
-        var sb = new StringBuilder();
-
-        sb.AppendLine($"📅 *{eventData.Time:dd.MM.yyyy HH:mm}*");
-        if (!string.IsNullOrEmpty(eventData.Subject))
-            sb.AppendLine($"📌 *{eventData.Subject}*");
-        if (!string.IsNullOrEmpty(eventData.Description))
-            sb.AppendLine($"📝 {eventData.Description}");
-
-        return sb.ToString();
     }
 }

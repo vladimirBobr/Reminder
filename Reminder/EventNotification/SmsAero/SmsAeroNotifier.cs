@@ -1,8 +1,6 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using ReminderApp.Common;
-using ReminderApp.EventNotification.SmsAero;
 
 namespace ReminderApp.EventNotification.SmsAero;
 
@@ -39,12 +37,9 @@ public class SmsAeroNotifier : INotifier
         _httpClient = new HttpClient(handler);
     }
 
-    public void Notify(EventData eventData)
+    public void Notify(string message)
     {
-        var message = FormatMessage(eventData);
-        
-        // Get phone number from event data or use default
-        var phoneNumber = eventData.PhoneNumber ?? GetDefaultPhoneNumber();
+        var phoneNumber = GetDefaultPhoneNumber();
         
         if (string.IsNullOrEmpty(phoneNumber))
         {
@@ -58,7 +53,7 @@ public class SmsAeroNotifier : INotifier
             
             if (response.Success)
             {
-                Console.WriteLine($"✅ SMS отправлен через SMSAero: {eventData.Subject} на {phoneNumber}");
+                Console.WriteLine($"✅ SMS отправлен через SMSAero на {phoneNumber}");
             }
             else
             {
@@ -91,23 +86,6 @@ public class SmsAeroNotifier : INotifier
         {
             return new SmsAeroResponse { Success = false, ErrorMessage = content };
         }
-    }
-
-    private string FormatMessage(EventData eventData)
-    {
-        var sb = new StringBuilder();
-        
-        if (!string.IsNullOrEmpty(eventData.Subject))
-            sb.Append(eventData.Subject);
-        
-        if (!string.IsNullOrEmpty(eventData.Description))
-        {
-            if (sb.Length > 0)
-                sb.Append(". ");
-            sb.Append(eventData.Description);
-        }
-
-        return sb.ToString();
     }
 
     private string? GetDefaultPhoneNumber()

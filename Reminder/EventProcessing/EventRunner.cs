@@ -162,17 +162,9 @@ public class EventRunner : IEventRunner
         // Выводим в консоль
         _eventPrinter.PrintEvents(todayEvents);
 
-        // ФормируемDigest
+        // Формируем и отправляемDigest
         var digest = BuildDigestMessage(todayEvents);
-        var digestEvent = new EventData
-        {
-            Date = today,
-            Time = new TimeOnly(now.Hour, now.Minute),
-            Subject = "📅 Daily Digest",
-            Description = digest
-        };
-
-        _notifier.Notify(digestEvent);
+        _notifier.Notify(digest);
         Console.WriteLine("✅ Digest отправлен");
     }
 

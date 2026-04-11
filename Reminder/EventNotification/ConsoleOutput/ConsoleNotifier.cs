@@ -1,14 +1,11 @@
-using ReminderApp.Common;
-
 namespace ReminderApp.EventNotification.ConsoleOutput;
 
 public class ConsoleNotifier : INotifier
 {
-    public void Notify(EventData eventData)
+    public void Notify(string message)
     {
-        Console.WriteLine($"🔔 УВЕДОМЛЕНИЕ: {eventData.Subject}");
-        Console.WriteLine($"📝 {eventData.Description}");
-        Console.WriteLine($"📅 Время: {eventData.Time:dd.MM.yyyy HH:mm}");
+        Console.WriteLine($"🔔 УВЕДОМЛЕНИЕ:");
+        Console.WriteLine(message);
         Console.WriteLine("---");
     }
 }
