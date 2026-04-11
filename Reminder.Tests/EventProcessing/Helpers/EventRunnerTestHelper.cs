@@ -1,48 +1,38 @@
-﻿using ReminderApp.Common;
+using ReminderApp.Common;
+using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing;
-using ReminderApp.EventScheduling;
 
 namespace Reminder.Tests.EventProcessing.Helpers;
 
 public static class EventRunnerTestHelper
 {
     public static EventRunner CreateEventRunner(
-        DateTime now = default,
+        DateTime? now = null,
         List<EventData>? events = null,
-        Dictionary<string, DateTime>? processed = null,
         INotifier? notifier = null,
-        InMemoryFileStorage? fileStorage = null,
-        IEventScheduler? scheduler = null)
+        InMemoryFileStorage? fileStorage = null)
     {
-        // Устанавливаем значения по умолчанию
-        now = now == default ? DateTime.Now : now;
-        events = events ?? new List<EventData>();
-        processed = processed ?? new Dictionary<string, DateTime>();
-        notifier = notifier ?? new TestNotifier();
-        fileStorage = fileStorage ?? new InMemoryFileStorage();
-        scheduler = scheduler ?? new EventScheduler();
+        now ??= DateTime.Now;
+        events ??= new List<EventData>();
+        notifier ??= new TestNotifier();
+        fileStorage ??= new InMemoryFileStorage();
 
         var dateTimeProvider = new MockDateTimeProvider();
-        dateTimeProvider.SetNow(now);
+        dateTimeProvider.SetNow(now.Value);
 
         var eventReader = new TestEventReader();
         eventReader.SetEvents(events);
 
-        // Устанавливаем processed в fileStorage
-        fileStorage.SetProcessed(processed);
-
         var printer = new EventOutputPrinter();
 
         var eventRunner = new EventRunner(
-            scheduler,
             dateTimeProvider,
             fileStorage,
             eventReader,
             notifier,
-            printer
-            );
+            printer);
 
         return eventRunner;
     }

@@ -1,10 +1,11 @@
-﻿using ReminderApp.FileStorage;
+using ReminderApp.FileStorage;
 
 namespace Reminder.Tests.EventProcessing.Helpers;
 
 public class InMemoryFileStorage : IFileStorage
 {
     private Dictionary<string, DateTime> _processed = new();
+    private Dictionary<string, string> _data = new();
 
     public Task<Dictionary<string, DateTime>> LoadProcessedAsync(string filePath)
     {
@@ -25,5 +26,16 @@ public class InMemoryFileStorage : IFileStorage
     public Dictionary<string, DateTime> GetProcessed()
     {
         return _processed;
+    }
+
+    public Task<string?> LoadAsync(string key)
+    {
+        return Task.FromResult(_data.GetValueOrDefault(key));
+    }
+
+    public Task SaveAsync(string key, string value)
+    {
+        _data[key] = value;
+        return Task.CompletedTask;
     }
 }

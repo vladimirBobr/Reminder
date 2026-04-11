@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace ReminderApp.FileStorage;
 
@@ -17,5 +17,27 @@ public class JsonFileStorage : IFileStorage
     {
         var json = JsonSerializer.Serialize(processed, new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(filePath, json);
+    }
+
+    public async Task<string?> LoadAsync(string key)
+    {
+        var filePath = GetFilePath(key);
+        if (!File.Exists(filePath))
+            return null;
+
+        return await File.ReadAllTextAsync(filePath);
+    }
+
+    public async Task SaveAsync(string key, string value)
+    {
+        var filePath = GetFilePath(key);
+        await File.WriteAllTextAsync(filePath, value);
+    }
+
+    private string GetFilePath(string key)
+    {
+        // Sanitize key for file name
+        var safeKey = string.Join("_", key.Split(Path.GetInvalidFileNameChars()));
+        return $"{safeKey}.json";
     }
 }

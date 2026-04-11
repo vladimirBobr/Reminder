@@ -4,7 +4,6 @@ using ReminderApp.EventNotification.Telegram;
 using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventReading.GitHub;
-using ReminderApp.EventScheduling;
 using ReminderApp.FileStorage;
 
 namespace ReminderApp;
@@ -16,7 +15,6 @@ internal class Program
         Console.WriteLine("▶️ Starting Reminder");
 
         var runner = new EventRunner(
-            new EventScheduler(),
             new DateTimeProvider(),
             new JsonFileStorage(),
             new GitHubEventReader(new GitHubCredentialsProvider()),
