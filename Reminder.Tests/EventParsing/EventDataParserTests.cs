@@ -17,11 +17,10 @@ public partial class EventDataParserTests
 
         var events = _parser.ParseEvents(content);
 
-        Assert.Single(events);
-        var evt = events[0];
-        Assert.Equal(new DateOnly(2026, 4, 10), evt.Date);
-        Assert.Equal(new TimeOnly(18, 30), evt.Time);
-        Assert.Equal("Встреча с клиентом", evt.Subject);
+        Expect.Event("Встреча с клиентом")
+            .WithDate(10, 4, 2026)
+            .WithTime(18, 30)
+            .AssertMatches(events);
     }
 
     [Fact]
@@ -35,12 +34,11 @@ public partial class EventDataParserTests
 
         var events = _parser.ParseEvents(content);
 
-        Assert.Single(events);
-        var evt = events[0];
-        Assert.Equal(new DateOnly(2026, 4, 10), evt.Date);
-        Assert.Equal(new TimeOnly(18, 30), evt.Time);
-        Assert.Equal("Встреча с клиентом", evt.Subject);
-        Assert.Equal("Обсудить проект", evt.Description);
+        Expect.Event("Встреча с клиентом")
+            .WithDate(10, 4, 2026)
+            .WithTime(18, 30)
+            .WithDescription("Обсудить проект")
+            .AssertMatches(events);
     }
 
     [Fact]
@@ -53,11 +51,9 @@ public partial class EventDataParserTests
 
         var events = _parser.ParseEvents(content);
 
-        Assert.Single(events);
-        var evt = events[0];
-        Assert.Equal(new DateOnly(2026, 4, 10), evt.Date);
-        Assert.Null(evt.Time);
-        Assert.Equal("Просто событие без времени", evt.Subject);
+        Expect.Event("Просто событие без времени")
+            .WithDate(10, 4, 2026)
+            .AssertMatches(events);
     }
 
     [Fact]
@@ -71,12 +67,10 @@ public partial class EventDataParserTests
 
         var events = _parser.ParseEvents(content);
 
-        Assert.Single(events);
-        var evt = events[0];
-        Assert.Equal(new DateOnly(2026, 4, 10), evt.Date);
-        Assert.Null(evt.Time);
-        Assert.Equal("Важное событие", evt.Subject);
-        Assert.Equal("Это описание события", evt.Description);
+        Expect.Event("Важное событие")
+            .WithDate(10, 4, 2026)
+            .WithDescription("Это описание события")
+            .AssertMatches(events);
     }
 
     [Fact]
@@ -93,11 +87,13 @@ public partial class EventDataParserTests
 
         Assert.Equal(2, events.Count);
         
-        Assert.Equal(new TimeOnly(9, 0), events[0].Time);
-        Assert.Equal("Утренняя планёрка", events[0].Subject);
+        Expect.Event("Утренняя планёрка")
+            .WithTime(9, 0)
+            .AssertMatches(events[0]);
         
-        Assert.Equal(new TimeOnly(14, 30), events[1].Time);
-        Assert.Equal("Совещание", events[1].Subject);
+        Expect.Event("Совещание")
+            .WithTime(14, 30)
+            .AssertMatches(events[1]);
     }
 
     [Fact]
@@ -115,11 +111,15 @@ public partial class EventDataParserTests
 
         Assert.Equal(2, events.Count);
         
-        Assert.Equal(new DateOnly(2026, 4, 10), events[0].Date);
-        Assert.Equal(new TimeOnly(10, 0), events[0].Time);
+        Expect.Event("Событие на пятницу")
+            .WithDate(10, 4, 2026)
+            .WithTime(10, 0)
+            .AssertMatches(events[0]);
         
-        Assert.Equal(new DateOnly(2026, 4, 11), events[1].Date);
-        Assert.Equal(new TimeOnly(11, 0), events[1].Time);
+        Expect.Event("Событие на субботу")
+            .WithDate(11, 4, 2026)
+            .WithTime(11, 0)
+            .AssertMatches(events[1]);
     }
 
     [Fact]
@@ -146,10 +146,9 @@ public partial class EventDataParserTests
 
         var events = _parser.ParseEvents(content);
 
-        Assert.Single(events);
-        var evt = events[0];
-        Assert.Equal(new TimeOnly(18, 30), evt.Time);
-        Assert.Null(evt.Subject);
+        Expect.Event(null)
+            .WithTime(18, 30)
+            .AssertMatches(events);
     }
 
     [Fact]
@@ -162,8 +161,9 @@ public partial class EventDataParserTests
 
         var events = _parser.ParseEvents(content);
 
-        Assert.Single(events);
-        Assert.Equal(new TimeOnly(9, 30), events[0].Time);
+        Expect.Event("Утреннее событие")
+            .WithTime(9, 30)
+            .AssertMatches(events);
     }
 
     [Fact]
@@ -178,10 +178,10 @@ public partial class EventDataParserTests
 
         var events = _parser.ParseEvents(content);
 
-        Assert.Single(events);
-        var evt = events[0];
-        Assert.Equal("Встреча", evt.Subject);
-        Assert.Equal("Строка 1 описания" + Environment.NewLine + "Строка 2 описания", evt.Description);
+        Expect.Event("Встреча")
+            .WithTime(18, 30)
+            .WithDescription("Строка 1 описания" + Environment.NewLine + "Строка 2 описания")
+            .AssertMatches(events);
     }
 
     [Fact]
