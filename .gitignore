@@ -254,3 +254,6 @@ paket-files/
 
 */wwwroot/bundles/
 **/serviceDependencies*.json
+
+*.pubxml
+**/Properties/PublishProfiles/
