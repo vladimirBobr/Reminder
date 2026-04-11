@@ -240,4 +240,126 @@ public partial class EventDataParserTests
 
         Assert.Empty(events);
     }
+
+    [Fact]
+    public void ParseEvents_WithDifferentDatesSection_ParsesCorrectly()
+    {
+        var content = """
+            # different_dates_section #
+            02.04.2026 Чт Дежурный ФТ
+            """;
+
+        var events = _parser.ParseEvents(content);
+
+        new EventData
+        {
+            Date = new DateOnly(2026, 4, 2),
+            Time = null,
+            Subject = "Чт Дежурный ФТ",
+            Description = null,
+        }.AssertEquals(events);
+    }
+
+    [Fact]
+    public void ParseEvents_WithDifferentDatesSectionAndTime_ParsesCorrectly()
+    {
+        var content = """
+            # different_dates_section #
+            02.04.2026 14:00 Встреча
+            """;
+
+        var events = _parser.ParseEvents(content);
+
+        new EventData
+        {
+            Date = new DateOnly(2026, 4, 2),
+            Time = new TimeOnly(14, 0),
+            Subject = "Встреча",
+            Description = null,
+        }.AssertEquals(events);
+    }
+
+    [Fact]
+    public void ParseEvents_WithNotesSection_ParsesCorrectly()
+    {
+        var content = """
+            # notes_section #
+            Моя заметка
+            """;
+
+        var events = _parser.ParseEvents(content);
+
+        new EventData
+        {
+            Date = null,
+            Time = null,
+            Subject = "Моя заметка",
+            Description = null,
+        }.AssertEquals(events);
+    }
+
+    [Fact]
+    public void ParseEvents_WithNotesSectionAndTime_ParsesCorrectly()
+    {
+        var content = """
+            # notes_section #
+            15:00 Напоминание
+            """;
+
+        var events = _parser.ParseEvents(content);
+
+        new EventData
+        {
+            Date = null,
+            Time = new TimeOnly(15, 0),
+            Subject = "Напоминание",
+            Description = null,
+        }.AssertEquals(events);
+    }
+
+    [Fact]
+    public void ParseEvents_WithAllSections_ParsesAll()
+    {
+        var content = """
+            # 10.04.2026 #
+            10:00 Событие на дату
+
+            # different_dates_section #
+            05.04.2026 Событие с датой
+
+            # notes_section #
+            Заметка
+            """;
+
+        var events = _parser.ParseEvents(content);
+
+        Assert.Equal(3, events.Count);
+        
+        // DateSection
+        new EventData
+        {
+            Date = new DateOnly(2026, 4, 10),
+            Time = new TimeOnly(10, 0),
+            Subject = "Событие на дату",
+            Description = null,
+        }.AssertEquals(events[0]);
+        
+        // DifferentDatesSection
+        new EventData
+        {
+            Date = new DateOnly(2026, 4, 5),
+            Time = null,
+            Subject = "Событие с датой",
+            Description = null,
+        }.AssertEquals(events[1]);
+        
+        // NotesSection
+        new EventData
+        {
+            Date = null,
+            Time = null,
+            Subject = "Заметка",
+            Description = null,
+        }.AssertEquals(events[2]);
+    }
 }

@@ -148,10 +148,143 @@ public class FileParser
             }
         }
 
-        // Можно также добавить обработку DifferentDatesSection и NotesSection
-        // но пока только DateSections согласно заданию
+        // Обрабатываем DifferentDatesSection - даты в самом тексте блока
+        if (parseResult.DifferentDates != null)
+        {
+            foreach (var block in parseResult.DifferentDates.EventBlocks)
+            {
+                var eventData = ParseEventBlockWithDateInText(block);
+                if (eventData != null)
+                    events.Add(eventData);
+            }
+        }
+
+        // Обрабатываем NotesSection - тоже парсим как события
+        if (parseResult.NotesSection != null)
+        {
+            foreach (var block in parseResult.NotesSection.EventBlocks)
+            {
+                var eventData = ParseEventBlockWithoutDate(block);
+                events.Add(eventData);
+            }
+        }
 
         return events;
+    }
+
+    /// <summary>
+    /// Парсит блок из DifferentDatesSection - дата указана в самом тексте
+    /// </summary>
+    private EventData? ParseEventBlockWithDateInText(string block)
+    {
+        var lines = block.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
+        if (lines.Length == 0)
+            return null;
+
+        var firstLine = lines[0].Trim();
+
+        // Ищем дату в формате dd.MM.yyyy в начале строки
+        DateOnly? date = null;
+        string remainingLine = firstLine;
+
+        if (firstLine.Length >= 10)
+        {
+            // Пробуем найти дату в начале строки
+            var dateMatch = firstLine.Substring(0, 10);
+            if (DateOnly.TryParseExact(dateMatch, "dd.MM.yyyy",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var parsedDate))
+            {
+                date = parsedDate;
+                remainingLine = firstLine.Substring(10).Trim();
+            }
+        }
+
+        if (!date.HasValue)
+            return null;
+
+        var result = new EventData { Date = date.Value };
+
+        // Проверяем время
+        if (TryParseTime(remainingLine, out var time))
+        {
+            result.Time = time;
+            var timePrefixLength = remainingLine.IndexOf(time.ToString("HH:mm"), StringComparison.Ordinal);
+            var subjectPart = remainingLine.Substring(timePrefixLength + 5).Trim();
+            
+            if (!string.IsNullOrEmpty(subjectPart))
+            {
+                result.Subject = subjectPart;
+                var descriptionLines = lines.Skip(1).ToList();
+                if (descriptionLines.Count > 0)
+                    result.Description = string.Join(Environment.NewLine, descriptionLines);
+            }
+            else if (lines.Length > 1)
+            {
+                result.Subject = string.Join(Environment.NewLine, lines.Skip(1));
+            }
+        }
+        else
+        {
+            // Нет времени - весь текст это subject
+            if (lines.Length == 1)
+            {
+                result.Subject = remainingLine;
+            }
+            else
+            {
+                result.Subject = remainingLine;
+                result.Description = string.Join(Environment.NewLine, lines.Skip(1));
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Парсит блок из NotesSection - без даты
+    /// </summary>
+    private EventData ParseEventBlockWithoutDate(string block)
+    {
+        var result = new EventData();
+        var lines = block.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
+
+        if (lines.Length == 0)
+            return result;
+
+        var firstLine = lines[0].Trim();
+
+        // Проверяем, есть ли время в начале
+        if (TryParseTime(firstLine, out var time))
+        {
+            result.Time = time;
+            var timePrefixLength = firstLine.IndexOf(time.ToString("HH:mm"), StringComparison.Ordinal);
+            var remainingFirstLine = firstLine.Substring(timePrefixLength + 5).Trim();
+
+            if (remainingFirstLine.Length > 0)
+            {
+                result.Subject = remainingFirstLine;
+                var descriptionLines = lines.Skip(1).ToList();
+                if (descriptionLines.Count > 0)
+                    result.Description = string.Join(Environment.NewLine, descriptionLines);
+            }
+            else if (lines.Length > 1)
+            {
+                result.Subject = string.Join(Environment.NewLine, lines.Skip(1));
+            }
+        }
+        else
+        {
+            if (lines.Length == 1)
+                result.Subject = firstLine;
+            else
+            {
+                result.Subject = firstLine;
+                result.Description = string.Join(Environment.NewLine, lines.Skip(1));
+            }
+        }
+
+        return result;
     }
 
     private EventData ParseEventBlock(string block, DateOnly date)
