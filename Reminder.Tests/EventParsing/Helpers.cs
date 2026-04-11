@@ -34,4 +34,16 @@ public static class Helpers
         Assert.Single(expectedList);
         actual.AssertEquals(expectedList[0]);
     }
+
+    public static void AssertEquals(this List<EventData> actual, List<EventData> expected)
+    {
+        Assert.Equal(expected.Count, actual.Count);
+        for (int i = 0; i < expected.Count; i++)
+        {
+            Assert.Equal(expected[i].Date, actual[i].Date);
+            Assert.Equal(expected[i].Time, actual[i].Time);
+            Assert.Equal(expected[i].Subject, actual[i].Subject);
+            Assert.Equal(expected[i].Description, actual[i].Description);
+        }
+    }
 }
