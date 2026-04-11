@@ -15,7 +15,7 @@ public class EventRunner : IEventRunner
     private readonly INotifier _notifier;
     private readonly IEventOutputPrinter _eventPrinter;
     private readonly IDigestSender _digestSender;
-    private readonly IReminderScheduler _reminderScheduler;
+    private readonly IReminderSender _reminderSender;
     private CancellationTokenSource? _cts;
     private bool _isRunning = false;
 
@@ -26,7 +26,7 @@ public class EventRunner : IEventRunner
         INotifier notifier,
         IEventOutputPrinter eventPrinter,
         IDigestSender digestSender,
-        IReminderScheduler reminderScheduler)
+        IReminderSender reminderSender)
     {
         _dateTimeProvider = dateTimeProvider;
         _fileStorage = fileStorage;
@@ -34,7 +34,7 @@ public class EventRunner : IEventRunner
         _notifier = notifier;
         _eventPrinter = eventPrinter;
         _digestSender = digestSender;
-        _reminderScheduler = reminderScheduler;
+        _reminderSender = reminderSender;
     }
 
     public async Task StartAsync()
@@ -46,7 +46,7 @@ public class EventRunner : IEventRunner
 
         // Инициализируем отправителей - загружаем состояние
         await _digestSender.InitializeAsync();
-        await _reminderScheduler.InitializeAsync();
+        await _reminderSender.InitializeAsync();
 
         Console.WriteLine("▶️ EventRunner запущен. Проверка каждую минуту.");
 
@@ -72,7 +72,7 @@ public class EventRunner : IEventRunner
 
                 // Вызываем обработчики
                 await _digestSender.SendIfNeededAsync(events, now);
-                await _reminderScheduler.SendIfNeededAsync(events, now);
+                await _reminderSender.SendIfNeededAsync(events, now);
             }
             catch (Exception ex)
             {

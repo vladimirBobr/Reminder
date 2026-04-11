@@ -23,7 +23,7 @@ internal class Program
 
         // Создаём отправителей
         var digestSender = new DigestSender(dateTimeProvider, fileStorage, notifier);
-        var reminderScheduler = new ReminderScheduler(dateTimeProvider, fileStorage, notifier);
+        var reminderSender = new ReminderSender(dateTimeProvider, fileStorage, notifier);
 
         var runner = new EventRunner(
             dateTimeProvider,
@@ -32,7 +32,7 @@ internal class Program
             notifier,
             new EventOutputPrinter(),
             digestSender,
-            reminderScheduler);
+            reminderSender);
 
         await runner.StartAsync();
 

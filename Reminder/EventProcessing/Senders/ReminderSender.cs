@@ -5,7 +5,7 @@ using ReminderApp.FileStorage;
 
 namespace ReminderApp.EventProcessing.Senders;
 
-public class ReminderScheduler : IReminderScheduler
+public class ReminderSender : IReminderSender
 {
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IFileStorage _fileStorage;
@@ -16,7 +16,7 @@ public class ReminderScheduler : IReminderScheduler
     private readonly HashSet<string> _sentReminders = new();
     private const string SentRemindersKey = "sent_reminders";
 
-    public ReminderScheduler(
+    public ReminderSender(
         IDateTimeProvider dateTimeProvider,
         IFileStorage fileStorage,
         INotifier notifier,

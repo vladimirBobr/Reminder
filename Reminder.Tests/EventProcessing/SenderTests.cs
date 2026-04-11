@@ -79,7 +79,7 @@ public class DigestSenderTests
     }
 }
 
-public class ReminderSchedulerTests
+public class ReminderSenderTests
 {
     [Fact]
     public async Task SendIfNeededAsync_WhenNoTime_DoesNotSend()
@@ -93,11 +93,11 @@ public class ReminderSchedulerTests
         };
 
         var notifier = new TestNotifier();
-        var scheduler = CreateReminderScheduler(now: now, events: events, notifier: notifier);
-        await scheduler.InitializeAsync();
+        var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
+        await sender.InitializeAsync();
 
         // Act
-        await scheduler.SendIfNeededAsync(events, now);
+        await sender.SendIfNeededAsync(events, now);
 
         // Assert
         Assert.Null(notifier.LastNotifiedMessage);
@@ -111,20 +111,20 @@ public class ReminderSchedulerTests
         
         var events = new List<EventData>
         {
-            new() 
-            { 
-                Date = new DateOnly(2026, 4, 11), 
+            new()
+            {
+                Date = new DateOnly(2026, 4, 11),
                 Time = new TimeOnly(11, 0),
-                Subject = "Встреча" 
+                Subject = "Встреча"
             }
         };
 
         var notifier = new TestNotifier();
-        var scheduler = CreateReminderScheduler(now: now, events: events, notifier: notifier);
-        await scheduler.InitializeAsync();
+        var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
+        await sender.InitializeAsync();
 
         // Act
-        await scheduler.SendIfNeededAsync(events, now);
+        await sender.SendIfNeededAsync(events, now);
 
         // Assert
         Assert.NotNull(notifier.LastNotifiedMessage);
@@ -140,20 +140,20 @@ public class ReminderSchedulerTests
         
         var events = new List<EventData>
         {
-            new() 
-            { 
-                Date = new DateOnly(2026, 4, 11), 
+            new()
+            {
+                Date = new DateOnly(2026, 4, 11),
                 Time = new TimeOnly(11, 0),
-                Subject = "Встреча" 
+                Subject = "Встреча"
             }
         };
 
         var notifier = new TestNotifier();
-        var scheduler = CreateReminderScheduler(now: now, events: events, notifier: notifier);
-        await scheduler.InitializeAsync();
+        var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
+        await sender.InitializeAsync();
 
         // Act
-        await scheduler.SendIfNeededAsync(events, now);
+        await sender.SendIfNeededAsync(events, now);
 
         // Assert
         Assert.NotNull(notifier.LastNotifiedMessage);
@@ -167,20 +167,20 @@ public class ReminderSchedulerTests
         
         var events = new List<EventData>
         {
-            new() 
-            { 
-                Date = new DateOnly(2026, 4, 11), 
+            new()
+            {
+                Date = new DateOnly(2026, 4, 11),
                 Time = new TimeOnly(11, 0),
-                Subject = "Встреча" 
+                Subject = "Встреча"
             }
         };
 
         var notifier = new TestNotifier();
-        var scheduler = CreateReminderScheduler(now: now, events: events, notifier: notifier);
-        await scheduler.InitializeAsync();
+        var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
+        await sender.InitializeAsync();
 
         // Act
-        await scheduler.SendIfNeededAsync(events, now);
+        await sender.SendIfNeededAsync(events, now);
 
         // Assert
         Assert.Null(notifier.LastNotifiedMessage);

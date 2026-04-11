@@ -27,7 +27,7 @@ public static class EventRunnerTestHelper
         return new DigestSender(dateTimeProvider, fileStorage, notifier);
     }
 
-    public static ReminderScheduler CreateReminderScheduler(
+    public static ReminderSender CreateReminderSender(
         DateTime? now = null,
         List<EventData>? events = null,
         INotifier? notifier = null,
@@ -40,6 +40,6 @@ public static class EventRunnerTestHelper
         var dateTimeProvider = new MockDateTimeProvider();
         dateTimeProvider.SetNow(now.Value);
 
-        return new ReminderScheduler(dateTimeProvider, fileStorage, notifier);
+        return new ReminderSender(dateTimeProvider, fileStorage, notifier);
     }
 }
