@@ -1,4 +1,4 @@
-using ReminderApp.Common;
+﻿using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.EventOutput;
@@ -20,7 +20,7 @@ public class EventRunner : IEventRunner
     // Кэш даты последней отправки Digest (чтобы не читать файл каждый раз)
     private DateOnly? _lastDigestDate;
 
-    // Время отправки Daily Digest
+    // Время отправки Daily Digest (по умолчанию 7 утра)
     private const int DigestHour = 7;
     private const string LastDigestKey = "last_digest_date";
 
@@ -67,6 +67,8 @@ public class EventRunner : IEventRunner
         {
             try
             {
+                Console.WriteLine($"Проверка ..");
+
                 await CheckAndSendDigestIfNeededAsync();
             }
             catch (Exception ex)
@@ -76,7 +78,7 @@ public class EventRunner : IEventRunner
 
             try
             {
-                await Task.Delay(60_000, ct); // 1 минута
+                await Task.Delay(5_000, ct); // 1 минута
             }
             catch (OperationCanceledException)
             {
@@ -160,7 +162,7 @@ public class EventRunner : IEventRunner
         Console.WriteLine($"📅 {today:dd.MM.yyyy} - найдено {todayEvents.Count} событий, отправляю Digest...");
 
         // Выводим в консоль
-        _eventPrinter.PrintEvents(todayEvents);
+        //_eventPrinter.PrintEvents(todayEvents);
 
         // Формируем и отправляемDigest
         var digest = BuildDigestMessage(todayEvents);

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace ReminderApp.Common;
@@ -35,8 +35,8 @@ public abstract class EncryptedConfigCredentialsProvider<TSettings> where TSetti
             // Показываем сохранённые настройки пользователю
             ShowSavedSettings(settings);
             
-            Console.Write("Использовать сохранённые настройки? (y/n): ");
-            if (Console.ReadLine()?.ToLower() == "y")
+            //Console.Write("Использовать сохранённые настройки? (y/n): ");
+            //if (Console.ReadLine()?.ToLower() == "y")
             {
                 DecryptSettings(settings);
                 return settings;
