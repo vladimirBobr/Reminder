@@ -280,44 +280,6 @@ public partial class EventDataParserTests
     }
 
     [Fact]
-    public void ParseEvents_WithNotesSection_ParsesCorrectly()
-    {
-        var content = """
-            # notes_section #
-            Моя заметка
-            """;
-
-        var events = _parser.ParseEvents(content);
-
-        new EventData
-        {
-            Date = null,
-            Time = null,
-            Subject = "Моя заметка",
-            Description = null,
-        }.AssertEquals(events);
-    }
-
-    [Fact]
-    public void ParseEvents_WithNotesSectionAndTime_ParsesCorrectly()
-    {
-        var content = """
-            # notes_section #
-            15:00 Напоминание
-            """;
-
-        var events = _parser.ParseEvents(content);
-
-        new EventData
-        {
-            Date = null,
-            Time = new TimeOnly(15, 0),
-            Subject = "Напоминание",
-            Description = null,
-        }.AssertEquals(events);
-    }
-
-    [Fact]
     public void ParseEvents_WithAllSections_ParsesAll()
     {
         var content = """
@@ -326,14 +288,11 @@ public partial class EventDataParserTests
 
             # different_dates_section #
             05.04.2026 Событие с датой
-
-            # notes_section #
-            Заметка
             """;
 
         var events = _parser.ParseEvents(content);
 
-        Assert.Equal(3, events.Count);
+        Assert.Equal(2, events.Count);
         
         // DateSection
         new EventData
@@ -353,13 +312,6 @@ public partial class EventDataParserTests
             Description = null,
         }.AssertEquals(events[1]);
         
-        // NotesSection
-        new EventData
-        {
-            Date = null,
-            Time = null,
-            Subject = "Заметка",
-            Description = null,
-        }.AssertEquals(events[2]);
+        // NotesSection не парсится - это не события
     }
 }

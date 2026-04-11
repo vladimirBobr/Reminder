@@ -159,15 +159,7 @@ public class FileParser
             }
         }
 
-        // Обрабатываем NotesSection - тоже парсим как события
-        if (parseResult.NotesSection != null)
-        {
-            foreach (var block in parseResult.NotesSection.EventBlocks)
-            {
-                var eventData = ParseEventBlockWithoutDate(block);
-                events.Add(eventData);
-            }
-        }
+        // NotesSection не парсим - это не события с датами
 
         return events;
     }
@@ -241,51 +233,6 @@ public class FileParser
         return result;
     }
 
-    /// <summary>
-    /// Парсит блок из NotesSection - без даты
-    /// </summary>
-    private EventData ParseEventBlockWithoutDate(string block)
-    {
-        var result = new EventData();
-        var lines = block.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
-
-        if (lines.Length == 0)
-            return result;
-
-        var firstLine = lines[0].Trim();
-
-        // Проверяем, есть ли время в начале
-        if (TryParseTime(firstLine, out var time))
-        {
-            result.Time = time;
-            var timePrefixLength = firstLine.IndexOf(time.ToString("HH:mm"), StringComparison.Ordinal);
-            var remainingFirstLine = firstLine.Substring(timePrefixLength + 5).Trim();
-
-            if (remainingFirstLine.Length > 0)
-            {
-                result.Subject = remainingFirstLine;
-                var descriptionLines = lines.Skip(1).ToList();
-                if (descriptionLines.Count > 0)
-                    result.Description = string.Join(Environment.NewLine, descriptionLines);
-            }
-            else if (lines.Length > 1)
-            {
-                result.Subject = string.Join(Environment.NewLine, lines.Skip(1));
-            }
-        }
-        else
-        {
-            if (lines.Length == 1)
-                result.Subject = firstLine;
-            else
-            {
-                result.Subject = firstLine;
-                result.Description = string.Join(Environment.NewLine, lines.Skip(1));
-            }
-        }
-
-        return result;
-    }
 
     private EventData ParseEventBlock(string block, DateOnly date)
     {
