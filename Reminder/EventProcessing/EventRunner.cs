@@ -1,4 +1,4 @@
-﻿using ReminderApp.DateTimeProviding;
+using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing.Senders;
@@ -9,6 +9,14 @@ namespace ReminderApp.EventProcessing;
 
 public class EventRunner : IEventRunner
 {
+    // В Debug - 5 секунд, в Release - 60 секунд
+    private const int LoopDelayMs =
+#if DEBUG
+        5_000;
+#else
+        60_000;
+#endif
+
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IEventReader _eventReader;
     private readonly IDigestSender _digestSender;
@@ -42,7 +50,8 @@ public class EventRunner : IEventRunner
         await _digestSender.InitializeAsync();
         await _reminderSender.InitializeAsync();
 
-        Console.WriteLine("▶️ EventRunner запущен. Проверка каждую минуту.");
+        var intervalSec = LoopDelayMs / 1000;
+        Console.WriteLine($"▶️ EventRunner запущен. Проверка каждые {intervalSec} сек.");
 
         _ = RunLoopAsync(_cts.Token);
     }
@@ -75,7 +84,7 @@ public class EventRunner : IEventRunner
 
             try
             {
-                await Task.Delay(60_000, ct); // 1 минута
+                await Task.Delay(LoopDelayMs, ct);
             }
             catch (OperationCanceledException)
             {
