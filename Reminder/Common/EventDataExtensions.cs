@@ -1,4 +1,4 @@
-﻿namespace ReminderApp.Common;
+namespace ReminderApp.Common;
 
 public static class EventDataExtensions
 {
