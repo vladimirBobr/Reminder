@@ -13,11 +13,7 @@ public class EventOutputPrinter : IEventOutputPrinter
 
             if (!_seenEvents.Contains(eventKey))
             {
-                var timeStr = eventData.Date.HasValue
-                    ? eventData.Date.Value.ToDateTime(eventData.Time ?? TimeOnly.MinValue).ToString("dd.MM.yyyy HH:mm")
-                    : eventData.Time.HasValue
-                        ? eventData.Time.Value.ToString("HH:mm")
-                        : "без даты и времени";
+                var timeStr = eventData.Date.ToDateTime(eventData.Time ?? TimeOnly.MinValue).ToString("dd.MM.yyyy HH:mm");
 
                 Console.WriteLine($"📅 Новое событие: {timeStr} {eventData.Subject}");
                 if (eventData.Description != null)

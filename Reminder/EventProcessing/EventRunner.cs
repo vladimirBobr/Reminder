@@ -1,3 +1,4 @@
+using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.EventOutput;
@@ -100,7 +101,7 @@ public class EventRunner : IEventRunner
             {
                 _notifier.Notify(eventData);
 
-                var notifyKey = $"notify-{eventData.Time:yyyyMMddHHmmss}-{eventData.Subject}";
+                var notifyKey = eventData.GetKey();
                 processed[notifyKey] = now;
 
                 await _fileStorage.SaveProcessedAsync(ProcessedFilePath, processed);

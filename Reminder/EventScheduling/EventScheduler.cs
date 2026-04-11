@@ -25,18 +25,7 @@ public class EventScheduler : IEventScheduler
     }
     private bool IsEventDue(EventData eventData, DateTime now)
     {
-        if (eventData.Date.HasValue)
-        {
-            var eventDateTime = eventData.Date.Value.ToDateTime(eventData.Time ?? TimeOnly.MinValue);
-            return eventDateTime <= now;
-        }
-
-        if (eventData.Time.HasValue)
-        {
-            var todayEventTime = DateTime.Today.Add(eventData.Time.Value.ToTimeSpan());
-            return todayEventTime <= now;
-        }
-
-        return false;
+        var eventDateTime = eventData.Date.ToDateTime(eventData.Time ?? TimeOnly.MinValue);
+        return eventDateTime <= now;
     }
 }
