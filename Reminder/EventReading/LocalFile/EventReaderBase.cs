@@ -8,7 +8,7 @@ namespace ReminderApp.EventReading.LocalFile;
 /// </summary>
 public abstract class EventReaderBase : IEventReader
 {
-    protected readonly Parser Parser = new();
+    protected readonly FileParser Parser = new();
 
     public async Task<List<EventData>> ReadEventsAsync()
     {
