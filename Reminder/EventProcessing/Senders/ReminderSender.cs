@@ -1,4 +1,4 @@
-using ReminderApp.Common;
+﻿using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.FileStorage;
@@ -7,7 +7,6 @@ namespace ReminderApp.EventProcessing.Senders;
 
 public class ReminderSender : IReminderSender
 {
-    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IFileStorage _fileStorage;
     private readonly INotifier _notifier;
     private readonly int _remindMinutesBefore;
@@ -22,7 +21,6 @@ public class ReminderSender : IReminderSender
         INotifier notifier,
         int remindMinutesBefore = 60)
     {
-        _dateTimeProvider = dateTimeProvider;
         _fileStorage = fileStorage;
         _notifier = notifier;
         _remindMinutesBefore = remindMinutesBefore;
@@ -50,8 +48,9 @@ public class ReminderSender : IReminderSender
             var eventTime = evt.Date.ToDateTime(evt.Time!.Value);
             var minutesUntilEvent = (eventTime - now).TotalMinutes;
 
-            // Если до события 45-60 минут (окно для отправки)
-            if (minutesUntilEvent >= 45 && minutesUntilEvent <= _remindMinutesBefore + 5)
+            // Отправляем если до события <= 60 минут (и оно ещё не началось)
+            // Это покрывает: обычный случай (за час) и случай когда сервис лежал
+            if (minutesUntilEvent > 0 && minutesUntilEvent <= _remindMinutesBefore)
             {
                 var reminderKey = evt.GetKey();
 

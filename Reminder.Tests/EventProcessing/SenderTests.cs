@@ -185,4 +185,60 @@ public class ReminderSenderTests
         // Assert
         Assert.Null(notifier.LastNotifiedMessage);
     }
+
+    [Fact]
+    public async Task SendIfNeededAsync_WhenServiceWasDown_SendsReminder()
+    {
+        // Arrange - 10:59, событие в 11:00 (через 1 минуту - сервис лежал)
+        var now = new DateTime(2026, 4, 11, 10, 59, 0);
+        
+        var events = new List<EventData>
+        {
+            new()
+            {
+                Date = new DateOnly(2026, 4, 11),
+                Time = new TimeOnly(11, 0),
+                Subject = "Срочная встреча"
+            }
+        };
+
+        var notifier = new TestNotifier();
+        var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
+        await sender.InitializeAsync();
+
+        // Act
+        await sender.SendIfNeededAsync(events, now);
+
+        // Assert - должно отправить, т.к. сервис был недоступен
+        Assert.NotNull(notifier.LastNotifiedMessage);
+        Assert.Contains("Срочная встреча", notifier.LastNotifiedMessage);
+        Assert.Contains("1 минут", notifier.LastNotifiedMessage);
+    }
+
+    [Fact]
+    public async Task SendIfNeededAsync_WhenEventAlreadyStarted_DoesNotSend()
+    {
+        // Arrange - 11:01, событие в 11:00 (уже началось)
+        var now = new DateTime(2026, 4, 11, 11, 1, 0);
+        
+        var events = new List<EventData>
+        {
+            new()
+            {
+                Date = new DateOnly(2026, 4, 11),
+                Time = new TimeOnly(11, 0),
+                Subject = "Встреча"
+            }
+        };
+
+        var notifier = new TestNotifier();
+        var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
+        await sender.InitializeAsync();
+
+        // Act
+        await sender.SendIfNeededAsync(events, now);
+
+        // Assert
+        Assert.Null(notifier.LastNotifiedMessage);
+    }
 }

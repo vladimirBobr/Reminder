@@ -1,4 +1,4 @@
-using ReminderApp.Common;
+﻿using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.FileStorage;
@@ -7,7 +7,6 @@ namespace ReminderApp.EventProcessing.Senders;
 
 public class DigestSender : IDigestSender
 {
-    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IFileStorage _fileStorage;
     private readonly INotifier _notifier;
     private readonly int _digestHour;
@@ -21,7 +20,6 @@ public class DigestSender : IDigestSender
         INotifier notifier,
         int digestHour = 7)
     {
-        _dateTimeProvider = dateTimeProvider;
         _fileStorage = fileStorage;
         _notifier = notifier;
         _digestHour = digestHour;

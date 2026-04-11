@@ -1,4 +1,4 @@
-using ReminderApp.DateTimeProviding;
+﻿using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing.Senders;
@@ -10,10 +10,7 @@ namespace ReminderApp.EventProcessing;
 public class EventRunner : IEventRunner
 {
     private readonly IDateTimeProvider _dateTimeProvider;
-    private readonly IFileStorage _fileStorage;
     private readonly IEventReader _eventReader;
-    private readonly INotifier _notifier;
-    private readonly IEventOutputPrinter _eventPrinter;
     private readonly IDigestSender _digestSender;
     private readonly IReminderSender _reminderSender;
     private CancellationTokenSource? _cts;
@@ -29,10 +26,7 @@ public class EventRunner : IEventRunner
         IReminderSender reminderSender)
     {
         _dateTimeProvider = dateTimeProvider;
-        _fileStorage = fileStorage;
         _eventReader = eventReader;
-        _notifier = notifier;
-        _eventPrinter = eventPrinter;
         _digestSender = digestSender;
         _reminderSender = reminderSender;
     }
