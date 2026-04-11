@@ -1,0 +1,116 @@
+using ReminderApp.Common;
+using ReminderApp.DateTimeProviding;
+using ReminderApp.EventNotification;
+using ReminderApp.FileStorage;
+
+namespace ReminderApp.EventProcessing.Senders;
+
+public class ReminderScheduler : IReminderScheduler
+{
+    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IFileStorage _fileStorage;
+    private readonly INotifier _notifier;
+    private readonly int _remindMinutesBefore;
+
+    // Кэш отправленных напоминаний (ключ = "yyyy-MM-dd HH:mm-Subject")
+    private readonly HashSet<string> _sentReminders = new();
+    private const string SentRemindersKey = "sent_reminders";
+
+    public ReminderScheduler(
+        IDateTimeProvider dateTimeProvider,
+        IFileStorage fileStorage,
+        INotifier notifier,
+        int remindMinutesBefore = 60)
+    {
+        _dateTimeProvider = dateTimeProvider;
+        _fileStorage = fileStorage;
+        _notifier = notifier;
+        _remindMinutesBefore = remindMinutesBefore;
+    }
+
+    /// <summary>
+    /// Загружает отправленные напоминания (вызывается при старте)
+    /// </summary>
+    public async Task InitializeAsync()
+    {
+        await LoadSentRemindersAsync();
+    }
+
+    public async Task SendIfNeededAsync(List<EventData> events, DateTime now)
+    {
+        var today = DateOnly.FromDateTime(now);
+
+        // Фильтруем: события на сегодня, с указанием времени
+        var todayEvents = events
+            .Where(e => e.Date == today && e.Time.HasValue)
+            .ToList();
+
+        foreach (var evt in todayEvents)
+        {
+            var eventTime = evt.Date.ToDateTime(evt.Time!.Value);
+            var minutesUntilEvent = (eventTime - now).TotalMinutes;
+
+            // Если до события 45-60 минут (окно для отправки)
+            if (minutesUntilEvent >= 45 && minutesUntilEvent <= _remindMinutesBefore + 5)
+            {
+                var reminderKey = evt.GetKey();
+
+                // Если ещё не отправляли
+                if (!_sentReminders.Contains(reminderKey))
+                {
+                    await SendReminderAsync(evt, (int)minutesUntilEvent);
+                    _sentReminders.Add(reminderKey);
+                    await SaveSentRemindersAsync();
+                }
+            }
+        }
+    }
+
+    private async Task SendReminderAsync(EventData evt, int minutesUntil)
+    {
+        var timeStr = evt.Time?.ToString("HH:mm") ?? "";
+        var message = $"🔔 Через {minutesUntil} минут: {timeStr} - {evt.Subject}";
+
+        if (!string.IsNullOrEmpty(evt.Description))
+        {
+            message += $"\n{evt.Description}";
+        }
+
+        _notifier.Notify(message);
+        Console.WriteLine($"✅ Напоминание отправлено: {evt.Subject}");
+    }
+
+    private async Task LoadSentRemindersAsync()
+    {
+        try
+        {
+            var data = await _fileStorage.LoadAsync(SentRemindersKey);
+            if (!string.IsNullOrEmpty(data))
+            {
+                var keys = data.Split(';', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var key in keys)
+                {
+                    _sentReminders.Add(key);
+                }
+            }
+            Console.WriteLine($"📋 Загружено {_sentReminders.Count} напоминаний");
+        }
+        catch
+        {
+            // Игнорируем ошибки
+        }
+    }
+
+    private async Task SaveSentRemindersAsync()
+    {
+        try
+        {
+            var data = string.Join(";", _sentReminders);
+            await _fileStorage.SaveAsync(SentRemindersKey, data);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Не удалось сохранить напоминания: {ex.Message}");
+        }
+    }
+}

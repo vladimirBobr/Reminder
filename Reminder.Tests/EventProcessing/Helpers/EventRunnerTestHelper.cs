@@ -2,20 +2,19 @@ using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.EventOutput;
-using ReminderApp.EventProcessing;
+using ReminderApp.EventProcessing.Senders;
 
 namespace Reminder.Tests.EventProcessing.Helpers;
 
 public static class EventRunnerTestHelper
 {
-    public static EventRunner CreateEventRunner(
+    public static DigestSender CreateDigestSender(
         DateTime? now = null,
         List<EventData>? events = null,
         INotifier? notifier = null,
         InMemoryFileStorage? fileStorage = null)
     {
         now ??= DateTime.Now;
-        events ??= new List<EventData>();
         notifier ??= new TestNotifier();
         fileStorage ??= new InMemoryFileStorage();
 
@@ -23,17 +22,24 @@ public static class EventRunnerTestHelper
         dateTimeProvider.SetNow(now.Value);
 
         var eventReader = new TestEventReader();
-        eventReader.SetEvents(events);
+        eventReader.SetEvents(events ?? new List<EventData>());
 
-        var printer = new EventOutputPrinter();
+        return new DigestSender(dateTimeProvider, fileStorage, notifier);
+    }
 
-        var eventRunner = new EventRunner(
-            dateTimeProvider,
-            fileStorage,
-            eventReader,
-            notifier,
-            printer);
+    public static ReminderScheduler CreateReminderScheduler(
+        DateTime? now = null,
+        List<EventData>? events = null,
+        INotifier? notifier = null,
+        InMemoryFileStorage? fileStorage = null)
+    {
+        now ??= DateTime.Now;
+        notifier ??= new TestNotifier();
+        fileStorage ??= new InMemoryFileStorage();
 
-        return eventRunner;
+        var dateTimeProvider = new MockDateTimeProvider();
+        dateTimeProvider.SetNow(now.Value);
+
+        return new ReminderScheduler(dateTimeProvider, fileStorage, notifier);
     }
 }
