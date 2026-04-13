@@ -35,11 +35,6 @@ internal class Program
             reminderSender);
 
         await runner.StartAsync();
-
-        Console.WriteLine("Нажмите любую клавишу для остановки...");
-        Console.ReadKey();
-
-        runner.Stop();
-        Console.WriteLine("✅ Работа завершена.");
+        await Task.Delay(-1);
     }
 }
