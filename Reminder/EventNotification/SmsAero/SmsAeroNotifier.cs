@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -11,6 +11,7 @@ public class SmsAeroNotifier : INotifier
     private readonly string _apiToken;
     private readonly string _sign;
     private const string BASE_URL = "https://gate.smsaero.ru/v2/sms/send";
+    private const string SIGN = "SMS Aero";
 
     public SmsAeroNotifier(ISmsAeroCredentialsProvider credentialsProvider)
     {
@@ -49,15 +50,15 @@ public class SmsAeroNotifier : INotifier
 
         try
         {
-            var response = SendSms(phoneNumber, message);
+            var error = SendSms(phoneNumber, message);
             
-            if (response.Success)
+            if (string.IsNullOrEmpty(error))
             {
                 Console.WriteLine($"✅ SMS отправлен через SMSAero на {phoneNumber}");
             }
             else
             {
-                Console.WriteLine($"❌ SMSAero API error: {response.ErrorMessage}");
+                Console.WriteLine($"❌ SMSAero API error: {error}");
             }
         }
         catch (Exception ex)
@@ -66,11 +67,13 @@ public class SmsAeroNotifier : INotifier
         }
     }
 
-    private SmsAeroResponse SendSms(string number, string text)
+    private string? SendSms(string number, string text)
     {
         var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_email}:{_apiToken}"));
-        
-        var request = new HttpRequestMessage(HttpMethod.Post, $"{BASE_URL}?number={Uri.EscapeDataString(number)}&text={Uri.EscapeDataString(text)}&sign={Uri.EscapeDataString(_sign)}");
+
+        var url = $"{BASE_URL}?text={Uri.EscapeDataString(text)}&sign={Uri.EscapeDataString(SIGN)}&number={Uri.EscapeDataString(number)}";
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+
         request.Headers.Add("Authorization", $"Basic {credentials}");
         request.Headers.Add("Accept", "application/json");
 
@@ -80,11 +83,14 @@ public class SmsAeroNotifier : INotifier
         
         try
         {
-            return JsonSerializer.Deserialize<SmsAeroResponse>(content) ?? new SmsAeroResponse { Success = false, ErrorMessage = "Failed to deserialize response" };
+            var responseJson = JsonSerializer.Deserialize<SmsAeroResponse>(content);
+            return responseJson?.Success == true
+                ? null
+                : content;
         }
-        catch
+        catch(Exception ex)
         {
-            return new SmsAeroResponse { Success = false, ErrorMessage = content };
+            return ex.ToString();
         }
     }
 
@@ -98,25 +104,4 @@ public class SmsAeroResponse
 {
     [JsonPropertyName("success")]
     public bool Success { get; set; }
-    
-    [JsonPropertyName("error")]
-    public string? ErrorMessage { get; set; }
-    
-    [JsonPropertyName("data")]
-    public SmsAeroResponseData? Data { get; set; }
-}
-
-public class SmsAeroResponseData
-{
-    [JsonPropertyName("id")]
-    public string? MessageId { get; set; }
-    
-    [JsonPropertyName("number")]
-    public string? Number { get; set; }
-    
-    [JsonPropertyName("text")]
-    public string? Text { get; set; }
-    
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
-}
+}    
