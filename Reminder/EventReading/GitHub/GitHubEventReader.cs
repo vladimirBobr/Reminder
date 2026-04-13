@@ -1,7 +1,8 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
-using ReminderApp.EventReading.LocalFile;
 using ReminderApp.EventReading.GitHub;
+using ReminderApp.EventReading.LocalFile;
+using Serilog;
 
 namespace ReminderApp.EventReading.GitHub;
 
@@ -60,8 +61,8 @@ public class GitHubEventReader : EventReaderBase
             
             // Decode base64 content
             var decodedContent = Encoding.UTF8.GetString(Convert.FromBase64String(githubContent.content));
-            
-            Console.WriteLine($"📄 Read content from GitHub: {_owner}/{_repo}/{_filePath}");
+
+            Log.Information($"📄 Read content from GitHub: {_owner}/{_repo}/{_filePath}");
             
             return decodedContent;
         }

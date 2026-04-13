@@ -1,14 +1,11 @@
-using ReminderApp.DateTimeProviding;
+﻿using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification.ConsoleOutput;
-using ReminderApp.EventNotification.SmsAero;
-using ReminderApp.EventNotification.SmsRu;
-using ReminderApp.EventNotification.Telegram;
-using ReminderApp.EventNotification.YandexMail;
 using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventProcessing.Senders;
 using ReminderApp.EventReading.GitHub;
 using ReminderApp.FileStorage;
+using Serilog;
 
 namespace ReminderApp;
 
@@ -16,7 +13,13 @@ internal class Program
 {
     static async Task Main(string[] args)
     {
-        Console.WriteLine("▶️ Starting Reminder");
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .WriteTo.Console()
+            .WriteTo.Seq("http://localhost:5341")
+            .CreateLogger();
+
+        Log.Information("▶️ Starting Reminder");
 
         var dateTimeProvider = new DateTimeProvider();
         var fileStorage = new JsonFileStorage();
