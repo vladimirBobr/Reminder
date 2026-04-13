@@ -53,7 +53,7 @@ jobs:
           timeout 10 ssh root@80.66.81.93 "echo 'Connected'"
           
           echo "Copying files..."
-          tar -czf - -C ./publish . | timeout 30 ssh root@80.66.81.93 "tar -xzf - -C /opt/smsapp/"
+          tar -czf - -C ./publish . | timeout 300 ssh root@80.66.81.93 "tar -xzf - -C /opt/smsapp/"
           
           echo "Restarting service..."
           ssh root@80.66.81.93 "systemctl restart smsapp.service"
