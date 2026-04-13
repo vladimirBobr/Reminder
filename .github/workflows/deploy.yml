@@ -27,6 +27,6 @@ jobs:
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H 80.66.81.93 >> ~/.ssh/known_hosts
-          scp -r ./publish/* root@80.66.81.93:/opt/smsapp/
-          ssh root@80.66.81.93 "systemctl restart smsapp.service"
+          
+          scp -r -o StrictHostKeyChecking=accept-new ./publish/* root@80.66.81.93:/opt/smsapp/
+          ssh -o StrictHostKeyChecking=accept-new root@80.66.81.93 "systemctl restart smsapp.service"
