@@ -1,4 +1,4 @@
-using ReminderApp.Common;
+﻿using ReminderApp.Common;
 
 namespace ReminderApp.EventNotification.YandexMail;
 
@@ -26,12 +26,11 @@ public class YandexMailCredentialsProvider :
 
     protected override YandexMailSettings RequestFromConsole()
     {
-        Console.WriteLine("Настройка Yandex Mail:");
-        Console.WriteLine("Для получения пароля приложения:");
-        Console.WriteLine("1. Перейдите на https://id.yandex.ru/security");
-        Console.WriteLine("2. Выберите 'Пароли приложений' -> 'Создать пароль'");
-        Console.WriteLine("3. Назовите приложение (например, 'Reminder') и создайте пароль");
-        Console.WriteLine();
+        Log.Information("Настройка Yandex Mail:");
+        Log.Information("Для получения пароля приложения:");
+        Log.Information("1. Перейдите на https://id.yandex.ru/security");
+        Log.Information("2. Выберите 'Пароли приложений' -> 'Создать пароль'");
+        Log.Information("3. Назовите приложение (например, 'Reminder') и создайте пароль");
         
         Console.Write("Email (полный адрес @yandex.ru): ");
         var email = Console.ReadLine()?.Trim() ?? "";
@@ -51,7 +50,7 @@ public class YandexMailCredentialsProvider :
         Console.Write("Email получателя (куда отправлять уведомления): ");
         var toEmail = Console.ReadLine()?.Trim();
 
-        Console.WriteLine("✅ Yandex Mail настройки сохранены");
+        Log.Information("✅ Yandex Mail настройки сохранены");
 
         return new YandexMailSettings 
         { 

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace ReminderApp.EventNotification.SmsRu;
@@ -38,7 +38,7 @@ public class SmsRuNotifier : INotifier
         
         if (string.IsNullOrEmpty(phoneNumber))
         {
-            Console.WriteLine("❌ SMS.RU: Phone number not specified");
+            Log.Information("❌ SMS.RU: Phone number not specified");
             return;
         }
 
@@ -48,16 +48,16 @@ public class SmsRuNotifier : INotifier
             
             if (response.Status == "OK")
             {
-                Console.WriteLine($"✅ SMS отправлен через SMS.RU на {phoneNumber}");
+                Log.Information($"✅ SMS отправлен через SMS.RU на {phoneNumber}");
             }
             else
             {
-                Console.WriteLine($"❌ SMS.RU API error: {response.StatusText}");
+                Log.Information($"❌ SMS.RU API error: {response.StatusText}");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Ошибка отправки SMS: {ex.Message}");
+            Log.Information($"❌ Ошибка отправки SMS: {ex.Message}");
         }
     }
 

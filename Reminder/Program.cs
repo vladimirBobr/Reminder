@@ -5,13 +5,12 @@ using ReminderApp.EventProcessing;
 using ReminderApp.EventProcessing.Senders;
 using ReminderApp.EventReading.GitHub;
 using ReminderApp.FileStorage;
-using Serilog;
 
 namespace ReminderApp;
 
 internal class Program
 {
-    static async Task Main(string[] args)
+    static async Task Main()
     {
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
@@ -24,8 +23,6 @@ internal class Program
         var dateTimeProvider = new DateTimeProvider();
         var fileStorage = new JsonFileStorage();
         var notifier = new YandexMailNotifier(new YandexMailCredentialsProvider()); // или SmsRuNotifier, TelegramNotifier, YandexMailNotifier
-
-        notifier.Notify("test123");
 
         // Создаём отправителей
         var digestSender = new DigestSender(dateTimeProvider, fileStorage, notifier);

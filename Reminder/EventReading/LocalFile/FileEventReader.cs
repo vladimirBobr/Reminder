@@ -18,7 +18,7 @@ public class FileEventReader : EventReaderBase
     {
         if (!File.Exists(_filePath))
         {
-            Console.WriteLine($"❌ File {_filePath} not found.");
+            Log.Information($"❌ File {_filePath} not found.");
             return null;
         }
 

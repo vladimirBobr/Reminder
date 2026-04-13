@@ -1,4 +1,4 @@
-using ReminderApp.Common;
+﻿using ReminderApp.Common;
 
 namespace ReminderApp.EventOutput;
 public class EventOutputPrinter : IEventOutputPrinter
@@ -15,10 +15,10 @@ public class EventOutputPrinter : IEventOutputPrinter
             {
                 var timeStr = eventData.Date.ToDateTime(eventData.Time ?? TimeOnly.MinValue).ToString("dd.MM.yyyy HH:mm");
 
-                Console.WriteLine($"📅 Новое событие: {timeStr} {eventData.Subject}");
+                Log.Information($"📅 Новое событие: {timeStr} {eventData.Subject}");
                 if (eventData.Description != null)
                 {
-                    Console.WriteLine($"📝 {eventData.Description}");
+                    Log.Information($"📝 {eventData.Description}");
                 }
 
                 _seenEvents.Add(eventKey);

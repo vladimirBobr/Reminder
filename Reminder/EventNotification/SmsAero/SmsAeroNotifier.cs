@@ -44,7 +44,7 @@ public class SmsAeroNotifier : INotifier
         
         if (string.IsNullOrEmpty(phoneNumber))
         {
-            Console.WriteLine("❌ SMSAero: Phone number not specified");
+            Log.Information("❌ SMSAero: Phone number not specified");
             return;
         }
 
@@ -54,16 +54,16 @@ public class SmsAeroNotifier : INotifier
             
             if (string.IsNullOrEmpty(error))
             {
-                Console.WriteLine($"✅ SMS отправлен через SMSAero на {phoneNumber}");
+                Log.Information($"✅ SMS отправлен через SMSAero на {phoneNumber}");
             }
             else
             {
-                Console.WriteLine($"❌ SMSAero API error: {error}");
+                Log.Information($"❌ SMSAero API error: {error}");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Ошибка отправки SMS: {ex.Message}");
+            Log.Information($"❌ Ошибка отправки SMS: {ex.Message}");
         }
     }
 

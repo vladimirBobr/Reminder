@@ -1,4 +1,4 @@
-using ReminderApp.DateTimeProviding;
+﻿using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing.Senders;
@@ -51,7 +51,7 @@ public class EventRunner : IEventRunner
         await _reminderSender.InitializeAsync();
 
         var intervalSec = LoopDelayMs / 1000;
-        Console.WriteLine($"▶️ EventRunner запущен. Проверка каждые {intervalSec} сек.");
+        Log.Information($"▶️ EventRunner запущен. Проверка каждые {intervalSec} сек.");
 
         _ = RunLoopAsync(_cts.Token);
     }
@@ -60,7 +60,7 @@ public class EventRunner : IEventRunner
     {
         _cts?.Cancel();
         _isRunning = false;
-        Console.WriteLine("⏸️ EventRunner остановлен.");
+        Log.Information("⏸️ EventRunner остановлен.");
     }
 
     private async Task RunLoopAsync(CancellationToken ct)
@@ -79,7 +79,7 @@ public class EventRunner : IEventRunner
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Ошибка: {ex.Message}");
+                Log.Information($"❌ Ошибка: {ex.Message}");
             }
 
             try

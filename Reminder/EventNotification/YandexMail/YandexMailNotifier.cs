@@ -28,7 +28,7 @@ public class YandexMailNotifier : INotifier
     {
         if (string.IsNullOrEmpty(_toEmail))
         {
-            Console.WriteLine("❌ Yandex Mail: Email получателя не указан");
+            Log.Information("❌ Yandex Mail: Email получателя не указан");
             return;
         }
 
@@ -38,12 +38,12 @@ public class YandexMailNotifier : INotifier
             
             if (success)
             {
-                Console.WriteLine($"✅ Email отправлен через Yandex Mail на {_toEmail}");
+                Log.Information($"✅ Email отправлен через Yandex Mail на {_toEmail}");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Ошибка отправки Email: {ex.Message}");
+            Log.Information($"❌ Ошибка отправки Email: {ex.Message}");
         }
     }
 
@@ -75,7 +75,7 @@ public class YandexMailNotifier : INotifier
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Yandex Mail API error: {ex.Message}");
+            Log.Information($"❌ Yandex Mail API error: {ex.Message}");
             return false;
         }
     }

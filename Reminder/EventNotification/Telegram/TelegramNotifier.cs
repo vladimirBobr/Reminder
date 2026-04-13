@@ -1,4 +1,4 @@
-namespace ReminderApp.EventNotification.Telegram;
+﻿namespace ReminderApp.EventNotification.Telegram;
 
 public class TelegramNotifier : INotifier
 {
@@ -35,16 +35,16 @@ public class TelegramNotifier : INotifier
 
             if (!response.IsSuccessStatusCode)
             {
-                Console.WriteLine($"❌ Telegram API error: {response.StatusCode} - {response.ReasonPhrase}");
+                Log.Information($"❌ Telegram API error: {response.StatusCode} - {response.ReasonPhrase}");
             }
             else
             {
-                Console.WriteLine("✅ Уведомление отправлено в Telegram");
+                Log.Information("✅ Уведомление отправлено в Telegram");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Ошибка отправки в Telegram: {ex.Message}");
+            Log.Information($"❌ Ошибка отправки в Telegram: {ex.Message}");
         }
     }
 }

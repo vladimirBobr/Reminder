@@ -1,4 +1,4 @@
-using ReminderApp.Common;
+﻿using ReminderApp.Common;
 
 namespace ReminderApp.EventNotification.SmsRu;
 
@@ -26,14 +26,14 @@ public class SmsRuCredentialsProvider :
 
     protected override SmsRuSettings RequestFromConsole()
     {
-        Console.WriteLine("Настройка SMS.RU:");
+        Log.Information("Настройка SMS.RU:");
         Console.Write("API ID: ");
         var apiId = Console.ReadLine()?.Trim() ?? "";
 
         Console.Write("Номер телефона для уведомлений (в формате 79000000000): ");
         var phoneNumber = Console.ReadLine()?.Trim();
 
-        Console.WriteLine("✅ SMS.RU настройки сохранены");
+        Log.Information("✅ SMS.RU настройки сохранены");
 
         return new SmsRuSettings 
         { 

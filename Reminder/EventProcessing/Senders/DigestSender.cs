@@ -58,15 +58,15 @@ public class DigestSender : IDigestSender
 
         if (todayEvents.Count == 0)
         {
-            Console.WriteLine($"📅 {today:dd.MM.yyyy} - нет событий");
+            Log.Information($"📅 {today:dd.MM.yyyy} - нет событий");
             return;
         }
 
-        Console.WriteLine($"📅 {today:dd.MM.yyyy} - найдено {todayEvents.Count} событий, отправляю Digest...");
+        Log.Information($"📅 {today:dd.MM.yyyy} - найдено {todayEvents.Count} событий, отправляю Digest...");
 
         var digest = BuildDigestMessage(todayEvents);
         _notifier.Notify(digest);
-        Console.WriteLine("✅ Digest отправлен");
+        Log.Information("✅ Digest отправлен");
     }
 
     private string BuildDigestMessage(List<EventData> events)
@@ -113,7 +113,7 @@ public class DigestSender : IDigestSender
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Не удалось сохранить дату Digest: {ex.Message}");
+            Log.Information($"❌ Не удалось сохранить дату Digest: {ex.Message}");
         }
     }
 }

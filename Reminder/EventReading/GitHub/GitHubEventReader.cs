@@ -1,8 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using System.Text;
-using ReminderApp.EventReading.GitHub;
 using ReminderApp.EventReading.LocalFile;
-using Serilog;
 
 namespace ReminderApp.EventReading.GitHub;
 
@@ -44,7 +42,7 @@ public class GitHubEventReader : EventReaderBase
             
             if (!response.IsSuccessStatusCode)
             {
-                Console.WriteLine($"❌ GitHub API error: {response.StatusCode}");
+                Log.Information($"❌ GitHub API error: {response.StatusCode}");
                 return null;
             }
             
@@ -55,7 +53,7 @@ public class GitHubEventReader : EventReaderBase
             
             if (githubContent == null || string.IsNullOrEmpty(githubContent.content))
             {
-                Console.WriteLine("❌ Could not read file content from GitHub.");
+                Log.Information("❌ Could not read file content from GitHub.");
                 return null;
             }
             
@@ -68,7 +66,7 @@ public class GitHubEventReader : EventReaderBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Error fetching from GitHub: {ex.Message}");
+            Log.Information($"❌ Error fetching from GitHub: {ex.Message}");
             return null;
         }
     }

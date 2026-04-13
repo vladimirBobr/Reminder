@@ -76,7 +76,7 @@ public class ReminderSender : IReminderSender
         }
 
         _notifier.Notify(message);
-        Console.WriteLine($"✅ Напоминание отправлено: {evt.Subject}");
+        Log.Information($"✅ Напоминание отправлено: {evt.Subject}");
     }
 
     private async Task LoadSentRemindersAsync()
@@ -92,7 +92,7 @@ public class ReminderSender : IReminderSender
                     _sentReminders.Add(key);
                 }
             }
-            Console.WriteLine($"📋 Загружено {_sentReminders.Count} напоминаний");
+            Log.Information($"📋 Загружено {_sentReminders.Count} напоминаний");
         }
         catch
         {
@@ -109,7 +109,7 @@ public class ReminderSender : IReminderSender
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Не удалось сохранить напоминания: {ex.Message}");
+            Log.Information($"❌ Не удалось сохранить напоминания: {ex.Message}");
         }
     }
 }

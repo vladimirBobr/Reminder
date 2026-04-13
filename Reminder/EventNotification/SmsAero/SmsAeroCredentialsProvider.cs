@@ -1,4 +1,4 @@
-using ReminderApp.Common;
+﻿using ReminderApp.Common;
 
 namespace ReminderApp.EventNotification.SmsAero;
 
@@ -26,7 +26,7 @@ public class SmsAeroCredentialsProvider :
 
     protected override SmsAeroSettings RequestFromConsole()
     {
-        Console.WriteLine("Настройка SMSAero:");
+        Log.Information("Настройка SMSAero:");
         Console.Write("Email: ");
         var email = Console.ReadLine()?.Trim() ?? "";
 
@@ -39,7 +39,7 @@ public class SmsAeroCredentialsProvider :
         Console.Write("Номер телефона для уведомлений (в формате 79000000000): ");
         var phoneNumber = Console.ReadLine()?.Trim();
 
-        Console.WriteLine("✅ SMSAero настройки сохранены");
+        Log.Information("✅ SMSAero настройки сохранены");
 
         return new SmsAeroSettings 
         { 

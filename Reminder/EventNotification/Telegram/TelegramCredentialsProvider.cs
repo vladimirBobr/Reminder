@@ -1,4 +1,4 @@
-using ReminderApp.Common;
+﻿using ReminderApp.Common;
 
 namespace ReminderApp.EventNotification.Telegram;
 
@@ -26,14 +26,14 @@ public class TelegramCredentialsProvider :
 
     protected override TelegramSettings RequestFromConsole()
     {
-        Console.WriteLine("Настройка Telegram:");
+        Log.Information("Настройка Telegram:");
         Console.Write("Bot Token: ");
         var botToken = Console.ReadLine()?.Trim() ?? "";
 
         Console.Write("Chat ID: ");
         var chatId = Console.ReadLine()?.Trim() ?? "";
 
-        Console.WriteLine("✅ Telegram настройки сохранены");
+        Log.Information("✅ Telegram настройки сохранены");
 
         return new TelegramSettings 
         { 
