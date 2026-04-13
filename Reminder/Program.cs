@@ -25,6 +25,8 @@ internal class Program
         var fileStorage = new JsonFileStorage();
         var notifier = new YandexMailNotifier(new YandexMailCredentialsProvider()); // или SmsRuNotifier, TelegramNotifier, YandexMailNotifier
 
+        notifier.Notify("test123");
+
         // Создаём отправителей
         var digestSender = new DigestSender(dateTimeProvider, fileStorage, notifier);
         var reminderSender = new ReminderSender(dateTimeProvider, fileStorage, notifier);
