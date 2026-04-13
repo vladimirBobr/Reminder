@@ -17,7 +17,7 @@ public static class ProxyHelper
         //}
 
 #else
-        
+return null;
 #endif
     }
 }
