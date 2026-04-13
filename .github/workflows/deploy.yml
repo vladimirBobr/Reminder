@@ -1,0 +1,272 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+# =====================================================
+# НАСТРОЙКА СЕКРЕТОВ В GITHUB REPO:
+# 1. Settings -> Secrets and variables -> Actions -> New repository secret
+# 2. Добавь все необходимые секреты:
+#
+# Обязательные:
+#   - VPS_HOST: IP-адрес VPS (например, 192.168.1.100)
+#   - VPS_PORT: SSH порт (обычно 22)
+#   - VPS_USER: пользователь для подключения (root, ubuntu)
+#   - VPS_SSH_KEY: приватный SSH ключ (RSA)
+#
+# Опциональные (для приложения):
+#   - ENCRYPTION_KEY: ключ шифрования credentials
+#   - TELEGRAM_BOT_TOKEN: токен Telegram бота
+#   - SMS_API_KEY: API ключ SMS-сервиса
+#   - YANDEX_MAIL_PASSWORD: пароль от почты
+#   - GITHUB_TOKEN: токен доступа к GitHub (автоматически)
+# =====================================================
+
+env:
+  APP_NAME: reminder
+  DOTNET_VERSION: '9.0'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Get version
+      id: version
+      run: echo "version=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Run tests
+      run: dotnet test --no-build
+
+    - name: Publish
+      run: |
+        dotnet publish Reminder/ReminderApp.csproj \
+          --configuration Release \
+          --output ./publish \
+          --no-build
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: publish
+        path: ./publish
+        retention-days: 7
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: publish
+        path: ./publish
+
+    - name: Deploy to VPS
+      env:
+        VPS_HOST: ${{ secrets.VPS_HOST }}
+        VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        VPS_USER: ${{ secrets.VPS_USER }}
+        VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        
+        # === СЕКРЕТЫ ПРИЛОЖЕНИЯ ===
+        # Они будут записаны в файл /etc/reminder/environment на сервере
+        # Каждый секрет = отдельная строка KEY=VALUE
+        SECRET_ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+        SECRET_TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        SECRET_SMS_API_KEY: ${{ secrets.SMS_API_KEY }}
+        SECRET_YANDEX_MAIL_PASSWORD: ${{ secrets.YANDEX_MAIL_PASSWORD }}
+      run: |
+        # Проверка обязательных переменных
+        if [ -z "$VPS_HOST" ] || [ -z "$VPS_USER" ] || [ -z "$VPS_SSH_KEY" ]; then
+          echo "ERROR: Не настроены обязательные секреты VPS!"
+          echo "Добавь в GitHub Settings -> Secrets and variables -> Actions:"
+          echo "  - VPS_HOST"
+          echo "  - VPS_USER"
+          echo "  - VPS_SSH_KEY"
+          exit 1
+        fi
+        
+        # Создаём временную директорию для ключа
+        mkdir -p ~/.ssh
+        
+        # Записываем SSH ключ
+        echo "$VPS_SSH_KEY" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        
+        # Добавляем known_hosts
+        ssh-keyscan -p ${VPS_PORT} -H ${VPS_HOST} >> ~/.ssh/known_hosts 2>/dev/null
+        ssh-keyscan -H ${VPS_HOST} >> ~/.ssh/known_hosts 2>/dev/null
+        
+        # Выполняем деплой
+        scp -P ${VPS_PORT} -r ./publish/* ${VPS_USER}@${VPS_HOST}:~/app/${APP_NAME}/publish/
+        
+        # Настраиваем secrets на сервере
+        ssh -p ${VPS_PORT} ${VPS_USER}@${VPS_HOST} << 'EOF'
+          set -e
+          
+          APP_NAME="${{ env.APP_NAME }}"
+          
+          # Останавливаем сервис
+          if systemctl is-active --quiet ${APP_NAME} 2>/dev/null; then
+            echo "Останавливаю сервис..."
+            sudo systemctl stop ${APP_NAME} || true
+          fi
+          
+          # Создаём директории
+          mkdir -p ~/app/${APP_NAME}/logs
+          mkdir -p ~/app/${APP_NAME}/data
+          mkdir -p ~/.reminder/keys
+          mkdir -p /etc/reminder
+          
+          # === НАСТРОЙКА CREDENTIALS ===
+          # Приложение хранит зашифрованные настройки в ~/.reminder/
+          # При первом запуске оно запрашивает данные в консоли
+          # Для автоматического деплоя создадим конфиг заранее
+          
+          # Если есть GitHub credentials в secrets - создаём конфиг
+          if [ -n "$SECRET_GITHUB_TOKEN" ]; then
+            echo "Создаю GitHub конфиг..."
+            
+            # Токен нужен для чтения приватных репо или с высоким лимитом
+            GITHUB_TOKEN="$SECRET_GITHUB_TOKEN"
+            
+            # URL файла с событиями (по умолчанию или из secret)
+            GITHUB_URL="${SECRET_GITHUB_URL:-https://github.com/$(echo $GITHUB_REPO | cut -d'/' -f1,2)/blob/main/events.txt}"
+            
+            cat > ~/.reminder/github-config.json << 'CONFIG'
+            {
+              "Url": "GITHUB_URL_PLACEHOLDER",
+              "Token": "GITHUB_TOKEN_PLACEHOLDER",
+              "Owner": "OWNER_PLACEHOLDER",
+              "Repo": "REPO_PLACEHOLDER",
+              "FilePath": "FILEPATH_PLACEHOLDER",
+              "Branch": "BRANCH_PLACEHOLDER"
+            }
+            CONFIG
+            
+            # Заменяем плейсхолдеры
+            sed -i "s|GITHUB_URL_PLACEHOLDER|$GITHUB_URL|g" ~/.reminder/github-config.json
+            sed -i "s|GITHUB_TOKEN_PLACEHOLDER|$GITHUB_TOKEN|g" ~/.reminder/github-config.json
+          fi
+          
+          # Записываем secrets для сервиса в файл
+          # Эти переменные будут загружены через EnvironmentFile в systemd
+          cat > /etc/reminder/environment << 'ENVFILE'
+          # Автоматически сгенерировано GitHub Actions
+          # Не редактируй вручную - перезапишется при следующем деплое
+          ENVFILE
+          
+          # Добавляем каждый секрет если он установлен
+          if [ -n "$SECRET_ENCRYPTION_KEY" ]; then
+            echo "REMINDER_ENCRYPTION_KEY=$SECRET_ENCRYPTION_KEY" >> /etc/reminder/environment
+          fi
+          if [ -n "$SECRET_TELEGRAM_BOT_TOKEN" ]; then
+            echo "REMINDER_TELEGRAM_BOT_TOKEN=$SECRET_TELEGRAM_BOT_TOKEN" >> /etc/reminder/environment
+          fi
+          if [ -n "$SECRET_SMS_API_KEY" ]; then
+            echo "REMINDER_SMS_API_KEY=$SECRET_SMS_API_KEY" >> /etc/reminder/environment
+          fi
+          if [ -n "$SECRET_YANDEX_MAIL_PASSWORD" ]; then
+            echo "REMINDER_YANDEX_MAIL_PASSWORD=$SECRET_YANDEX_MAIL_PASSWORD" >> /etc/reminder/environment
+          fi
+          
+          chmod 600 /etc/reminder/environment
+          chmod -R 700 ~/.reminder
+          
+          # Создаём/обновляем service файл
+          cat > /tmp/${APP_NAME}.service << 'SERVICE'
+          [Unit]
+          Description=Reminder Application
+          After=network.target
+          
+          [Service]
+          WorkingDirectory=%h/app/reminder/publish
+          ExecStart=/usr/bin/dotnet %h/app/reminder/publish/ReminderApp.dll
+          Restart=always
+          RestartSec=10
+          User=%u
+          EnvironmentFile=/etc/reminder/environment
+          Environment="DOTNET_RUNNING_IN_CONTAINER=false"
+          Environment="ASPNETCORE_ENVIRONMENT=Production"
+          
+          [Install]
+          WantedBy=multi-user.target
+          SERVICE
+          
+          sudo cp /tmp/${APP_NAME}.service /etc/systemd/system/
+          sudo systemctl daemon-reload
+          
+          # Запускаем
+          echo "Запускаю приложение..."
+          sudo systemctl start ${APP_NAME}
+          sudo systemctl enable ${APP_NAME}
+          
+          # Проверяем
+          sleep 3
+          if systemctl is-active --quiet ${APP_NAME}; then
+            echo "✓ Приложение запущено успешно!"
+            systemctl status ${APP_NAME} --no-pager
+          else
+            echo "✗ Ошибка запуска!"
+            journalctl -u ${APP_NAME} -n 30 --no-pager
+            exit 1
+          fi
+        EOF
+        
+        # Очищаем ключ
+        rm -f ~/.ssh/id_rsa
+
+    - name: Verify deployment
+      if: success()
+      env:
+        VPS_HOST: ${{ secrets.VPS_HOST }}
+        VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        VPS_USER: ${{ secrets.VPS_USER }}
+      run: |
+        echo "=========================================="
+        echo "✓ Деплой завершён успешно!"
+        echo "=========================================="
+        echo ""
+        echo "Проверь работу приложения:"
+        echo "  ssh -p $VPS_PORT $VPS_USER@$VPS_HOST"
+        echo "  sudo systemctl status $APP_NAME"
+        echo "  sudo journalctl -u $APP_NAME -f"
+        echo ""
+        echo "Логи приложения:"
+        echo "  tail -f ~/app/$APP_NAME/logs/"
+
+    - name: Show failure details
+      if: failure()
+      run: |
+        echo "=========================================="
+        echo "✗ Деплой не удался!"
+        echo "=========================================="
+        echo ""
+        echo "Проверь:"
+        echo "1. Secrets в GitHub: Settings -> Secrets and variables -> Actions"
+        echo "2. Доступность VPS"
+        echo "3. Установлен ли .NET на VPS: запусти 'dotnet --version' на сервере"
+        echo ""
+        echo "Логи на сервере:"
+        echo "  ssh -p ${{ secrets.VPS_PORT || '22' }} ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+        echo "  sudo journalctl -u $APP_NAME -n 50"
