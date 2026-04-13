@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Mail;
 
 namespace ReminderApp.EventNotification.YandexMail;
@@ -55,6 +55,7 @@ public class YandexMailNotifier : INotifier
             {
                 EnableSsl = _enableSsl,
                 Credentials = new NetworkCredential(_email, _password),
+                UseDefaultCredentials = false,
                 Timeout = 30000
             };
 
