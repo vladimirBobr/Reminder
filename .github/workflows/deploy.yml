@@ -1,12 +1,14 @@
-name: Deploy to VPS
+name: CI/CD
 
 on:
   push:
     branches: [main]
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      artifact-name: publish-${{ github.run_id }}
     
     steps:
       - name: Checkout code
@@ -20,29 +22,41 @@ jobs:
       - name: Publish app for Linux
         run: dotnet publish Reminder/ReminderApp.csproj -c Release -r linux-x64 --self-contained false -o ./publish
       
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish
+          path: ./publish
+          retention-days: 7
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: publish
+          path: ./publish
+      
       - name: Deploy to VPS
         env:
           SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
-          # Создаём SSH ключ
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          
-          # Добавляем сервер в known_hosts
           ssh-keyscan -H 80.66.81.93 >> ~/.ssh/known_hosts 2>&1
           
-          # Проверяем подключение
           echo "Testing connection..."
-          timeout 10 ssh root@80.66.81.93 "echo 'Connected successfully'"
+          timeout 10 ssh root@80.66.81.93 "echo 'Connected'"
           
-          # Копируем файлы через tar (надёжнее чем scp)
           echo "Copying files..."
-          tar -czf - -C ./publish . | timeout 30 ssh root@80.66.81.93 "tar -xzf - -C /opt/smsapp/"
+          tar -czf - -C ./publish . | timeout 300 ssh root@80.66.81.93 "tar -xzf - -C /opt/smsapp/"
           
-          # Перезапускаем сервис
           echo "Restarting service..."
           ssh root@80.66.81.93 "systemctl restart smsapp.service"
           
-          # Проверяем статус
+          echo "Checking status..."
           ssh root@80.66.81.93 "systemctl status smsapp.service --no-pager"
