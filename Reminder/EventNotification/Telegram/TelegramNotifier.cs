@@ -25,13 +25,13 @@ public class TelegramNotifier : INotifier
         _httpClient.BaseAddress = new Uri($"https://api.telegram.org/bot{_botToken}/");
     }
 
-    public void Notify(string message)
+    public async Task NotifyAsync(string message)
     {
         var url = $"sendMessage?chat_id={_chatId}&text={Uri.EscapeDataString(message)}&parse_mode=Markdown";
 
         try
         {
-            var response = _httpClient.GetAsync(url).Result;
+            var response = await _httpClient.GetAsync(url);
 
             if (!response.IsSuccessStatusCode)
             {

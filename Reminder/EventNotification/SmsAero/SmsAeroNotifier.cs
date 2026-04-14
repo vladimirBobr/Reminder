@@ -38,7 +38,7 @@ public class SmsAeroNotifier : INotifier
         _httpClient = new HttpClient(handler);
     }
 
-    public void Notify(string message)
+    public async Task NotifyAsync(string message)
     {
         var phoneNumber = GetDefaultPhoneNumber();
         
@@ -50,7 +50,7 @@ public class SmsAeroNotifier : INotifier
 
         try
         {
-            var error = SendSms(phoneNumber, message);
+            var error = await SendSmsAsync(phoneNumber, message);
             
             if (string.IsNullOrEmpty(error))
             {
@@ -67,7 +67,7 @@ public class SmsAeroNotifier : INotifier
         }
     }
 
-    private string? SendSms(string number, string text)
+    private async Task<string?> SendSmsAsync(string number, string text)
     {
         var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_email}:{_apiToken}"));
 
@@ -77,9 +77,9 @@ public class SmsAeroNotifier : INotifier
         request.Headers.Add("Authorization", $"Basic {credentials}");
         request.Headers.Add("Accept", "application/json");
 
-        var response = _httpClient.SendAsync(request).Result;
+        var response = await _httpClient.SendAsync(request);
         
-        var content = response.Content.ReadAsStringAsync().Result;
+        var content = await response.Content.ReadAsStringAsync();
         
         try
         {

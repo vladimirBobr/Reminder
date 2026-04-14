@@ -32,7 +32,7 @@ public class SmsRuNotifier : INotifier
         _httpClient = new HttpClient(handler);
     }
 
-    public void Notify(string message)
+    public async Task NotifyAsync(string message)
     {
         var phoneNumber = GetDefaultPhoneNumber();
         
@@ -44,7 +44,7 @@ public class SmsRuNotifier : INotifier
 
         try
         {
-            var response = SendSms(phoneNumber, message);
+            var response = await SendSmsAsync(phoneNumber, message);
             
             if (response.Status == "OK")
             {
@@ -61,13 +61,13 @@ public class SmsRuNotifier : INotifier
         }
     }
 
-    private SmsRuResponse SendSms(string number, string text)
+    private async Task<SmsRuResponse> SendSmsAsync(string number, string text)
     {
         var url = $"{BASE_URL}?api_id={_apiId}&to={number}&msg={Uri.EscapeDataString(text)}&json=1";
         
-        var response = _httpClient.GetAsync(url).Result;
+        var response = await _httpClient.GetAsync(url);
         
-        var content = response.Content.ReadAsStringAsync().Result;
+        var content = await response.Content.ReadAsStringAsync();
         
         try
         {

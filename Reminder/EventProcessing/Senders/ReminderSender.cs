@@ -77,7 +77,7 @@ public class ReminderSender : IReminderSender
 
         foreach (var notifier in _notifiers)
         {
-            notifier.Notify(message);
+            await notifier.NotifyAsync(message);
         }
         Log.Information($"✅ Напоминание отправлено: {evt.Subject}");
     }

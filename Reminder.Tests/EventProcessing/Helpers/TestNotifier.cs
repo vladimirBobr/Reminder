@@ -7,9 +7,10 @@ public class TestNotifier : INotifier
     public string? LastNotifiedMessage { get; private set; }
     public List<string> NotifiedMessages { get; } = new();
 
-    public void Notify(string message)
+    public Task NotifyAsync(string message)
     {
         LastNotifiedMessage = message;
         NotifiedMessages.Add(message);
+        return Task.CompletedTask;
     }
 }

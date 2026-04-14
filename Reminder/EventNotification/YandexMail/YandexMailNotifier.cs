@@ -24,7 +24,7 @@ public class YandexMailNotifier : INotifier
         _toEmail = settings.ToEmail;
     }
 
-    public void Notify(string message)
+    public async Task NotifyAsync(string message)
     {
         if (string.IsNullOrEmpty(_toEmail))
         {
@@ -34,7 +34,7 @@ public class YandexMailNotifier : INotifier
 
         try
         {
-            var success = SendEmail(_toEmail, message);
+            var success = await SendEmailAsync(_toEmail, message);
             
             if (success)
             {
@@ -47,7 +47,7 @@ public class YandexMailNotifier : INotifier
         }
     }
 
-    private bool SendEmail(string to, string text)
+    private async Task<bool> SendEmailAsync(string to, string text)
     {
         try
         {
@@ -69,7 +69,7 @@ public class YandexMailNotifier : INotifier
             
             mailMessage.To.Add(to);
 
-            client.Send(mailMessage);
+            await client.SendMailAsync(mailMessage);
             
             return true;
         }
