@@ -46,20 +46,23 @@ jobs:
       - name: Deploy to VPS
         env:
           SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ vars.VPS_HOST }}
+          VPS_PORT: ${{ vars.VPS_PORT }}
+          VPS_USER: ${{ vars.VPS_USER }}
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H 80.66.81.93 >> ~/.ssh/known_hosts 2>&1
+          ssh-keyscan -H $VPS_HOST >> ~/.ssh/known_hosts 2>&1
           
           echo "Testing connection..."
-          timeout 10 ssh root@80.66.81.93 "echo 'Connected'"
+          timeout 10 ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "echo 'Connected'"
           
           echo "Copying files..."
-          tar -czf - -C ./publish . | timeout 300 ssh root@80.66.81.93 "tar -xzf - -C /opt/smsapp/"
+          tar -czf - -C ./publish . | timeout 300 ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "tar -xzf - -C /opt/smsapp/"
           
           echo "Restarting service..."
-          ssh root@80.66.81.93 "systemctl restart smsapp.service"
+          ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "systemctl restart smsapp.service"
           
           echo "Checking status..."
-          ssh root@80.66.81.93 "systemctl status smsapp.service --no-pager"
+          ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "systemctl status smsapp.service --no-pager"
