@@ -34,7 +34,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     
     steps:
       - name: Download artifact
@@ -46,20 +46,41 @@ jobs:
       - name: Deploy to VPS
         env:
           SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ vars.VPS_HOST }}
+          VPS_PORT: ${{ vars.VPS_PORT }}
+          VPS_USER: ${{ vars.VPS_USER }}
+          NTFY_SERVER_URL: ${{ vars.NTFY_SERVER_URL }}
+          NTFY_TOPIC: ${{ vars.NTFY_TOPIC }}
+          NTFY_USERNAME: ${{ vars.NTFY_USERNAME }}
+          NTFY_PASSWORD: ${{ secrets.NTFY_PASSWORD }}          
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H 80.66.81.93 >> ~/.ssh/known_hosts 2>&1
+          ssh-keyscan -H $VPS_HOST >> ~/.ssh/known_hosts 2>&1
           
           echo "Testing connection..."
-          timeout 10 ssh root@80.66.81.93 "echo 'Connected'"
+          timeout 10 ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "echo 'Connected'"
           
           echo "Copying files..."
-          tar -czf - -C ./publish . | timeout 300 ssh root@80.66.81.93 "tar -xzf - -C /opt/smsapp/"
+          tar -czf - -C ./publish . | timeout 300 ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "tar -xzf - -C /opt/smsapp/"
+
+            # === СОЗДАЁМ ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ ===
+            echo "Creating environment variables..."
+            ssh -p $VPS_PORT $VPS_USER@$VPS_HOST << EOF
+              mkdir -p /etc/reminder
+              cat > /etc/reminder/environment << 'ENV'
+          NTFY_SERVER_URL=$NTFY_SERVER_URL
+          NTFY_TOPIC=$NTFY_TOPIC
+          NTFY_USERNAME=$NTFY_USERNAME
+          NTFY_PASSWORD=$NTFY_PASSWORD
+          ENV
+              chmod 600 /etc/reminder/environment
+              echo "✅ Environment file created"
+          EOF
           
           echo "Restarting service..."
-          ssh root@80.66.81.93 "systemctl restart smsapp.service"
+          ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "systemctl restart smsapp.service"
           
           echo "Checking status..."
-          ssh root@80.66.81.93 "systemctl status smsapp.service --no-pager"
+          ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "systemctl status smsapp.service --no-pager"
