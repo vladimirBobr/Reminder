@@ -25,14 +25,6 @@ internal class Program
         var dateTimeProvider = new DateTimeProvider();
         var fileStorage = new JsonFileStorage();
 
-        var n = new NtfyNotifier(new NtfyCredentialsProvider());
-        await n.NotifyAsync("asdf1");
-        await n.NotifyAsync("asdf2");
-        await n.NotifyAsync("asdf3");
-        await n.NotifyAsync("asdf4");
-
-        return;
-
         // Создаём список нотификаторов
         var notifiers = new List<INotifier>
         {
