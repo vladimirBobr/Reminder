@@ -36,11 +36,11 @@ public class NtfyNotifier : INotifier
 
     public async Task NotifyAsync(string message)
     {
-        var url = $"{_serverUrl}/{_topic}/json";
+        var url = $"{_serverUrl}/{_topic}";
 
         try
         {
-            var content = new StringContent($"\"{EscapeJson(message)}\"", Encoding.UTF8, "application/json");
+            var content = new StringContent(message, Encoding.UTF8, "text/plain");
             var response = await _httpClient.PostAsync(url, content);
 
             if (!response.IsSuccessStatusCode)
@@ -56,15 +56,5 @@ public class NtfyNotifier : INotifier
         {
             Log.Information($"❌ Ошибка отправки в Ntfy: {ex.Message}");
         }
-    }
-
-    private static string EscapeJson(string text)
-    {
-        return text
-            .Replace("\\", "\\\\")
-            .Replace("\"", "\\\"")
-            .Replace("\n", "\\n")
-            .Replace("\r", "\\r")
-            .Replace("\t", "\\t");
     }
 }
