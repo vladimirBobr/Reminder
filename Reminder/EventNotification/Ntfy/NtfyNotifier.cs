@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
 
 namespace ReminderApp.EventNotification.Ntfy;
@@ -34,14 +34,14 @@ public class NtfyNotifier : INotifier
         }
     }
 
-    public void Notify(string message)
+    public async Task NotifyAsync(string message)
     {
         var url = $"{_serverUrl}/{_topic}/json";
 
         try
         {
             var content = new StringContent($"\"{EscapeJson(message)}\"", Encoding.UTF8, "application/json");
-            var response = _httpClient.PostAsync(url, content).Result;
+            var response = await _httpClient.PostAsync(url, content);
 
             if (!response.IsSuccessStatusCode)
             {

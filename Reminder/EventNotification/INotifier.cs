@@ -1,6 +1,6 @@
-namespace ReminderApp.EventNotification;
+﻿namespace ReminderApp.EventNotification;
 
 public interface INotifier
 {
-    void Notify(string message);
+    Task NotifyAsync(string message);
 }

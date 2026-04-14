@@ -1,4 +1,4 @@
-using ReminderApp.Common;
+﻿using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.FileStorage;
@@ -67,7 +67,7 @@ public class DigestSender : IDigestSender
         var digest = BuildDigestMessage(todayEvents);
         foreach (var notifier in _notifiers)
         {
-            notifier.Notify(digest);
+            await notifier.NotifyAsync(digest);
         }
         Log.Information("✅ Digest отправлен");
     }
