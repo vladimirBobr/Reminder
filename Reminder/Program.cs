@@ -22,6 +22,8 @@ internal class Program
 
         Log.Information("▶️ Starting Reminder");
 
+        await new NtfyNotifier(new NtfyCredentialsProvider()).NotifyAsync("▶️ Reminder started");
+
         var dateTimeProvider = new DateTimeProvider();
         var fileStorage = new JsonFileStorage();
 
