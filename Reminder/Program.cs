@@ -1,4 +1,6 @@
-﻿using ReminderApp.DateTimeProviding;
+using ReminderApp.DateTimeProviding;
+using ReminderApp.EventNotification;
+using ReminderApp.EventNotification.Ntfy;
 using ReminderApp.EventNotification.YandexMail;
 using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing;
@@ -22,7 +24,7 @@ internal class Program
 
         var dateTimeProvider = new DateTimeProvider();
         var fileStorage = new JsonFileStorage();
-        var notifier = new YandexMailNotifier(new YandexMailCredentialsProvider()); // или SmsRuNotifier, TelegramNotifier, YandexMailNotifier
+        var notifier = new NtfyNotifier(new NtfyCredentialsProvider()); // или SmsRuNotifier, TelegramNotifier, YandexMailNotifier, NtfyNotifier
 
         // Создаём отправителей
         var digestSender = new DigestSender(dateTimeProvider, fileStorage, notifier);
