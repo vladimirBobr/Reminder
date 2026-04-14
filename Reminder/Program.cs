@@ -1,4 +1,4 @@
-using ReminderApp.DateTimeProviding;
+﻿using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.EventNotification.Ntfy;
 using ReminderApp.EventNotification.YandexMail;
@@ -24,17 +24,23 @@ internal class Program
 
         var dateTimeProvider = new DateTimeProvider();
         var fileStorage = new JsonFileStorage();
-        var notifier = new NtfyNotifier(new NtfyCredentialsProvider()); // или SmsRuNotifier, TelegramNotifier, YandexMailNotifier, NtfyNotifier
+
+        // Создаём список нотификаторов
+        var notifiers = new List<INotifier>
+        {
+            new NtfyNotifier(new NtfyCredentialsProvider()),
+            new YandexMailNotifier(new YandexMailCredentialsProvider()),
+            // new TelegramNotifier(new TelegramCredentialsProvider()),
+        };
 
         // Создаём отправителей
-        var digestSender = new DigestSender(dateTimeProvider, fileStorage, notifier);
-        var reminderSender = new ReminderSender(dateTimeProvider, fileStorage, notifier);
+        var digestSender = new DigestSender(dateTimeProvider, fileStorage, notifiers);
+        var reminderSender = new ReminderSender(dateTimeProvider, fileStorage, notifiers);
 
         var runner = new EventRunner(
             dateTimeProvider,
             fileStorage,
             new GitHubEventReader(new GitHubCredentialsProvider()),
-            notifier,
             new EventOutputPrinter(),
             digestSender,
             reminderSender);

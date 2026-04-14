@@ -24,7 +24,7 @@ public static class EventRunnerTestHelper
         var eventReader = new TestEventReader();
         eventReader.SetEvents(events ?? new List<EventData>());
 
-        return new DigestSender(dateTimeProvider, fileStorage, notifier);
+        return new DigestSender(dateTimeProvider, fileStorage, new List<INotifier> { notifier });
     }
 
     public static ReminderSender CreateReminderSender(
@@ -40,6 +40,6 @@ public static class EventRunnerTestHelper
         var dateTimeProvider = new MockDateTimeProvider();
         dateTimeProvider.SetNow(now.Value);
 
-        return new ReminderSender(dateTimeProvider, fileStorage, notifier);
+        return new ReminderSender(dateTimeProvider, fileStorage, new List<INotifier> { notifier });
     }
 }

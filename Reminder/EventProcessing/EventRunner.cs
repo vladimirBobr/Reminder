@@ -28,7 +28,6 @@ public class EventRunner : IEventRunner
         IDateTimeProvider dateTimeProvider,
         IFileStorage fileStorage,
         IEventReader eventReader,
-        INotifier notifier,
         IEventOutputPrinter eventPrinter,
         IDigestSender digestSender,
         IReminderSender reminderSender)

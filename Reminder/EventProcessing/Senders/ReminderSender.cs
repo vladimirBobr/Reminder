@@ -1,4 +1,4 @@
-﻿using ReminderApp.Common;
+using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.FileStorage;
@@ -8,7 +8,7 @@ namespace ReminderApp.EventProcessing.Senders;
 public class ReminderSender : IReminderSender
 {
     private readonly IFileStorage _fileStorage;
-    private readonly INotifier _notifier;
+    private readonly IEnumerable<INotifier> _notifiers;
     private readonly int _remindMinutesBefore;
 
     // Кэш отправленных напоминаний (ключ = "yyyy-MM-dd HH:mm-Subject")
@@ -18,11 +18,11 @@ public class ReminderSender : IReminderSender
     public ReminderSender(
         IDateTimeProvider dateTimeProvider,
         IFileStorage fileStorage,
-        INotifier notifier,
+        IEnumerable<INotifier> notifiers,
         int remindMinutesBefore = 60)
     {
         _fileStorage = fileStorage;
-        _notifier = notifier;
+        _notifiers = notifiers ?? throw new ArgumentNullException(nameof(notifiers));
         _remindMinutesBefore = remindMinutesBefore;
     }
 
@@ -75,7 +75,10 @@ public class ReminderSender : IReminderSender
             message += $"\n{evt.Description}";
         }
 
-        _notifier.Notify(message);
+        foreach (var notifier in _notifiers)
+        {
+            notifier.Notify(message);
+        }
         Log.Information($"✅ Напоминание отправлено: {evt.Subject}");
     }
 

@@ -1,4 +1,4 @@
-﻿using ReminderApp.Common;
+using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.FileStorage;
@@ -8,7 +8,7 @@ namespace ReminderApp.EventProcessing.Senders;
 public class DigestSender : IDigestSender
 {
     private readonly IFileStorage _fileStorage;
-    private readonly INotifier _notifier;
+    private readonly IEnumerable<INotifier> _notifiers;
     private readonly int _digestHour;
 
     private DateOnly? _lastDigestDate;
@@ -17,11 +17,11 @@ public class DigestSender : IDigestSender
     public DigestSender(
         IDateTimeProvider dateTimeProvider,
         IFileStorage fileStorage,
-        INotifier notifier,
+        IEnumerable<INotifier> notifiers,
         int digestHour = 7)
     {
         _fileStorage = fileStorage;
-        _notifier = notifier;
+        _notifiers = notifiers ?? throw new ArgumentNullException(nameof(notifiers));
         _digestHour = digestHour;
     }
 
@@ -65,7 +65,10 @@ public class DigestSender : IDigestSender
         Log.Information($"📅 {today:dd.MM.yyyy} - найдено {todayEvents.Count} событий, отправляю Digest...");
 
         var digest = BuildDigestMessage(todayEvents);
-        _notifier.Notify(digest);
+        foreach (var notifier in _notifiers)
+        {
+            notifier.Notify(digest);
+        }
         Log.Information("✅ Digest отправлен");
     }
 
