@@ -22,7 +22,8 @@ internal class Program
 
         Log.Information("▶️ Starting Reminder");
 
-        await new NtfyNotifier(new NtfyCredentialsProvider()).NotifyAsync("▶️ Reminder started");
+        NtfyNotifier ntfyNotifier = new(new NtfyCredentialsProvider());
+        await ntfyNotifier.NotifyAsync("▶️ Reminder started");
 
         var dateTimeProvider = new DateTimeProvider();
         var fileStorage = new JsonFileStorage();
@@ -30,7 +31,7 @@ internal class Program
         // Создаём список нотификаторов
         var notifiers = new List<INotifier>
         {
-            new NtfyNotifier(new NtfyCredentialsProvider()),
+            ntfyNotifier,
             new YandexMailNotifier(new YandexMailCredentialsProvider()),
             // new TelegramNotifier(new TelegramCredentialsProvider()),
         };
