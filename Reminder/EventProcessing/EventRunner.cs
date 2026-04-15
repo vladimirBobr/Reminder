@@ -1,4 +1,6 @@
-﻿using ReminderApp.DateTimeProviding;
+﻿using System.Collections.Concurrent;
+using ReminderApp.Common;
+using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing.Senders;
@@ -21,8 +23,10 @@ public class EventRunner : IEventRunner
     private readonly IEventReader _eventReader;
     private readonly IDigestSender _digestSender;
     private readonly IReminderSender _reminderSender;
+    private readonly IEventOutputPrinter _printer;
     private CancellationTokenSource? _cts;
     private bool _isRunning = false;
+    private List<EventData> _events;
 
     public EventRunner(
         IDateTimeProvider dateTimeProvider,
@@ -30,12 +34,14 @@ public class EventRunner : IEventRunner
         IEventReader eventReader,
         IEventOutputPrinter eventPrinter,
         IDigestSender digestSender,
-        IReminderSender reminderSender)
+        IReminderSender reminderSender,
+        IEventOutputPrinter printer)
     {
         _dateTimeProvider = dateTimeProvider;
         _eventReader = eventReader;
         _digestSender = digestSender;
         _reminderSender = reminderSender;
+        _printer = printer;
     }
 
     public async Task StartAsync()
@@ -62,6 +68,11 @@ public class EventRunner : IEventRunner
         Log.Information("⏸️ EventRunner остановлен.");
     }
 
+    internal void SendDigest()
+    {
+        _digestSender.SendDigestAsync(_events, _dateTimeProvider.Now);
+    }
+
     private async Task RunLoopAsync(CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)
@@ -69,12 +80,13 @@ public class EventRunner : IEventRunner
             try
             {
                 // Читаем события из источника
-                var events = await _eventReader.ReadEventsAsync();
+                _events = await _eventReader.ReadEventsAsync();
+                _printer.PrintEvents(_events);
                 var now = _dateTimeProvider.Now;
 
                 // Вызываем обработчики
-                await _digestSender.SendIfNeededAsync(events, now);
-                await _reminderSender.SendIfNeededAsync(events, now);
+                await _digestSender.SendIfNeededAsync(_events, now);
+                await _reminderSender.SendIfNeededAsync(_events, now);
             }
             catch (Exception ex)
             {

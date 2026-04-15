@@ -46,7 +46,7 @@ public class DigestSender : IDigestSender
         }
     }
 
-    private async Task SendDigestAsync(List<EventData> events, DateTime now)
+    public async Task SendDigestAsync(List<EventData> events, DateTime now)
     {
         var today = DateOnly.FromDateTime(now);
 

@@ -1,4 +1,6 @@
-﻿using ReminderApp.DateTimeProviding;
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.EventNotification.Ntfy;
 using ReminderApp.EventNotification.YandexMail;
@@ -39,6 +41,7 @@ internal class Program
         // Создаём отправителей
         var digestSender = new DigestSender(dateTimeProvider, fileStorage, notifiers);
         var reminderSender = new ReminderSender(dateTimeProvider, fileStorage, notifiers);
+        var printer = new EventOutputPrinter();
 
         var runner = new EventRunner(
             dateTimeProvider,
@@ -46,9 +49,60 @@ internal class Program
             new GitHubEventReader(new GitHubCredentialsProvider()),
             new EventOutputPrinter(),
             digestSender,
-            reminderSender);
+            reminderSender,
+            printer);
+
+        SetupAdminApi(runner);
 
         await runner.StartAsync();
+
         await Task.Delay(-1);
+    }
+
+    private static void SetupAdminApi(EventRunner runner)
+    {
+        var adminToken = Environment.GetEnvironmentVariable("ADMIN_API_TOKEN");
+
+        if (string.IsNullOrEmpty(adminToken))
+        {
+#if DEBUG
+            Log.Information("Добавь токен удалённого доступа:");
+
+            // Сохраняем в переменные окружения для текущей сессии
+            adminToken = Console.ReadLine();
+            Environment.SetEnvironmentVariable("ADMIN_API_TOKEN", adminToken, EnvironmentVariableTarget.User);
+#else
+
+            Log.Warning("Remote control is not configured");
+            return;
+#endif
+        }
+
+        _ = Task.Run(() => StartAdminApi(runner, adminToken));
+    }
+
+    static void StartAdminApi(EventRunner runner, string adminToken)
+    {
+        
+        var builder = WebApplication.CreateBuilder();
+        var app = builder.Build();
+
+        app.MapGet("/today", async (HttpContext ctx) =>
+        {
+            var token = ctx.Request.Query["token"].FirstOrDefault();
+
+            if (string.IsNullOrEmpty(token) || token != adminToken)
+            {
+                Log.Warning("Unauthorized stop attempt from {Ip}", ctx.Connection.RemoteIpAddress);
+                return Results.Json(new { error = "Unauthorized" }, statusCode: 401);
+            }
+
+
+            _ = Task.Run(() => runner.SendDigest());
+
+            return Results.Json(new { message = "Digest sent" });
+        });
+
+        app.Run("http://0.0.0.0:5000");
     }
 }

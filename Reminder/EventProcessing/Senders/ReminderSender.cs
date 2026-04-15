@@ -1,4 +1,4 @@
-using ReminderApp.Common;
+﻿using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.FileStorage;
@@ -95,7 +95,6 @@ public class ReminderSender : IReminderSender
                     _sentReminders.Add(key);
                 }
             }
-            Log.Information($"📋 Загружено {_sentReminders.Count} напоминаний");
         }
         catch
         {
