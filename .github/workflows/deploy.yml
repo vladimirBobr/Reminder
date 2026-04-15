@@ -53,6 +53,7 @@ jobs:
           NTFY_TOPIC: ${{ vars.NTFY_TOPIC }}
           NTFY_USERNAME: ${{ vars.NTFY_USERNAME }}
           NTFY_PASSWORD: ${{ secrets.NTFY_PASSWORD }}          
+          ADMIN_API_TOKEN: ${{ secrets.ADMIN_API_TOKEN }}
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/id_rsa
@@ -83,6 +84,7 @@ jobs:
           Environment=NTFY_TOPIC=$NTFY_TOPIC
           Environment=NTFY_USERNAME=$NTFY_USERNAME
           Environment=NTFY_PASSWORD=$NTFY_PASSWORD
+          Environment=ADMIN_API_TOKEN=$ADMIN_API_TOKEN
           
           [Install]
           WantedBy=multi-user.target
