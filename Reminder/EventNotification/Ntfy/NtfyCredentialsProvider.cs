@@ -8,10 +8,10 @@ public class NtfyCredentialsProvider : INtfyCredentialsProvider
     public NtfySettings GetCredentials()
     {
         // 1. Пытаемся получить из переменных окружения
-        var serverUrl = Environment.GetEnvironmentVariable("NTFY_SERVER_URL", EnvironmentVariableTarget.User);
-        var topic = Environment.GetEnvironmentVariable("NTFY_TOPIC", EnvironmentVariableTarget.User);
-        var username = Environment.GetEnvironmentVariable("NTFY_USERNAME", EnvironmentVariableTarget.User);
-        var password = Environment.GetEnvironmentVariable("NTFY_PASSWORD", EnvironmentVariableTarget.User);
+        var serverUrl = Environment.GetEnvironmentVariable("NTFY_SERVER_URL");
+        var topic = Environment.GetEnvironmentVariable("NTFY_TOPIC");
+        var username = Environment.GetEnvironmentVariable("NTFY_USERNAME");
+        var password = Environment.GetEnvironmentVariable("NTFY_PASSWORD");
 
         // Если все переменные есть — возвращаем
         if (!string.IsNullOrEmpty(serverUrl) && !string.IsNullOrEmpty(topic))
