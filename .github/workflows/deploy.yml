@@ -65,18 +65,33 @@ jobs:
           echo "Copying files..."
           tar -czf - -C ./publish . | timeout 300 ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "tar -xzf - -C /opt/smsapp/"
 
-            # === СОЗДАЁМ ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ ===
-            echo "Creating environment variables..."
-            ssh -p $VPS_PORT $VPS_USER@$VPS_HOST << EOF
-              mkdir -p /etc/reminder
-              cat > /etc/reminder/environment << 'ENV'
-          NTFY_SERVER_URL=$NTFY_SERVER_URL
-          NTFY_TOPIC=$NTFY_TOPIC
-          NTFY_USERNAME=$NTFY_USERNAME
-          NTFY_PASSWORD=$NTFY_PASSWORD
-          ENV
-              chmod 600 /etc/reminder/environment
-              echo "✅ Environment file created"
+          echo "Creating systemd service..."
+          ssh -p $VPS_PORT $VPS_USER@$VPS_HOST << EOF
+          cat > /etc/systemd/system/smsapp.service << 'SERVICE'
+          [Unit]
+          Description=SMS Reminder App
+          After=network.target
+          
+          [Service]
+          Type=simple
+          WorkingDirectory=/opt/smsapp
+          ExecStart=/usr/bin/dotnet /opt/smsapp/ReminderApp.dll
+          Restart=always
+          RestartSec=10
+          User=root
+          Environment=NTFY_SERVER_URL=$NTFY_SERVER_URL
+          Environment=NTFY_TOPIC=$NTFY_TOPIC
+          Environment=NTFY_USERNAME=$NTFY_USERNAME
+          Environment=NTFY_PASSWORD=$NTFY_PASSWORD
+          
+          [Install]
+          WantedBy=multi-user.target
+          SERVICE
+          
+          systemctl daemon-reload
+          systemctl enable smsapp.service
+          systemctl restart smsapp.service
+          systemctl status smsapp.service --no-pager
           EOF
           
           echo "Restarting service..."
