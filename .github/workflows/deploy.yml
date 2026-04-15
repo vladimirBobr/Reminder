@@ -64,10 +64,12 @@ jobs:
           timeout 10 ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "echo 'Connected'"
 
           echo "Killing old process..."
-          ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "systemctl stop smsapp.service" || true
-          sleep 2
           ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "pkill -9 -f ReminderApp.dll" || true
-          sleep 1       
+          sleep 2
+          
+          echo "Stopping service..."
+          ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "systemctl stop smsapp.service" || true
+          sleep 1    
           
           echo "Copying files..."
           tar -czf - -C ./publish . | timeout 300 ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "tar -xzf - -C /opt/smsapp/"
