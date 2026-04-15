@@ -82,6 +82,7 @@ jobs:
           After=network.target
           
           [Service]
+          TimeoutStopSec=5
           Type=simple
           WorkingDirectory=/opt/smsapp
           ExecStart=/usr/bin/dotnet /opt/smsapp/ReminderApp.dll
@@ -103,9 +104,6 @@ jobs:
           systemctl restart smsapp.service
           systemctl status smsapp.service --no-pager
           EOF
-          
-          echo "Restarting service..."
-          ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "systemctl restart smsapp.service"
           
           echo "Checking status..."
           ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "systemctl status smsapp.service --no-pager"

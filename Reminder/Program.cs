@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
@@ -103,6 +105,52 @@ internal class Program
             return Results.Json(new { message = "Digest sent" });
         });
 
+        app.MapPost("/github-webhook", async (HttpContext ctx) =>
+        {
+            var payload = await ParsePayload(ctx);
+            if (payload == null)
+                return Results.BadRequest("Invalid payload");
+
+            // Проверяем, что коммит не от самого бота (защита от цикла)
+            //var author = payload.HeadCommit?.Author?.Username;
+            //if (author == "reminder-bot" || author == "vladimirBobr")
+            //    return Results.Ok("ignored: bot commit");
+
+            Log.Information("Web hook received");
+
+            return Results.Accepted("post-processing started");
+        });
+
         app.Run("http://0.0.0.0:5000");
+    }
+
+    private static async Task<GitHubPushEvent?> ParsePayload(HttpContext ctx)
+    {
+        var body = await new StreamReader(ctx.Request.Body).ReadToEndAsync();
+        if (string.IsNullOrEmpty(body))
+            return null;
+
+        return JsonSerializer.Deserialize<GitHubPushEvent>(body);
+    }
+
+    public class GitHubPushEvent
+    {
+        [JsonPropertyName("head_commit")]
+        public GitHubCommit HeadCommit { get; set; } = new();
+    }
+
+    public class GitHubCommit
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("author")]
+        public GitHubAuthor? Author { get; set; }
+    }
+
+    public class GitHubAuthor
+    {
+        [JsonPropertyName("username")]
+        public string Username { get; set; } = string.Empty;
     }
 }
