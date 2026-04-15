@@ -62,6 +62,10 @@ jobs:
           
           echo "Testing connection..."
           timeout 10 ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "echo 'Connected'"
+
+          echo "Killing old process..."
+          ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "pkill -9 -f ReminderApp.dll || true"
+          sleep 2          
           
           echo "Copying files..."
           tar -czf - -C ./publish . | timeout 300 ssh -p $VPS_PORT $VPS_USER@$VPS_HOST "tar -xzf - -C /opt/smsapp/"
