@@ -107,18 +107,28 @@ internal class Program
 
         app.MapPost("/github-webhook", async (HttpContext ctx) =>
         {
-            var payload = await ParsePayload(ctx);
-            if (payload == null)
-                return Results.BadRequest("Invalid payload");
+            try
+            {
+                var payload = await ParsePayload(ctx);
+                if (payload == null)
+                    return Results.BadRequest("Invalid payload");
 
-            // Проверяем, что коммит не от самого бота (защита от цикла)
-            //var author = payload.HeadCommit?.Author?.Username;
-            //if (author == "reminder-bot" || author == "vladimirBobr")
-            //    return Results.Ok("ignored: bot commit");
+                // Проверяем, что коммит не от самого бота (защита от цикла)
+                //var author = payload.HeadCommit?.Author?.Username;
+                //if (author == "reminder-bot" || author == "vladimirBobr")
+                //    return Results.Ok("ignored: bot commit");
 
-            Log.Information("Web hook received");
+                Log.Information("Web hook received");
 
-            return Results.Accepted("post-processing started");
+                return Results.Accepted("post-processing started");
+            }
+            catch (Exception ex)
+            {
+
+                return Results.InternalServerError(ex.Message);
+            }
+
+            
         });
 
         app.Run("http://0.0.0.0:5000");
