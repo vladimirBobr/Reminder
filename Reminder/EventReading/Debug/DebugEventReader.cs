@@ -6,52 +6,56 @@ public class DebugEventReader : IEventReader
 {
     public Task<List<EventData>> ReadEventsAsync()
     {
+        var now = DateTime.Now;
         var events = new List<EventData>
         {
-            // Сегодня
+            // Событие через 30 минут - для тестирования ReminderProcessor
             new() 
             { 
-                Date = DateOnly.FromDateTime(DateTime.Today.AddDays(0)), 
-                Time = new TimeOnly(15, 0), 
-                Subject = "Совещание с командой", 
-                Description = "Ежедневный стендап" 
+                Date = DateOnly.FromDateTime(now.AddMinutes(30)), 
+                Time = TimeOnly.FromDateTime(now.AddMinutes(30)), 
+                Subject = "Событие через 30 минут", 
+                Description = "Должно прийти как напоминание" 
             },
+            
+            // Событие через 2.5 часа - для ежедневного дайджеста
             new() 
             { 
-                Date = DateOnly.FromDateTime(DateTime.Today.AddDays(0)), 
-                Time = new TimeOnly(16, 30), 
-                Subject = "Встреча с клиентом" 
+                Date = DateOnly.FromDateTime(now.AddHours(2).AddMinutes(30)), 
+                Time = TimeOnly.FromDateTime(now.AddHours(2).AddMinutes(30)), 
+                Subject = "Событие через 2.5 часа", 
+                Description = "В дайджесте" 
             },
             
             // Завтра
             new() 
             { 
-                Date = DateOnly.FromDateTime(DateTime.Today.AddDays(1)), 
+                Date = DateOnly.FromDateTime(now.AddDays(1)), 
                 Time = new TimeOnly(10, 0), 
                 Subject = "Планирование спринта" 
             },
             new() 
             { 
-                Date = DateOnly.FromDateTime(DateTime.Today.AddDays(1)), 
+                Date = DateOnly.FromDateTime(now.AddDays(1)), 
                 Subject = "Обзор дизайна" 
             },
             
             // Следующая неделя (пн)
             new() 
             { 
-                Date = DateOnly.FromDateTime(DateTime.Today.AddDays(7)), 
+                Date = DateOnly.FromDateTime(now.AddDays(7)), 
                 Time = new TimeOnly(9, 0), 
                 Subject = "Старт нового спринта" 
             },
             new() 
             { 
-                Date = DateOnly.FromDateTime(DateTime.Today.AddDays(7)), 
+                Date = DateOnly.FromDateTime(now.AddDays(7)), 
                 Time = new TimeOnly(14, 0), 
                 Subject = "Демо для стейкхолдеров" 
             },
             new() 
             { 
-                Date = DateOnly.FromDateTime(DateTime.Today.AddDays(8)), 
+                Date = DateOnly.FromDateTime(now.AddDays(8)), 
                 Time = new TimeOnly(11, 0), 
                 Subject = "Технический созвон" 
             },
