@@ -1,8 +1,8 @@
 using ReminderApp.Common;
 
-namespace ReminderApp.EventProcessing.Senders;
+namespace ReminderApp.EventProcessing.Processors;
 
-public interface IReminderSender
+public interface IReminderProcessor
 {
     Task SendIfNeededAsync(List<EventData> events, DateTime now);
 }

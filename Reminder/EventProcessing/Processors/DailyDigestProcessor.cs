@@ -3,16 +3,16 @@ using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.FileStorage;
 
-namespace ReminderApp.EventProcessing.Senders;
+namespace ReminderApp.EventProcessing.Processors;
 
-public class DigestSender : SenderBase, IDigestSender
+public class DailyDigestProcessor : ProcessorBase, IDailyDigestProcessor
 {
     private readonly int _digestHour;
 
     private DateOnly? _lastDigestDate;
     private const string LastDigestKey = "last_digest_date";
 
-    public DigestSender(
+    public DailyDigestProcessor(
         IDateTimeProvider dateTimeProvider,
         IFileStorage fileStorage,
         IEnumerable<INotifier> notifiers,

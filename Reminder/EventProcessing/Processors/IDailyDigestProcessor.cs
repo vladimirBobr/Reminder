@@ -1,8 +1,8 @@
 using ReminderApp.Common;
 
-namespace ReminderApp.EventProcessing.Senders;
+namespace ReminderApp.EventProcessing.Processors;
 
-public interface IDigestSender
+public interface IDailyDigestProcessor
 {
     Task SendIfNeededAsync(List<EventData> events, DateTime now);
     Task SendDailyDigestAsync(List<EventData> events, DateTime now);

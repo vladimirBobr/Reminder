@@ -2,13 +2,13 @@ using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.EventOutput;
-using ReminderApp.EventProcessing.Senders;
+using ReminderApp.EventProcessing.Processors;
 
 namespace Reminder.Tests.EventProcessing.Helpers;
 
 public static class EventRunnerTestHelper
 {
-    public static DigestSender CreateDigestSender(
+    public static DailyDigestProcessor CreateDailyDigestProcessor(
         DateTime? now = null,
         List<EventData>? events = null,
         INotifier? notifier = null,
@@ -24,10 +24,10 @@ public static class EventRunnerTestHelper
         var eventReader = new TestEventReader();
         eventReader.SetEvents(events ?? new List<EventData>());
 
-        return new DigestSender(dateTimeProvider, fileStorage, new List<INotifier> { notifier });
+        return new DailyDigestProcessor(dateTimeProvider, fileStorage, new List<INotifier> { notifier });
     }
 
-    public static ReminderSender CreateReminderSender(
+    public static ReminderProcessor CreateReminderProcessor(
         DateTime? now = null,
         List<EventData>? events = null,
         INotifier? notifier = null,
@@ -40,6 +40,6 @@ public static class EventRunnerTestHelper
         var dateTimeProvider = new MockDateTimeProvider();
         dateTimeProvider.SetNow(now.Value);
 
-        return new ReminderSender(dateTimeProvider, fileStorage, new List<INotifier> { notifier });
+        return new ReminderProcessor(dateTimeProvider, fileStorage, new List<INotifier> { notifier });
     }
 }

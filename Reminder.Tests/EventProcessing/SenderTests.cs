@@ -1,11 +1,11 @@
 using Reminder.Tests.EventProcessing.Helpers;
 using ReminderApp.Common;
-using ReminderApp.EventProcessing.Senders;
+using ReminderApp.EventProcessing.Processors;
 using static Reminder.Tests.EventProcessing.Helpers.EventRunnerTestHelper;
 
 namespace Reminder.Tests.EventProcessing;
 
-public class DigestSenderTests
+public class DailyDigestProcessorTests
 {
     [Fact]
     public async Task SendIfNeededAsync_WhenNot7AM_DoesNotSend()
@@ -19,10 +19,10 @@ public class DigestSenderTests
         };
 
         var notifier = new TestNotifier();
-        var sender = CreateDigestSender(now: now, events: events, notifier: notifier);
+        var processor = CreateDailyDigestProcessor(now: now, events: events, notifier: notifier);
 
         // Act
-        await sender.SendIfNeededAsync(events, now);
+        await processor.SendIfNeededAsync(events, now);
 
         // Assert
         Assert.Null(notifier.LastNotifiedMessage);
@@ -41,10 +41,10 @@ public class DigestSenderTests
         };
 
         var notifier = new TestNotifier();
-        var sender = CreateDigestSender(now: now, events: events, notifier: notifier);
+        var processor = CreateDailyDigestProcessor(now: now, events: events, notifier: notifier);
 
         // Act
-        await sender.SendIfNeededAsync(events, now);
+        await processor.SendIfNeededAsync(events, now);
 
         // Assert
         Assert.NotNull(notifier.LastNotifiedMessage);
@@ -64,10 +64,10 @@ public class DigestSenderTests
         };
 
         var notifier = new TestNotifier();
-        var sender = CreateDigestSender(now: now, events: events, notifier: notifier);
+        var processor = CreateDailyDigestProcessor(now: now, events: events, notifier: notifier);
 
         // Act
-        await sender.SendIfNeededAsync(events, now);
+        await processor.SendIfNeededAsync(events, now);
 
         // Assert
         var message = notifier.LastNotifiedMessage!;
@@ -76,7 +76,7 @@ public class DigestSenderTests
     }
 }
 
-public class ReminderSenderTests
+public class ReminderProcessorTests
 {
     [Fact]
     public async Task SendIfNeededAsync_WhenNoTime_DoesNotSend()
@@ -90,10 +90,10 @@ public class ReminderSenderTests
         };
 
         var notifier = new TestNotifier();
-        var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
+        var processor = CreateReminderProcessor(now: now, events: events, notifier: notifier);
 
         // Act
-        await sender.SendIfNeededAsync(events, now);
+        await processor.SendIfNeededAsync(events, now);
 
         // Assert
         Assert.Null(notifier.LastNotifiedMessage);
@@ -116,10 +116,10 @@ public class ReminderSenderTests
         };
 
         var notifier = new TestNotifier();
-        var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
+        var processor = CreateReminderProcessor(now: now, events: events, notifier: notifier);
 
         // Act
-        await sender.SendIfNeededAsync(events, now);
+        await processor.SendIfNeededAsync(events, now);
 
         // Assert
         Assert.NotNull(notifier.LastNotifiedMessage);
@@ -144,10 +144,10 @@ public class ReminderSenderTests
         };
 
         var notifier = new TestNotifier();
-        var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
+        var processor = CreateReminderProcessor(now: now, events: events, notifier: notifier);
 
         // Act
-        await sender.SendIfNeededAsync(events, now);
+        await processor.SendIfNeededAsync(events, now);
 
         // Assert
         Assert.NotNull(notifier.LastNotifiedMessage);
@@ -170,10 +170,10 @@ public class ReminderSenderTests
         };
 
         var notifier = new TestNotifier();
-        var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
+        var processor = CreateReminderProcessor(now: now, events: events, notifier: notifier);
 
         // Act
-        await sender.SendIfNeededAsync(events, now);
+        await processor.SendIfNeededAsync(events, now);
 
         // Assert
         Assert.Null(notifier.LastNotifiedMessage);
@@ -196,10 +196,10 @@ public class ReminderSenderTests
         };
 
         var notifier = new TestNotifier();
-        var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
+        var processor = CreateReminderProcessor(now: now, events: events, notifier: notifier);
 
         // Act
-        await sender.SendIfNeededAsync(events, now);
+        await processor.SendIfNeededAsync(events, now);
 
         // Assert - должно отправить, т.к. сервис был недоступен
         Assert.NotNull(notifier.LastNotifiedMessage);
@@ -224,10 +224,10 @@ public class ReminderSenderTests
         };
 
         var notifier = new TestNotifier();
-        var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
+        var processor = CreateReminderProcessor(now: now, events: events, notifier: notifier);
 
         // Act
-        await sender.SendIfNeededAsync(events, now);
+        await processor.SendIfNeededAsync(events, now);
 
         // Assert
         Assert.Null(notifier.LastNotifiedMessage);

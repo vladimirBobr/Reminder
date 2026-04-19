@@ -3,9 +3,9 @@ using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.FileStorage;
 
-namespace ReminderApp.EventProcessing.Senders;
+namespace ReminderApp.EventProcessing.Processors;
 
-public class ReminderSender : SenderBase, IReminderSender
+public class ReminderProcessor : ProcessorBase, IReminderProcessor
 {
     private readonly int _remindMinutesBefore;
 
@@ -13,7 +13,7 @@ public class ReminderSender : SenderBase, IReminderSender
     private readonly HashSet<string> _sentReminders = new();
     private const string SentRemindersKey = "sent_reminders";
 
-    public ReminderSender(
+    public ReminderProcessor(
         IDateTimeProvider dateTimeProvider,
         IFileStorage fileStorage,
         IEnumerable<INotifier> notifiers,

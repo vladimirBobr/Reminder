@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -8,7 +8,7 @@ using ReminderApp.EventNotification.Ntfy;
 using ReminderApp.EventNotification.YandexMail;
 using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing;
-using ReminderApp.EventProcessing.Senders;
+using ReminderApp.EventProcessing.Processors;
 using ReminderApp.EventReading.GitHub;
 using ReminderApp.FileStorage;
 
@@ -40,9 +40,9 @@ internal class Program
             // new TelegramNotifier(new TelegramCredentialsProvider()),
         };
 
-        // Создаём отправителей
-        var digestSender = new DigestSender(dateTimeProvider, fileStorage, notifiers);
-        var reminderSender = new ReminderSender(dateTimeProvider, fileStorage, notifiers);
+        // Создаём процессоры
+        var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, notifiers);
+        var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, notifiers);
         var printer = new EventOutputPrinter();
 
         var runner = new EventRunner(
@@ -50,8 +50,8 @@ internal class Program
             fileStorage,
             new GitHubEventReader(new GitHubCredentialsProvider()),
             new EventOutputPrinter(),
-            digestSender,
-            reminderSender,
+            dailyDigestProcessor,
+            reminderProcessor,
             printer);
 
         SetupAdminApi(runner);
@@ -85,7 +85,7 @@ internal class Program
 
     static void StartAdminApi(EventRunner runner, string adminToken)
     {
-        
+         
         var builder = WebApplication.CreateBuilder();
         var app = builder.Build();
 
@@ -128,7 +128,7 @@ internal class Program
                 return Results.InternalServerError(ex.Message);
             }
 
-            
+             
         });
 
         app.Run("http://0.0.0.0:5000");

@@ -3,15 +3,15 @@ using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.FileStorage;
 
-namespace ReminderApp.EventProcessing.Senders;
+namespace ReminderApp.EventProcessing.Processors;
 
-public abstract class SenderBase : ISender
+public abstract class ProcessorBase : IProcessor
 {
     protected readonly IFileStorage _fileStorage;
     protected readonly IEnumerable<INotifier> _notifiers;
     protected readonly IDateTimeProvider _dateTimeProvider;
 
-    protected SenderBase(
+    protected ProcessorBase(
         IDateTimeProvider dateTimeProvider,
         IFileStorage fileStorage,
         IEnumerable<INotifier> notifiers)
@@ -66,7 +66,7 @@ public abstract class SenderBase : ISender
     }
 }
 
-public interface ISender
+public interface IProcessor
 {
     Task SendIfNeededAsync(List<EventData> events, DateTime now);
 }

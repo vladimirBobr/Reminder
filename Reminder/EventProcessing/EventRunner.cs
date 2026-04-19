@@ -1,9 +1,9 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.EventOutput;
-using ReminderApp.EventProcessing.Senders;
+using ReminderApp.EventProcessing.Processors;
 using ReminderApp.EventReading;
 using ReminderApp.FileStorage;
 
@@ -21,8 +21,8 @@ public class EventRunner : IEventRunner
 
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IEventReader _eventReader;
-    private readonly IDigestSender _digestSender;
-    private readonly IReminderSender _reminderSender;
+    private readonly IDailyDigestProcessor _dailyDigestProcessor;
+    private readonly IReminderProcessor _reminderProcessor;
     private readonly IEventOutputPrinter _printer;
     private CancellationTokenSource? _cts;
     private bool _isRunning = false;
@@ -33,14 +33,14 @@ public class EventRunner : IEventRunner
         IFileStorage fileStorage,
         IEventReader eventReader,
         IEventOutputPrinter eventPrinter,
-        IDigestSender digestSender,
-        IReminderSender reminderSender,
+        IDailyDigestProcessor dailyDigestProcessor,
+        IReminderProcessor reminderProcessor,
         IEventOutputPrinter printer)
     {
         _dateTimeProvider = dateTimeProvider;
         _eventReader = eventReader;
-        _digestSender = digestSender;
-        _reminderSender = reminderSender;
+        _dailyDigestProcessor = dailyDigestProcessor;
+        _reminderProcessor = reminderProcessor;
         _printer = printer;
     }
 
@@ -66,7 +66,7 @@ public class EventRunner : IEventRunner
 
     internal void SendDigest()
     {
-        _digestSender.SendDailyDigestAsync(_events, _dateTimeProvider.Now);
+        _dailyDigestProcessor.SendDailyDigestAsync(_events, _dateTimeProvider.Now);
     }
 
     private async Task RunLoopAsync(CancellationToken ct)
@@ -81,8 +81,8 @@ public class EventRunner : IEventRunner
                 var now = _dateTimeProvider.Now;
 
                 // Вызываем обработчики
-                await _digestSender.SendIfNeededAsync(_events, now);
-                await _reminderSender.SendIfNeededAsync(_events, now);
+                await _dailyDigestProcessor.SendIfNeededAsync(_events, now);
+                await _reminderProcessor.SendIfNeededAsync(_events, now);
             }
             catch (Exception ex)
             {
