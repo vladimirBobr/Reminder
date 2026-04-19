@@ -14,9 +14,9 @@ public class WeeklyDigestProcessor : ProcessorBase, IWeeklyDigestProcessor
         (DayOfWeek.Sunday, 20)
     ];
 
-    private int? _lastSentWeek;
-    private int? _lastSentYear;
-    private const string LastSentWeekKey = "last_weekly_digest_week";
+    // Отслеживаем отдельно для каждого слота: "yyyy-MM-dd-HH" (день+час)
+    private readonly HashSet<string> _sentSlots = new();
+    private const string SentSlotsKey = "last_weekly_digest_slots";
 
     public WeeklyDigestProcessor(
         IDateTimeProvider dateTimeProvider,
@@ -28,35 +28,33 @@ public class WeeklyDigestProcessor : ProcessorBase, IWeeklyDigestProcessor
 
     protected override async Task OnInitializeAsync()
     {
-        (_lastSentYear, _lastSentWeek) = await LoadLastSentWeekAsync();
+        await LoadSentSlotsAsync();
     }
 
     public override async Task SendIfNeededAsync(List<EventData> events, DateTime now)
     {
-        // Получаем текущую неделю (по ISO: неделя начинается с понедельника)
-        var (year, week) = GetIsoWeek(now);
+        var slotKey = $"{now:yyyy-MM-dd-HH}";
 
-        // Если уже отправляли на этой неделе - не отправляем
-        if (_lastSentYear == year && _lastSentWeek == week)
+        // Если уже отправляли в этот слот (день+час) - не отправляем
+        if (_sentSlots.Contains(slotKey))
             return;
 
         // Проверяем, подходит ли текущее время
-        var shouldSend = Schedule.Any(s => s.Day == now.DayOfWeek && now.Hour == s.Hour);
+        var scheduleEntry = Schedule.FirstOrDefault(s => s.Day == now.DayOfWeek && s.Hour == now.Hour);
 
-        if (shouldSend)
+        if (scheduleEntry != default)
         {
             await SendWeeklyDigestAsync(events, now);
-            _lastSentYear = year;
-            _lastSentWeek = week;
-            await SaveLastSentWeekAsync(year, week);
+            _sentSlots.Add(slotKey);
+            await SaveSentSlotsAsync();
         }
     }
 
     public async Task SendWeeklyDigestAsync(List<EventData> events, DateTime now)
     {
-        // События на следующую неделю (пн-пт)
+        // События на следующую неделю (пн-вс)
         var nextWeekStart = GetNextWeekMonday(now);
-        var nextWeekEnd = nextWeekStart.AddDays(4); // пятница
+        var nextWeekEnd = nextWeekStart.AddDays(6); // воскресенье
 
         var weekEvents = events
             .Where(e => e.Date >= nextWeekStart && e.Date <= nextWeekEnd)
@@ -84,16 +82,6 @@ public class WeeklyDigestProcessor : ProcessorBase, IWeeklyDigestProcessor
         return DateOnly.FromDateTime(date.AddDays(daysUntilMonday));
     }
 
-    private static (int Year, int Week) GetIsoWeek(DateTime date)
-    {
-        var cal = System.Globalization.CultureInfo.InvariantCulture.Calendar;
-        var week = cal.GetWeekOfYear(
-            date,
-            System.Globalization.CalendarWeekRule.FirstFourDayWeek,
-            DayOfWeek.Monday);
-        return (date.Year, week);
-    }
-
     private string BuildWeeklyDigestMessage(DateOnly weekStart, DateOnly weekEnd, List<EventData> events)
     {
         var sb = new System.Text.StringBuilder();
@@ -115,22 +103,23 @@ public class WeeklyDigestProcessor : ProcessorBase, IWeeklyDigestProcessor
         return sb.ToString();
     }
 
-    private async Task<(int Year, int Week)> LoadLastSentWeekAsync()
+    private async Task LoadSentSlotsAsync()
     {
-        var data = await LoadAsync(LastSentWeekKey);
+        var data = await LoadAsync(SentSlotsKey);
         if (string.IsNullOrEmpty(data))
-            return (0, 0);
+            return;
 
-        var parts = data.Split('-');
-        if (parts.Length != 2)
-            return (0, 0);
-
-        return (int.Parse(parts[0]), int.Parse(parts[1]));
+        var slots = data.Split(';', StringSplitOptions.RemoveEmptyEntries);
+        foreach (var slot in slots)
+        {
+            _sentSlots.Add(slot);
+        }
     }
 
-    private async Task SaveLastSentWeekAsync(int year, int week)
+    private async Task SaveSentSlotsAsync()
     {
-        await SaveAsync(LastSentWeekKey, $"{year}-{week}");
+        var data = string.Join(";", _sentSlots);
+        await SaveAsync(SentSlotsKey, data);
     }
 }
 

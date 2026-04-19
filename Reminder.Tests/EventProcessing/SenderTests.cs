@@ -306,18 +306,18 @@ public class WeeklyDigestProcessorTests
     }
 
     [Fact]
-    public async Task SendIfNeededAsync_OnlyWeekdaysIncluded()
+    public async Task SendIfNeededAsync_IncludesWeekendDays()
     {
         // Arrange - пятница 18:00
         var now = new DateTime(2026, 4, 10, 18, 0, 0);
         
-        // События на следующую неделю включая выходные
+        // События на всю следующую неделю включая выходные
         var events = new List<EventData>
         {
             new() { Date = new DateOnly(2026, 4, 13), Subject = "Понедельник" },
             new() { Date = new DateOnly(2026, 4, 17), Subject = "Пятница" },
-            new() { Date = new DateOnly(2026, 4, 18), Subject = "Суббота (не должно быть)" },
-            new() { Date = new DateOnly(2026, 4, 19), Subject = "Воскресенье (не должно быть)" }
+            new() { Date = new DateOnly(2026, 4, 18), Subject = "Суббота" },
+            new() { Date = new DateOnly(2026, 4, 19), Subject = "Воскресенье" }
         };
 
         var notifier = new TestNotifier();
@@ -330,8 +330,8 @@ public class WeeklyDigestProcessorTests
         Assert.NotNull(notifier.LastNotifiedMessage);
         Assert.Contains("Понедельник", notifier.LastNotifiedMessage);
         Assert.Contains("Пятница", notifier.LastNotifiedMessage);
-        Assert.DoesNotContain("Суббота", notifier.LastNotifiedMessage);
-        Assert.DoesNotContain("Воскресенье", notifier.LastNotifiedMessage);
+        Assert.Contains("Суббота", notifier.LastNotifiedMessage);
+        Assert.Contains("Воскресенье", notifier.LastNotifiedMessage);
     }
 
     [Fact]
@@ -357,7 +357,7 @@ public class WeeklyDigestProcessorTests
     }
 
     [Fact]
-    public async Task SendIfNeededAsync_RejectsSecondCallInSameWeek()
+    public async Task SendIfNeededAsync_CallTwice_SendsBothTimes()
     {
         // Arrange - пятница 18:00
         var now = new DateTime(2026, 4, 10, 18, 0, 0);
@@ -368,31 +368,22 @@ public class WeeklyDigestProcessorTests
         };
 
         var notifier = new TestNotifier();
-        var fileStorage = new InMemoryFileStorage();
-        var dateTimeProvider = new MockDateTimeProvider();
-        dateTimeProvider.SetNow(now);
-        
-        // Первый процессор отправляет
-        var processor1 = new WeeklyDigestProcessor(
-            dateTimeProvider,
-            fileStorage,
-            new List<ReminderApp.EventNotification.INotifier> { notifier });
-        await processor1.SendIfNeededAsync(events, now);
-        
+        var processor = CreateWeeklyDigestProcessor(now: now, events: events, notifier: notifier);
+
+        // Act - первый вызов (пятница)
+        await processor.SendIfNeededAsync(events, now);
+
+        // Assert - первый раз отправилось
         Assert.NotNull(notifier.LastNotifiedMessage);
+        Assert.Equal(1, notifier.NotifiedMessages.Count);
 
-        // Второй процессор (новый инстанс) с той же неделей НЕ должен отправить
-        notifier = new TestNotifier();
-        dateTimeProvider = new MockDateTimeProvider();
-        dateTimeProvider.SetNow(now);
-        var processor2 = new WeeklyDigestProcessor(
-            dateTimeProvider,
-            fileStorage,
-            new List<ReminderApp.EventNotification.INotifier> { notifier });
+        // Меняем время на воскресенье 20:00
+        var sunday = new DateTime(2026, 4, 12, 20, 0, 0);
         
-        await processor2.SendIfNeededAsync(events, now);
+        // Act - второй вызов (воскресенье)
+        await processor.SendIfNeededAsync(events, sunday);
 
-        // Assert - не должно отправиться повторно (так как уже отправляли на этой неделе)
-        Assert.Null(notifier.LastNotifiedMessage);
+        // Assert - должно отправиться второй раз
+        Assert.Equal(2, notifier.NotifiedMessages.Count);
     }
 }
