@@ -7,6 +7,7 @@ using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventProcessing.Processors;
 using ReminderApp.EventReading.GitHub;
+using ReminderApp.EventReading.LocalFile;
 using ReminderApp.FileStorage;
 
 namespace ReminderApp;
@@ -27,16 +28,16 @@ internal class Program
         var fileStorage = new JsonFileStorage();
 
 #if DEBUG
-        // В DEBUG используем только консольный нотификатор
+        // В DEBUG используем локальный файл и консольный нотификатор
         var consoleNotifier = new ConsoleNotifier();
         await consoleNotifier.NotifyAsync("▶️ Reminder started (DEBUG)");
         
-        var notifiers = new List<INotifier>
-        {
-            consoleNotifier,
-        };
+        var notifiers = new List<INotifier> { consoleNotifier };
+        
+        // Читаем события из локального файла
+        var eventReader = new FileEventReader("events.txt");
 #else
-        // В RELEASE используем реальные нотификаторы
+        // В RELEASE используем GitHub и реальные нотификаторы
         NtfyNotifier ntfyNotifier = new(new NtfyCredentialsProvider());
         await ntfyNotifier.NotifyAsync("▶️ Reminder started");
 
@@ -45,6 +46,8 @@ internal class Program
             ntfyNotifier,
             new YandexMailNotifier(new YandexMailCredentialsProvider()),
         };
+        
+        var eventReader = new GitHubEventReader(new GitHubCredentialsProvider());
 #endif
 
         // Создаём процессоры
@@ -56,7 +59,7 @@ internal class Program
         var runner = new EventRunner(
             dateTimeProvider,
             fileStorage,
-            new GitHubEventReader(new GitHubCredentialsProvider()),
+            eventReader,
             new EventOutputPrinter(),
             dailyDigestProcessor,
             reminderProcessor,
