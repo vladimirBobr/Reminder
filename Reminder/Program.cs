@@ -43,6 +43,7 @@ internal class Program
         // Создаём процессоры
         var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, notifiers);
         var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, notifiers);
+        var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, notifiers);
         var printer = new EventOutputPrinter();
 
         var runner = new EventRunner(
@@ -52,6 +53,7 @@ internal class Program
             new EventOutputPrinter(),
             dailyDigestProcessor,
             reminderProcessor,
+            weeklyDigestProcessor,
             printer);
 
         SetupAdminApi(runner);

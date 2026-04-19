@@ -23,6 +23,7 @@ public class EventRunner : IEventRunner
     private readonly IEventReader _eventReader;
     private readonly IDailyDigestProcessor _dailyDigestProcessor;
     private readonly IReminderProcessor _reminderProcessor;
+    private readonly IWeeklyDigestProcessor _weeklyDigestProcessor;
     private readonly IEventOutputPrinter _printer;
     private CancellationTokenSource? _cts;
     private bool _isRunning = false;
@@ -35,12 +36,14 @@ public class EventRunner : IEventRunner
         IEventOutputPrinter eventPrinter,
         IDailyDigestProcessor dailyDigestProcessor,
         IReminderProcessor reminderProcessor,
+        IWeeklyDigestProcessor weeklyDigestProcessor,
         IEventOutputPrinter printer)
     {
         _dateTimeProvider = dateTimeProvider;
         _eventReader = eventReader;
         _dailyDigestProcessor = dailyDigestProcessor;
         _reminderProcessor = reminderProcessor;
+        _weeklyDigestProcessor = weeklyDigestProcessor;
         _printer = printer;
     }
 
@@ -83,6 +86,7 @@ public class EventRunner : IEventRunner
                 // Вызываем обработчики
                 await _dailyDigestProcessor.SendIfNeededAsync(_events, now);
                 await _reminderProcessor.SendIfNeededAsync(_events, now);
+                await _weeklyDigestProcessor.SendIfNeededAsync(_events, now);
             }
             catch (Exception ex)
             {
