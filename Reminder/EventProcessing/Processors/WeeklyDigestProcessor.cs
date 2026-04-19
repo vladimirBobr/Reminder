@@ -7,11 +7,11 @@ namespace ReminderApp.EventProcessing.Processors;
 
 public class WeeklyDigestProcessor : ProcessorBase, IWeeklyDigestProcessor
 {
-    // Пятница 18:00 и Воскресенье 18:00
+    // Пятница 18:00 и Воскресенье 20:00
     private static readonly (DayOfWeek Day, int Hour)[] Schedule =
     [
         (DayOfWeek.Friday, 18),
-        (DayOfWeek.Sunday, 18)
+        (DayOfWeek.Sunday, 20)
     ];
 
     // Отслеживаем отдельно для каждого слота: "yyyy-MM-dd-HH" (день+час)

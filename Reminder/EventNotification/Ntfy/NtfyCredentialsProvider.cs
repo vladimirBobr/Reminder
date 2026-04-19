@@ -26,28 +26,29 @@ public class NtfyCredentialsProvider : INtfyCredentialsProvider
             };
         }
 
-#if DEBUG
         // 2. Только в DEBUG режиме — запрашиваем из консоли
-        Log.Information("Ntfy настройки не найдены. Введите их:");
-        var settings = RequestFromConsole();
+        if (DebugHelper.IsDebug)
+        {
+            Log.Information("Ntfy настройки не найдены. Введите их:");
+            var settings = RequestFromConsole();
 
-        // Сохраняем в переменные окружения для текущей сессии
-        Environment.SetEnvironmentVariable("NTFY_SERVER_URL", settings.ServerUrl, EnvironmentVariableTarget.User);
-        Environment.SetEnvironmentVariable("NTFY_TOPIC", settings.Topic, EnvironmentVariableTarget.User);
+            // Сохраняем в переменные окружения для текущей сессии
+            Environment.SetEnvironmentVariable("NTFY_SERVER_URL", settings.ServerUrl, EnvironmentVariableTarget.User);
+            Environment.SetEnvironmentVariable("NTFY_TOPIC", settings.Topic, EnvironmentVariableTarget.User);
 
-        if (!string.IsNullOrEmpty(settings.Username))
-            Environment.SetEnvironmentVariable("NTFY_USERNAME", settings.Username, EnvironmentVariableTarget.User);
+            if (!string.IsNullOrEmpty(settings.Username))
+                Environment.SetEnvironmentVariable("NTFY_USERNAME", settings.Username, EnvironmentVariableTarget.User);
 
-        if (!string.IsNullOrEmpty(settings.Password))
-            Environment.SetEnvironmentVariable("NTFY_PASSWORD", settings.Password, EnvironmentVariableTarget.User);
+            if (!string.IsNullOrEmpty(settings.Password))
+                Environment.SetEnvironmentVariable("NTFY_PASSWORD", settings.Password, EnvironmentVariableTarget.User);
 
-        return settings;
-#else
-    // 3. В RELEASE режиме — ошибка, если переменных нет
-    throw new InvalidOperationException(
-        "Ntfy credentials not found. Set NTFY_SERVER_URL and NTFY_TOPIC environment variables."
-    );
-#endif
+            return settings;
+        }
+
+        // 3. В RELEASE режиме — ошибка, если переменных нет
+        throw new InvalidOperationException(
+            "Ntfy credentials not found. Set NTFY_SERVER_URL and NTFY_TOPIC environment variables."
+        );
     }
 
     private NtfySettings RequestFromConsole()

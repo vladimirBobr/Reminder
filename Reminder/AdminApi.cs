@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -10,21 +10,21 @@ public static class AdminApi
 {
     public static void Start(EventRunner runner)
     {
-        var adminToken = Environment.GetEnvironmentVariable("ADMIN_API_TOKEN");
+        var adminToken = DebugHelper.AdminToken;
 
         if (string.IsNullOrEmpty(adminToken))
         {
-#if DEBUG
             Log.Information("Добавь токен удалённого доступа:");
 
             // Сохраняем в переменные окружения для текущей сессии
             adminToken = Console.ReadLine();
             Environment.SetEnvironmentVariable("ADMIN_API_TOKEN", adminToken, EnvironmentVariableTarget.User);
-#else
             Log.Warning("Remote control is not configured");
             return;
-#endif
         }
+
+        if (DebugHelper.IsDebug)
+            Log.Information("DEBUG: Using hardcoded admin token: {Token}", adminToken);
 
         _ = Task.Run(() => StartAdminApi(runner, adminToken));
     }

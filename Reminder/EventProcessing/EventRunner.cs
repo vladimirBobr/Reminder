@@ -11,14 +11,6 @@ namespace ReminderApp.EventProcessing;
 
 public class EventRunner : IEventRunner
 {
-    // В Debug - 5 секунд, в Release - 60 секунд
-    private const int LoopDelayMs =
-#if DEBUG
-        5_000;
-#else
-        60_000;
-#endif
-
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IEventReader _eventReader;
     private readonly IDailyDigestProcessor _dailyDigestProcessor;
@@ -54,7 +46,7 @@ public class EventRunner : IEventRunner
         _isRunning = true;
         _cts = new CancellationTokenSource();
 
-        var intervalSec = LoopDelayMs / 1000;
+        var intervalSec = DebugHelper.LoopDelayMs / 1000;
         Log.Information($"▶️ EventRunner запущен. Проверка каждые {intervalSec} сек.");
 
         _ = RunLoopAsync(_cts.Token);
@@ -95,7 +87,7 @@ public class EventRunner : IEventRunner
 
             try
             {
-                await Task.Delay(LoopDelayMs, ct);
+                await Task.Delay(DebugHelper.LoopDelayMs, ct);
             }
             catch (OperationCanceledException)
             {
