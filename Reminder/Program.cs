@@ -55,13 +55,13 @@ internal class Program
         var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, notifiers);
         var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, notifiers);
         var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, notifiers);
-        var printer = new EventOutputPrinter();
+        var printer = new EventOutputPrinter(dateTimeProvider);
 
         var runner = new EventRunner(
             dateTimeProvider,
             fileStorage,
             eventReader,
-            new EventOutputPrinter(),
+            new EventOutputPrinter(dateTimeProvider),
             dailyDigestProcessor,
             reminderProcessor,
             weeklyDigestProcessor,

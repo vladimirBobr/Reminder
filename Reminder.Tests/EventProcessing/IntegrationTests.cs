@@ -73,11 +73,11 @@ public class IntegrationTests
             dateTimeProvider,
             fileStorage,
             eventReader,
-            new EventOutputPrinter(),
+            new EventOutputPrinter(dateTimeProvider),
             dailyDigestProcessor,
             reminderProcessor,
             weeklyDigestProcessor,
-            new EventOutputPrinter());
+            new EventOutputPrinter(dateTimeProvider));
 
         // Act - вызываем все процессоры
         await dailyDigestProcessor.SendIfNeededAsync(events, friday);
