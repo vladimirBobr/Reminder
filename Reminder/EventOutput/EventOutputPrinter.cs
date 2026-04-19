@@ -35,7 +35,13 @@ public class EventOutputPrinter : IEventOutputPrinter
             if (daysDiff == 0)
                 todayEvents.Add(e);
             else if (daysDiff == 1)
-                tomorrowEvents.Add(e);
+            {
+                // Если сегодня воскресенье, то понедельник - это начало следующей недели
+                if (today.DayOfWeek == DayOfWeek.Sunday)
+                    nextWeekEvents.Add(e);
+                else
+                    tomorrowEvents.Add(e);
+            }
             else if (daysDiff >= 2 && daysDiff <= 7)
                 nextWeekEvents.Add(e);
             else
