@@ -42,4 +42,20 @@ public static class EventRunnerTestHelper
 
         return new ReminderProcessor(dateTimeProvider, fileStorage, new List<INotifier> { notifier });
     }
+
+    public static WeeklyDigestProcessor CreateWeeklyDigestProcessor(
+        DateTime? now = null,
+        List<EventData>? events = null,
+        INotifier? notifier = null,
+        InMemoryFileStorage? fileStorage = null)
+    {
+        now ??= DateTime.Now;
+        notifier ??= new TestNotifier();
+        fileStorage ??= new InMemoryFileStorage();
+
+        var dateTimeProvider = new MockDateTimeProvider();
+        dateTimeProvider.SetNow(now.Value);
+
+        return new WeeklyDigestProcessor(dateTimeProvider, fileStorage, new List<INotifier> { notifier });
+    }
 }
