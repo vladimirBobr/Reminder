@@ -1,5 +1,6 @@
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
+using ReminderApp.EventNotification.ConsoleOutput;
 using ReminderApp.EventNotification.Ntfy;
 using ReminderApp.EventNotification.YandexMail;
 using ReminderApp.EventOutput;
@@ -22,19 +23,29 @@ internal class Program
 
         Log.Information("▶️ Starting Reminder");
 
-        NtfyNotifier ntfyNotifier = new(new NtfyCredentialsProvider());
-        await ntfyNotifier.NotifyAsync("▶️ Reminder started");
-
         var dateTimeProvider = new DateTimeProvider();
         var fileStorage = new JsonFileStorage();
 
-        // Создаём список нотификаторов
+#if DEBUG
+        // В DEBUG используем только консольный нотификатор
+        var consoleNotifier = new ConsoleNotifier();
+        await consoleNotifier.NotifyAsync("▶️ Reminder started (DEBUG)");
+        
+        var notifiers = new List<INotifier>
+        {
+            consoleNotifier,
+        };
+#else
+        // В RELEASE используем реальные нотификаторы
+        NtfyNotifier ntfyNotifier = new(new NtfyCredentialsProvider());
+        await ntfyNotifier.NotifyAsync("▶️ Reminder started");
+
         var notifiers = new List<INotifier>
         {
             ntfyNotifier,
             new YandexMailNotifier(new YandexMailCredentialsProvider()),
-            // new TelegramNotifier(new TelegramCredentialsProvider()),
         };
+#endif
 
         // Создаём процессоры
         var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, notifiers);
