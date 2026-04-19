@@ -17,9 +17,12 @@ internal class Program
 {
     static async Task Main()
     {
+        // Ensure console supports UTF-8 emoji output on Windows
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
+
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
-            .WriteTo.Console()
+            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss}] {Message:lj}{NewLine}{Exception}")
             .WriteTo.Seq("http://localhost:5341")
             .CreateLogger();
 
