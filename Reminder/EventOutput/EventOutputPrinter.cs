@@ -42,82 +42,80 @@ public class EventOutputPrinter : IEventOutputPrinter
                 futureEvents.Add(e);
         }
 
-        // Выводим с разделителями
+        // Собираем одно сообщение
+        var sb = new System.Text.StringBuilder();
+
         if (todayEvents.Count > 0)
         {
-            Log.Information("═══════════════════════════════════════");
-            Log.Information("📅 СЕГОДНЯ");
-            Log.Information("═══════════════════════════════════════");
+            sb.AppendLine("═══════════════════════════════════════");
+            sb.AppendLine("📅 СЕГОДНЯ");
+            sb.AppendLine("═══════════════════════════════════════");
             foreach (var e in todayEvents.OrderBy(x => x.Time))
-                PrintTodayEvent(e);
+                sb.AppendLine(FormatTodayEvent(e));
         }
 
         if (tomorrowEvents.Count > 0)
         {
-            Log.Information("═══════════════════════════════════════");
-            Log.Information("📅 ЗАВТРА");
-            Log.Information("═══════════════════════════════════════");
+            sb.AppendLine("═══════════════════════════════════════");
+            sb.AppendLine("📅 ЗАВТРА");
+            sb.AppendLine("═══════════════════════════════════════");
             foreach (var e in tomorrowEvents.OrderBy(x => x.Time))
-                PrintTomorrowEvent(e);
+                sb.AppendLine(FormatTomorrowEvent(e));
         }
 
         if (nextWeekEvents.Count > 0)
         {
-            Log.Information("═══════════════════════════════════════");
-            Log.Information("📅 НА СЛЕДУЮЩЕЙ НЕДЕЛЕ");
-            Log.Information("═══════════════════════════════════════");
+            sb.AppendLine("═══════════════════════════════════════");
+            sb.AppendLine("📅 НА СЛЕДУЮЩЕЙ НЕДЕЛЕ");
+            sb.AppendLine("═══════════════════════════════════════");
             foreach (var e in nextWeekEvents.OrderBy(x => x.Date).ThenBy(x => x.Time))
-                PrintNextWeekEvent(e);
+                sb.AppendLine(FormatNextWeekEvent(e));
         }
 
         if (futureEvents.Count > 0)
         {
-            Log.Information("═══════════════════════════════════════");
-            Log.Information("📅 В БУДУЩЕМ");
-            Log.Information("═══════════════════════════════════════");
+            sb.AppendLine("═══════════════════════════════════════");
+            sb.AppendLine("📅 В БУДУЩЕМ");
+            sb.AppendLine("═══════════════════════════════════════");
             foreach (var e in futureEvents.OrderBy(x => x.Date).ThenBy(x => x.Time))
-                PrintFutureEvent(e);
+                sb.AppendLine(FormatFutureEvent(e));
         }
+
+        if (sb.Length > 0)
+            Log.Information("{Events}", sb.ToString().TrimEnd());
     }
 
-    private void PrintTodayEvent(EventData e)
+    private string FormatTodayEvent(EventData e)
     {
         var timeStr = e.Time?.ToString("HH:mm") ?? "---";
         var hoursUntil = GetHoursUntil(e);
         var hoursStr = hoursUntil.HasValue ? $" (через {hoursUntil.Value} часов)" : "";
 
-        Log.Information($"  сегодня {timeStr} - {e.Subject}{hoursStr}");
-        if (!string.IsNullOrEmpty(e.Description))
-            Log.Information($"    📝 {e.Description}");
+        var desc = string.IsNullOrEmpty(e.Description) ? "" : $"\n   📝 {e.Description}";
+        return $"  сегодня {timeStr} - {e.Subject}{hoursStr}{desc}";
     }
 
-    private void PrintTomorrowEvent(EventData e)
+    private string FormatTomorrowEvent(EventData e)
     {
         var timeStr = e.Time?.ToString("HH:mm") ?? "---";
-
-        Log.Information($"  завтра {timeStr} - {e.Subject}");
-        if (!string.IsNullOrEmpty(e.Description))
-            Log.Information($"    📝 {e.Description}");
+        var desc = string.IsNullOrEmpty(e.Description) ? "" : $"\n   📝 {e.Description}";
+        return $"  завтра {timeStr} - {e.Subject}{desc}";
     }
 
-    private void PrintNextWeekEvent(EventData e)
+    private string FormatNextWeekEvent(EventData e)
     {
         var dayName = e.Date.ToString("dddd", new System.Globalization.CultureInfo("ru-RU"));
         var timeStr = e.Time?.ToString("HH:mm") ?? "---";
-
-        Log.Information($"  на след неделе ({dayName}) {timeStr} - {e.Subject}");
-        if (!string.IsNullOrEmpty(e.Description))
-            Log.Information($"    📝 {e.Description}");
+        var desc = string.IsNullOrEmpty(e.Description) ? "" : $"\n   📝 {e.Description}";
+        return $"  на след неделе ({dayName}) {timeStr} - {e.Subject}{desc}";
     }
 
-    private void PrintFutureEvent(EventData e)
+    private string FormatFutureEvent(EventData e)
     {
         var dateStr = e.Date.ToString("dd.MM.yyyy");
         var timeStr = e.Time?.ToString("HH:mm") ?? "---";
-
-        Log.Information($"  {dateStr} {timeStr} - {e.Subject}");
-        if (!string.IsNullOrEmpty(e.Description))
-            Log.Information($"    📝 {e.Description}");
+        var desc = string.IsNullOrEmpty(e.Description) ? "" : $"\n   📝 {e.Description}";
+        return $"  {dateStr} {timeStr} - {e.Subject}{desc}";
     }
 
     private int? GetHoursUntil(EventData e)
