@@ -1,14 +1,12 @@
-﻿using ReminderApp.Common;
+using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.FileStorage;
 
 namespace ReminderApp.EventProcessing.Senders;
 
-public class ReminderSender : IReminderSender
+public class ReminderSender : SenderBase, IReminderSender
 {
-    private readonly IFileStorage _fileStorage;
-    private readonly IEnumerable<INotifier> _notifiers;
     private readonly int _remindMinutesBefore;
 
     // Кэш отправленных напоминаний (ключ = "yyyy-MM-dd HH:mm-Subject")
@@ -20,21 +18,17 @@ public class ReminderSender : IReminderSender
         IFileStorage fileStorage,
         IEnumerable<INotifier> notifiers,
         int remindMinutesBefore = 60)
+        : base(dateTimeProvider, fileStorage, notifiers)
     {
-        _fileStorage = fileStorage;
-        _notifiers = notifiers ?? throw new ArgumentNullException(nameof(notifiers));
         _remindMinutesBefore = remindMinutesBefore;
     }
 
-    /// <summary>
-    /// Загружает отправленные напоминания (вызывается при старте)
-    /// </summary>
-    public async Task InitializeAsync()
+    protected override async Task OnInitializeAsync()
     {
         await LoadSentRemindersAsync();
     }
 
-    public async Task SendIfNeededAsync(List<EventData> events, DateTime now)
+    public override async Task SendIfNeededAsync(List<EventData> events, DateTime now)
     {
         var today = DateOnly.FromDateTime(now);
 
@@ -75,43 +69,26 @@ public class ReminderSender : IReminderSender
             message += $"\n{evt.Description}";
         }
 
-        foreach (var notifier in _notifiers)
-        {
-            await notifier.NotifyAsync(message);
-        }
+        await NotifyAllAsync(message);
         Log.Information($"✅ Напоминание отправлено: {evt.Subject}");
     }
 
     private async Task LoadSentRemindersAsync()
     {
-        try
+        var data = await LoadAsync(SentRemindersKey);
+        if (!string.IsNullOrEmpty(data))
         {
-            var data = await _fileStorage.LoadAsync(SentRemindersKey);
-            if (!string.IsNullOrEmpty(data))
+            var keys = data.Split(';', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var key in keys)
             {
-                var keys = data.Split(';', StringSplitOptions.RemoveEmptyEntries);
-                foreach (var key in keys)
-                {
-                    _sentReminders.Add(key);
-                }
+                _sentReminders.Add(key);
             }
-        }
-        catch
-        {
-            // Игнорируем ошибки
         }
     }
 
     private async Task SaveSentRemindersAsync()
     {
-        try
-        {
-            var data = string.Join(";", _sentReminders);
-            await _fileStorage.SaveAsync(SentRemindersKey, data);
-        }
-        catch (Exception ex)
-        {
-            Log.Information($"❌ Не удалось сохранить напоминания: {ex.Message}");
-        }
+        var data = string.Join(";", _sentReminders);
+        await SaveAsync(SentRemindersKey, data);
     }
 }

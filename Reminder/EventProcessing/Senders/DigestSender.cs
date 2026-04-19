@@ -1,14 +1,12 @@
-﻿using ReminderApp.Common;
+using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
 using ReminderApp.FileStorage;
 
 namespace ReminderApp.EventProcessing.Senders;
 
-public class DigestSender : IDigestSender
+public class DigestSender : SenderBase, IDigestSender
 {
-    private readonly IFileStorage _fileStorage;
-    private readonly IEnumerable<INotifier> _notifiers;
     private readonly int _digestHour;
 
     private DateOnly? _lastDigestDate;
@@ -19,34 +17,30 @@ public class DigestSender : IDigestSender
         IFileStorage fileStorage,
         IEnumerable<INotifier> notifiers,
         int digestHour = 7)
+        : base(dateTimeProvider, fileStorage, notifiers)
     {
-        _fileStorage = fileStorage;
-        _notifiers = notifiers ?? throw new ArgumentNullException(nameof(notifiers));
         _digestHour = digestHour;
     }
 
-    /// <summary>
-    /// Загружает дату последней отправки (вызывается при старте)
-    /// </summary>
-    public async Task InitializeAsync()
+    protected override async Task OnInitializeAsync()
     {
         _lastDigestDate = await LoadLastDigestDateAsync();
     }
 
-    public async Task SendIfNeededAsync(List<EventData> events, DateTime now)
+    public override async Task SendIfNeededAsync(List<EventData> events, DateTime now)
     {
         var today = DateOnly.FromDateTime(now);
 
         // Проверяем: если уже время Digest прошло и сегодня ещё не отправляли
         if (now.Hour >= _digestHour && _lastDigestDate != today)
         {
-            await SendDigestAsync(events, now);
+            await SendDailyDigestAsync(events, now);
             _lastDigestDate = today;
             await SaveLastDigestDateAsync(today);
         }
     }
 
-    public async Task SendDigestAsync(List<EventData> events, DateTime now)
+    public async Task SendDailyDigestAsync(List<EventData> events, DateTime now)
     {
         var today = DateOnly.FromDateTime(now);
 
@@ -65,11 +59,8 @@ public class DigestSender : IDigestSender
         Log.Information($"📅 {today:dd.MM.yyyy} - найдено {todayEvents.Count} событий, отправляю Digest...");
 
         var digest = BuildDigestMessage(todayEvents);
-        foreach (var notifier in _notifiers)
-        {
-            await notifier.NotifyAsync(digest);
-        }
-        Log.Information("✅ Digest отправлен");
+        await NotifyAllAsync(digest);
+        Log.Information("✅ Daily Digest отправлен");
     }
 
     private string BuildDigestMessage(List<EventData> events)
@@ -94,29 +85,15 @@ public class DigestSender : IDigestSender
 
     private async Task<DateOnly?> LoadLastDigestDateAsync()
     {
-        try
-        {
-            var data = await _fileStorage.LoadAsync(LastDigestKey);
-            if (string.IsNullOrEmpty(data))
-                return null;
-
-            return DateOnly.Parse(data);
-        }
-        catch
-        {
+        var data = await LoadAsync(LastDigestKey);
+        if (string.IsNullOrEmpty(data))
             return null;
-        }
+
+        return DateOnly.Parse(data);
     }
 
     private async Task SaveLastDigestDateAsync(DateOnly date)
     {
-        try
-        {
-            await _fileStorage.SaveAsync(LastDigestKey, date.ToString("yyyy-MM-dd"));
-        }
-        catch (Exception ex)
-        {
-            Log.Information($"❌ Не удалось сохранить дату Digest: {ex.Message}");
-        }
+        await SaveAsync(LastDigestKey, date.ToString("yyyy-MM-dd"));
     }
 }

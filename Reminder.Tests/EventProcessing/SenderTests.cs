@@ -20,7 +20,6 @@ public class DigestSenderTests
 
         var notifier = new TestNotifier();
         var sender = CreateDigestSender(now: now, events: events, notifier: notifier);
-        await sender.InitializeAsync();
 
         // Act
         await sender.SendIfNeededAsync(events, now);
@@ -43,7 +42,6 @@ public class DigestSenderTests
 
         var notifier = new TestNotifier();
         var sender = CreateDigestSender(now: now, events: events, notifier: notifier);
-        await sender.InitializeAsync();
 
         // Act
         await sender.SendIfNeededAsync(events, now);
@@ -67,7 +65,6 @@ public class DigestSenderTests
 
         var notifier = new TestNotifier();
         var sender = CreateDigestSender(now: now, events: events, notifier: notifier);
-        await sender.InitializeAsync();
 
         // Act
         await sender.SendIfNeededAsync(events, now);
@@ -94,7 +91,6 @@ public class ReminderSenderTests
 
         var notifier = new TestNotifier();
         var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
-        await sender.InitializeAsync();
 
         // Act
         await sender.SendIfNeededAsync(events, now);
@@ -121,7 +117,6 @@ public class ReminderSenderTests
 
         var notifier = new TestNotifier();
         var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
-        await sender.InitializeAsync();
 
         // Act
         await sender.SendIfNeededAsync(events, now);
@@ -150,7 +145,6 @@ public class ReminderSenderTests
 
         var notifier = new TestNotifier();
         var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
-        await sender.InitializeAsync();
 
         // Act
         await sender.SendIfNeededAsync(events, now);
@@ -177,7 +171,6 @@ public class ReminderSenderTests
 
         var notifier = new TestNotifier();
         var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
-        await sender.InitializeAsync();
 
         // Act
         await sender.SendIfNeededAsync(events, now);
@@ -204,7 +197,6 @@ public class ReminderSenderTests
 
         var notifier = new TestNotifier();
         var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
-        await sender.InitializeAsync();
 
         // Act
         await sender.SendIfNeededAsync(events, now);
@@ -233,7 +225,6 @@ public class ReminderSenderTests
 
         var notifier = new TestNotifier();
         var sender = CreateReminderSender(now: now, events: events, notifier: notifier);
-        await sender.InitializeAsync();
 
         // Act
         await sender.SendIfNeededAsync(events, now);

@@ -51,10 +51,6 @@ public class EventRunner : IEventRunner
         _isRunning = true;
         _cts = new CancellationTokenSource();
 
-        // Инициализируем отправителей - загружаем состояние
-        await _digestSender.InitializeAsync();
-        await _reminderSender.InitializeAsync();
-
         var intervalSec = LoopDelayMs / 1000;
         Log.Information($"▶️ EventRunner запущен. Проверка каждые {intervalSec} сек.");
 
@@ -70,7 +66,7 @@ public class EventRunner : IEventRunner
 
     internal void SendDigest()
     {
-        _digestSender.SendDigestAsync(_events, _dateTimeProvider.Now);
+        _digestSender.SendDailyDigestAsync(_events, _dateTimeProvider.Now);
     }
 
     private async Task RunLoopAsync(CancellationToken ct)
