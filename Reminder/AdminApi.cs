@@ -49,6 +49,21 @@ public static class AdminApi
             return Results.Json(new { message = "Digest sent" });
         });
 
+        app.MapGet("/week", async (HttpContext ctx) =>
+        {
+            var token = ctx.Request.Query["token"].FirstOrDefault();
+
+            if (string.IsNullOrEmpty(token) || token != adminToken)
+            {
+                Log.Warning("Unauthorized week attempt from {Ip}", ctx.Connection.RemoteIpAddress);
+                return Results.Json(new { error = "Unauthorized" }, statusCode: 401);
+            }
+
+            _ = Task.Run(() => runner.SendWeeklyDigest());
+
+            return Results.Json(new { message = "Weekly digest sent" });
+        });
+
         app.MapPost("/github-webhook", async (HttpContext ctx) =>
         {
             try

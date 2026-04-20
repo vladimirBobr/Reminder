@@ -64,6 +64,11 @@ public class EventRunner : IEventRunner
         _dailyDigestProcessor.SendDailyDigestAsync(_events, _dateTimeProvider.Now);
     }
 
+    internal void SendWeeklyDigest()
+    {
+        _weeklyDigestProcessor.SendWeeklyDigestAsync(_events, _dateTimeProvider.Now);
+    }
+
     private async Task RunLoopAsync(CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)
