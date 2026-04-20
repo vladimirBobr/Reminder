@@ -4,9 +4,16 @@ namespace ReminderApp.EventReading.Debug;
 
 public class DebugEventReader : IEventReader
 {
+    private readonly DateTime _frozenNow;
+
+    public DebugEventReader()
+    {
+        _frozenNow = DateTime.Now;
+    }
+
     public Task<List<EventData>> ReadEventsAsync()
     {
-        var now = DateTime.Now;
+        var now = _frozenNow;
         var events = new List<EventData>
         {
             // Событие через 30 минут - для тестирования ReminderProcessor
