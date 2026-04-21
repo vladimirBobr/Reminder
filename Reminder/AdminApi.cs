@@ -1,8 +1,10 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using ReminderApp.EventProcessing;
+using ReminderApp.EventReading.GitHub;
+using ReminderApp.EventStorage;
 
 namespace ReminderApp;
 
@@ -62,6 +64,41 @@ public static class AdminApi
             _ = Task.Run(() => runner.SendWeeklyDigest());
 
             return Results.Json(new { message = "Weekly digest sent" });
+        });
+
+        app.MapGet("/add-note", async (HttpContext ctx) =>
+        {
+            var token = ctx.Request.Query["token"].FirstOrDefault();
+            var isLocalhost = ctx.Connection.RemoteIpAddress?.ToString() == "127.0.0.1"
+                           || ctx.Connection.RemoteIpAddress?.ToString() == "::1";
+
+            if (string.IsNullOrEmpty(token) || (!isLocalhost && token != adminToken))
+            {
+                Log.Warning("Unauthorized add-note attempt from {Ip}", ctx.Connection.RemoteIpAddress);
+                return Results.Json(new { error = "Unauthorized" }, statusCode: 401);
+            }
+
+            if (isLocalhost && token != "test")
+            {
+                Log.Warning("Invalid token for localhost: {Token}", token);
+                return Results.Json(new { error = "Invalid token" }, statusCode: 401);
+            }
+
+            var note = ctx.Request.Query["note"].FirstOrDefault();
+            if (string.IsNullOrEmpty(note))
+            {
+                return Results.Json(new { error = "Note is required" }, statusCode: 400);
+            }
+
+            var notesService = new NotesService(new GitHubCredentialsProvider());
+            var error = notesService.AddNote(note);
+
+            if (!string.IsNullOrEmpty(error))
+            {
+                return Results.Json(new { message = error });
+            }
+
+            return Results.Json(new { message = "Ok" });
         });
 
         app.MapPost("/github-webhook", async (HttpContext ctx) =>
