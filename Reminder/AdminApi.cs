@@ -31,59 +31,54 @@ public static class AdminApi
         _ = Task.Run(() => StartAdminApi(runner, adminToken));
     }
 
+    private static async ValueTask<object?> AuthFilter(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    {
+        var ctx = context.HttpContext;
+        var adminToken = ctx.Items["AdminToken"]?.ToString() ?? "";
+        
+        var token = ctx.Request.Query["token"].FirstOrDefault();
+        var isLocalhost = ctx.Connection.RemoteIpAddress?.ToString() == "127.0.0.1"
+                       || ctx.Connection.RemoteIpAddress?.ToString() == "::1";
+
+        if (isLocalhost && token == "test")
+            return await next(context);
+
+        if (string.IsNullOrEmpty(token) || token != adminToken)
+        {
+            Log.Warning("Unauthorized attempt from {Ip}", ctx.Connection.RemoteIpAddress);
+            return Results.Json(new { error = "Unauthorized" }, statusCode: 401);
+        }
+
+        return await next(context);
+    }
+
     private static void StartAdminApi(EventRunner runner, string adminToken)
     {
         var builder = WebApplication.CreateBuilder();
         var app = builder.Build();
 
-        app.MapGet("/today", async (HttpContext ctx) =>
+        app.Use(async (ctx, next) =>
         {
-            var token = ctx.Request.Query["token"].FirstOrDefault();
+            ctx.Items["AdminToken"] = adminToken;
+            await next();
+        });
 
-            if (string.IsNullOrEmpty(token) || token != adminToken)
-            {
-                Log.Warning("Unauthorized stop attempt from {Ip}", ctx.Connection.RemoteIpAddress);
-                return Results.Json(new { error = "Unauthorized" }, statusCode: 401);
-            }
+        var protectedGroup = app.MapGroup("").AddEndpointFilter(AuthFilter);
 
+        protectedGroup.MapGet("/today", (HttpContext ctx) =>
+        {
             _ = Task.Run(() => runner.SendDigest());
-
             return Results.Json(new { message = "Digest sent" });
         });
 
-        app.MapGet("/week", async (HttpContext ctx) =>
+        protectedGroup.MapGet("/week", (HttpContext ctx) =>
         {
-            var token = ctx.Request.Query["token"].FirstOrDefault();
-
-            if (string.IsNullOrEmpty(token) || token != adminToken)
-            {
-                Log.Warning("Unauthorized week attempt from {Ip}", ctx.Connection.RemoteIpAddress);
-                return Results.Json(new { error = "Unauthorized" }, statusCode: 401);
-            }
-
             _ = Task.Run(() => runner.SendWeeklyDigest());
-
             return Results.Json(new { message = "Weekly digest sent" });
         });
 
-        app.MapGet("/add-note", async (HttpContext ctx) =>
+        protectedGroup.MapGet("/add-note", (HttpContext ctx) =>
         {
-            var token = ctx.Request.Query["token"].FirstOrDefault();
-            var isLocalhost = ctx.Connection.RemoteIpAddress?.ToString() == "127.0.0.1"
-                           || ctx.Connection.RemoteIpAddress?.ToString() == "::1";
-
-            if (string.IsNullOrEmpty(token) || (!isLocalhost && token != adminToken))
-            {
-                Log.Warning("Unauthorized add-note attempt from {Ip}", ctx.Connection.RemoteIpAddress);
-                return Results.Json(new { error = "Unauthorized" }, statusCode: 401);
-            }
-
-            if (isLocalhost && token != "test")
-            {
-                Log.Warning("Invalid token for localhost: {Token}", token);
-                return Results.Json(new { error = "Invalid token" }, statusCode: 401);
-            }
-
             var note = ctx.Request.Query["note"].FirstOrDefault();
             if (string.IsNullOrEmpty(note))
             {
