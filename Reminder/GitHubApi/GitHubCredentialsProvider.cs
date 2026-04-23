@@ -1,6 +1,6 @@
-﻿using ReminderApp.Common;
+using ReminderApp.Common;
 
-namespace ReminderApp.EventReading.GitHub;
+namespace ReminderApp.GitHubApi;
 
 /// <summary>
 /// Реализация провайдера credentials для GitHub
@@ -31,7 +31,7 @@ public class GitHubCredentialsProvider :
         Console.Write("Enter GitHub Personal Access Token: ");
         var token = Console.ReadLine() ?? "";
 
-        Log.Information("✅ Credentials saved.");
+        Log.Information("Credentials saved.");
 
         var parsed = ParseGitHubUrl(url);
         return new GitHubSettings 

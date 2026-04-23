@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
-using ReminderApp.EventReading.GitHub;
+using OneOf;
 
 namespace ReminderApp.GitHubApi;
 
@@ -35,7 +35,7 @@ public class GitHubClient : IGitHubClient
     }
 
     /// <inheritdoc />
-    public async Task<(string? Error, string? Content, string? Sha)> GetFileContentAsync()
+    public async Task<OneOf<GitHubFetchError, GitHubFetchSuccess>> GetFileContentAsync()
     {
         try
         {
@@ -45,7 +45,7 @@ public class GitHubClient : IGitHubClient
             if (!response.IsSuccessStatusCode)
             {
                 Log.Information($"❌ GitHub API error: {response.StatusCode}");
-                return ($"GitHub API error: {response.StatusCode}", null, null);
+                return new GitHubFetchError($"GitHub API error: {response.StatusCode}");
             }
             
             var jsonContent = await response.Content.ReadAsStringAsync();
@@ -54,24 +54,24 @@ public class GitHubClient : IGitHubClient
             if (githubContent == null || string.IsNullOrEmpty(githubContent.content))
             {
                 Log.Information("❌ Could not read file content from GitHub.");
-                return ("Could not read file content from GitHub", null, null);
+                return new GitHubFetchError("Could not read file content from GitHub");
             }
             
             var content = Encoding.UTF8.GetString(Convert.FromBase64String(githubContent.content));
 
             Log.Information($"📄 Read content from GitHub: {_owner}/{_repo}/{_filePath}");
             
-            return (null, content, githubContent.sha);
+            return new GitHubFetchSuccess(content, githubContent.sha);
         }
         catch (Exception ex)
         {
             Log.Information($"❌ Error fetching from GitHub: {ex.Message}");
-            return ($"Error fetching from GitHub: {ex.Message}", null, null);
+            return new GitHubFetchError($"Error fetching from GitHub: {ex.Message}");
         }
     }
 
     /// <inheritdoc />
-    public async Task<string?> UpdateFileContentAsync(string content, string sha)
+    public async Task<OneOf<GitHubUpdateError, GitHubUpdateSuccess>> UpdateFileContentAsync(string content, string sha)
     {
         try
         {
@@ -92,16 +92,16 @@ public class GitHubClient : IGitHubClient
             {
                 var error = $"Failed to update file on GitHub: {response.StatusCode}";
                 Log.Information(error);
-                return error;
+                return new GitHubUpdateError(error);
             }
 
             Log.Information($"📝 Updated content on GitHub: {_owner}/{_repo}/{_filePath}");
-            return null;
+            return new GitHubUpdateSuccess();
         }
         catch (Exception ex)
         {
             Log.Information($"❌ Error updating GitHub: {ex.Message}");
-            return $"Error updating GitHub: {ex.Message}";
+            return new GitHubUpdateError($"Error updating GitHub: {ex.Message}");
         }
     }
 }

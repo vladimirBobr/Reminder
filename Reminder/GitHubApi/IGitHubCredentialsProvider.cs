@@ -1,4 +1,4 @@
-namespace ReminderApp.EventReading.GitHub;
+namespace ReminderApp.GitHubApi;
 
 /// <summary>
 /// DTO для настроек GitHub

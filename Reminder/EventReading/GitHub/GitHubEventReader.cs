@@ -1,3 +1,4 @@
+using OneOf;
 using ReminderApp.EventReading.LocalFile;
 using ReminderApp.GitHubApi;
 
@@ -17,14 +18,15 @@ public class GitHubEventReader : EventReaderBase
 
     protected override async Task<string?> ReadContentAsync()
     {
-        var (error, content, _) = await _gitHubClient.GetFileContentAsync();
+        var result = await _gitHubClient.GetFileContentAsync();
         
-        if (!string.IsNullOrEmpty(error))
-        {
-            Log.Information($"❌ Error reading from GitHub: {error}");
-            return null;
-        }
-        
-        return content;
+        return result.Match<string?>(
+            error =>
+            {
+                Log.Information($"❌ Error reading from GitHub: {error.Message}");
+                return null;
+            },
+            success => success.Content
+        );
     }
 }

@@ -1,3 +1,5 @@
+using OneOf;
+
 namespace ReminderApp.GitHubApi;
 
 /// <summary>
@@ -11,6 +13,26 @@ public class GitHubFileContent
 }
 
 /// <summary>
+/// Error fetching file content from GitHub
+/// </summary>
+public record GitHubFetchError(string Message);
+
+/// <summary>
+/// Successful file content fetch
+/// </summary>
+public record GitHubFetchSuccess(string Content, string Sha);
+
+/// <summary>
+/// Error updating file content in GitHub
+/// </summary>
+public record GitHubUpdateError(string Message);
+
+/// <summary>
+/// Successful file update
+/// </summary>
+public record GitHubUpdateSuccess();
+
+/// <summary>
 /// Interface for GitHub API operations
 /// </summary>
 public interface IGitHubClient
@@ -18,14 +40,12 @@ public interface IGitHubClient
     /// <summary>
     /// Get file content from GitHub repository
     /// </summary>
-    /// <returns>Tuple of (Error, Content, Sha)</returns>
-    Task<(string? Error, string? Content, string? Sha)> GetFileContentAsync();
+    Task<OneOf<GitHubFetchError, GitHubFetchSuccess>> GetFileContentAsync();
 
     /// <summary>
     /// Update file content in GitHub repository
     /// </summary>
     /// <param name="content">New content</param>
     /// <param name="sha">File SHA from previous read</param>
-    /// <returns>Error message or null on success</returns>
-    Task<string?> UpdateFileContentAsync(string content, string sha);
+    Task<OneOf<GitHubUpdateError, GitHubUpdateSuccess>> UpdateFileContentAsync(string content, string sha);
 }
