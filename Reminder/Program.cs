@@ -10,6 +10,7 @@ using ReminderApp.EventReading;
 using ReminderApp.EventReading.Debug;
 using ReminderApp.EventReading.GitHub;
 using ReminderApp.FileStorage;
+using ReminderApp.GitHubApi;
 
 namespace ReminderApp;
 
@@ -32,6 +33,7 @@ internal class Program
         var fileStorage = new JsonFileStorage();
         var notifiers = new List<INotifier>();
         IEventReader eventReader;
+        IGitHubClient gitHubClient;
 
         if (DebugHelper.IsDebug)
         {
@@ -41,6 +43,7 @@ internal class Program
             
             notifiers.Add(consoleNotifier);
             eventReader = new DebugEventReader();
+            gitHubClient = null!;
         }
         else
         {
@@ -51,7 +54,8 @@ internal class Program
             notifiers.Add(ntfyNotifier);
             notifiers.Add(new YandexMailNotifier(new YandexMailCredentialsProvider()));
             
-            eventReader = new GitHubEventReader(new GitHubCredentialsProvider());
+            gitHubClient = new GitHubClient(new GitHubCredentialsProvider());
+            eventReader = new GitHubEventReader(gitHubClient);
         }
 
         // Создаём процессоры
@@ -72,7 +76,7 @@ internal class Program
             currentWeekDigestProcessor,
             printer);
 
-        AdminApi.Start(runner);
+        AdminApi.Start(runner, gitHubClient);
 
         await runner.StartAsync();
 

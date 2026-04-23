@@ -5,12 +5,13 @@ using Microsoft.AspNetCore.Http;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventReading.GitHub;
 using ReminderApp.EventStorage;
+using ReminderApp.GitHubApi;
 
 namespace ReminderApp;
 
 public static class AdminApi
 {
-    public static void Start(EventRunner runner)
+    public static void Start(EventRunner runner, IGitHubClient? gitHubClient)
     {
         var adminToken = DebugHelper.AdminToken;
 
@@ -28,7 +29,7 @@ public static class AdminApi
         if (DebugHelper.IsDebug)
             Log.Information("DEBUG: Using hardcoded admin token: {Token}", adminToken);
 
-        _ = Task.Run(() => StartAdminApi(runner, adminToken));
+        _ = Task.Run(() => StartAdminApi(runner, adminToken, gitHubClient));
     }
 
     private static async ValueTask<object?> AuthFilter(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
@@ -36,23 +37,24 @@ public static class AdminApi
         var ctx = context.HttpContext;
         var adminToken = ctx.Items["AdminToken"]?.ToString() ?? "";
         
-        var token = ctx.Request.Query["token"].FirstOrDefault();
-        var isLocalhost = ctx.Connection.RemoteIpAddress?.ToString() == "127.0.0.1"
-                       || ctx.Connection.RemoteIpAddress?.ToString() == "::1";
-
-        if (isLocalhost && token == "test")
+        // Check cookie first
+        var cookieToken = ctx.Request.Cookies["token"];
+        if (!string.IsNullOrEmpty(cookieToken) && cookieToken == adminToken)
             return await next(context);
 
-        if (string.IsNullOrEmpty(token) || token != adminToken)
-        {
-            Log.Warning("Unauthorized attempt from {Ip}", ctx.Connection.RemoteIpAddress);
-            return Results.Json(new { error = "Unauthorized" }, statusCode: 401);
-        }
+        // Check Authorization header (Bearer token)
+        var authHeader = ctx.Request.Headers["Authorization"].FirstOrDefault();
+        var bearerToken = authHeader?.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) == true
+            ? authHeader.Substring(7)
+            : null;
+        if (!string.IsNullOrEmpty(bearerToken) && bearerToken == adminToken)
+            return await next(context);
 
-        return await next(context);
+        Log.Warning("Unauthorized attempt from {Ip}", ctx.Connection.RemoteIpAddress);
+        return Results.Json(new { error = "Unauthorized" }, statusCode: 401);
     }
 
-    private static void StartAdminApi(EventRunner runner, string adminToken)
+    private static void StartAdminApi(EventRunner runner, string adminToken, IGitHubClient? gitHubClient)
     {
         var builder = WebApplication.CreateBuilder();
         var app = builder.Build();
@@ -85,15 +87,36 @@ public static class AdminApi
                 return Results.Json(new { error = "Note is required" }, statusCode: 400);
             }
 
-            var notesService = new NotesService(new GitHubCredentialsProvider());
-            var error = notesService.AddNote(note);
+            DateOnly? date = null;
+            var dateStr = ctx.Request.Query["date"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(dateStr))
+            {
+                if (DateOnly.TryParseExact(dateStr, "dd.MM.yyyy",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None, out var parsedDate))
+                {
+                    date = parsedDate;
+                }
+                else
+                {
+                    return Results.Json(new { error = "Invalid date format. Use dd.MM.yyyy" }, statusCode: 400);
+                }
+            }
+
+            if (gitHubClient == null)
+            {
+                return Results.Json(new { error = "GitHub client not available in debug mode" }, statusCode: 400);
+            }
+
+            var notesService = new NotesService(gitHubClient);
+            var (error, message) = notesService.AddNote(note, date);
 
             if (!string.IsNullOrEmpty(error))
             {
                 return Results.Json(new { message = error });
             }
 
-            return Results.Json(new { message = "Ok" });
+            return Results.Json(new { message = message ?? "Ok" });
         });
 
         app.MapPost("/github-webhook", async (HttpContext ctx) =>
@@ -112,6 +135,62 @@ public static class AdminApi
             {
                 return Results.InternalServerError(ex.Message);
             }
+        });
+
+        app.MapGet("/login", () => Results.Text(@"<!DOCTYPE html>
+<html>
+<head><title>Login</title></head>
+<body>
+<h1>Login</h1>
+<form method=""post"" action=""/login"">
+<input type=""password"" name=""token"" placeholder=""Enter token"" required>
+<button type=""submit"">Login</button>
+</form>
+</body>
+</html>", "text/html"));
+
+        app.MapPost("/login", (HttpContext ctx) =>
+        {
+            var token = ctx.Request.Form["token"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(token))
+            {
+                ctx.Response.Cookies.Append("token", token, new CookieOptions 
+                { 
+                    HttpOnly = true, 
+                    SameSite = SameSiteMode.Strict 
+                });
+            }
+            return Results.Redirect("/");
+        });
+
+        app.MapGet("/logout", (HttpContext ctx) =>
+        {
+            ctx.Response.Cookies.Delete("token");
+            return Results.Redirect("/");
+        });
+
+        app.MapGet("/", (HttpContext ctx) =>
+        {
+            var isLoggedIn = !string.IsNullOrEmpty(ctx.Request.Cookies["token"]);
+            
+            var html = $@"<!DOCTYPE html>
+<html>
+<head><title>Admin API</title></head>
+<body>
+<h1>Admin API {(!isLoggedIn ? "(Not logged in)" : "")}</h1>
+" + (isLoggedIn 
+? @"<p><a href=""/logout"">Logout</a></p>
+<ul>
+<li><a href=""/today"">GET /today - Send today's digest</a></li>
+<li><a href=""/week"">GET /week - Send weekly digest</a></li>
+<li><a href=""/add-note?note=Test note"">GET /add-note?note={note} - Add note to events file (optional: &date=dd.MM.yyyy)</a></li>
+<li>POST /github-webhook - GitHub webhook receiver</li>
+</ul>" 
+: @"<p>Please <a href=""/login"">login</a> to access protected endpoints.</p>
+<p>For API calls use header: <code>Authorization: Bearer <token></code></p>") + @"
+</body>
+</html>";
+            return Results.Text(html, "text/html");
         });
 
         app.Run("http://0.0.0.0:5000");

@@ -67,17 +67,20 @@ public class IntegrationTests
         var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, notifiers);
         var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, notifiers);
         var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, notifiers);
+        var currentWeekDigestProcessor = new CurrentWeekDigestProcessor(dateTimeProvider, fileStorage, notifiers);
+        var printer = new EventOutputPrinter(dateTimeProvider);
 
         // Создаём EventRunner
         var runner = new EventRunner(
             dateTimeProvider,
             fileStorage,
             eventReader,
-            new EventOutputPrinter(dateTimeProvider),
+            printer,
             dailyDigestProcessor,
             reminderProcessor,
             weeklyDigestProcessor,
-            new EventOutputPrinter(dateTimeProvider));
+            currentWeekDigestProcessor,
+            printer);
 
         // Act - вызываем все процессоры
         await dailyDigestProcessor.SendIfNeededAsync(events, friday);

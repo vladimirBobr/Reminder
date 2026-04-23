@@ -2,5 +2,5 @@ namespace ReminderApp.EventStorage;
 
 public interface INotesService
 {
-    string AddNote(string note);
+    (string Error, string? Message) AddNote(string note, DateOnly? date = null);
 }

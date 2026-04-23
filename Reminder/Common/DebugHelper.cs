@@ -1,4 +1,4 @@
-namespace ReminderApp;
+﻿namespace ReminderApp;
 
 public static class DebugHelper
 {
@@ -18,7 +18,7 @@ public static class DebugHelper
 
     public static string AdminToken => 
 #if DEBUG
-        "1234";
+        "test";
 #else
         Environment.GetEnvironmentVariable("ADMIN_API_TOKEN") ?? string.Empty;
 #endif
