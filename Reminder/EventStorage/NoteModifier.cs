@@ -1,7 +1,18 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.RegularExpressions;
+using OneOf;
 
 namespace ReminderApp.EventStorage;
+
+/// <summary>
+/// Error when modifying note content
+/// </summary>
+public record NoteModifierError(string Message);
+
+/// <summary>
+/// Success result with modified content and message
+/// </summary>
+public record NoteModifierSuccess(string ModifiedContent, string ResultMessage);
 
 /// <summary>
 /// Handles the logic of inserting notes into event file content.
@@ -14,8 +25,8 @@ public static class NoteModifier
     /// <param name="content">Current file content</param>
     /// <param name="note">The note text to add</param>
     /// <param name="date">Optional date - if provided and section exists, adds to that section</param>
-    /// <returns>Tuple of (Error message if any, Modified content, Result message)</returns>
-    public static (string? Error, string? ModifiedContent, string? ResultMessage) ModifyContent(
+    /// <returns>OneOf result with either NoteModifierError or NoteModifierSuccess</returns>
+    public static OneOf<NoteModifierError, NoteModifierSuccess> ModifyContent(
         string content,
         string note,
         DateOnly? date = null)
@@ -138,7 +149,7 @@ public static class NoteModifier
         }
 
         var newContent = string.Join("\n", lines);
-        return (null, newContent, resultMessage);
+        return new NoteModifierSuccess(newContent, resultMessage!);
     }
 
     private static int FindEndOfSection(List<string> lines, int startIndex)

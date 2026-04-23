@@ -1,3 +1,4 @@
+using OneOf;
 using ReminderApp.EventStorage;
 using Xunit.Abstractions;
 
@@ -14,7 +15,11 @@ public static class NoteModifierTestHelper
     public static string? AddToModified(this string note, string content, string? dateStr = null)
     {
         DateOnly? date = dateStr != null ? DateOnly.ParseExact(dateStr, "dd.MM.yyyy") : null;
-        return NoteModifier.ModifyContent(content, note, date).ModifiedContent;
+        var result = NoteModifier.ModifyContent(content, note, date);
+        return result.Match<string?>(
+            error => null,
+            success => success.ModifiedContent
+        );
     }
 
     /// <summary>

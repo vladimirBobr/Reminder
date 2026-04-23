@@ -33,21 +33,23 @@ public class NotesService : INotesService
         }
 
         // Step 2: Modify content
-        var (modError, modifiedContent, resultMessage) = NoteModifier.ModifyContent(currentContent!, note, date);
-        if (!string.IsNullOrEmpty(modError) || modifiedContent == null)
-        {
-            return (modError ?? "Failed to modify content", null);
-        }
-
-        // Step 3: Update file in GitHub
-        var updateResult = _gitHubClient.UpdateFileContentAsync(modifiedContent, sha!).Result;
+        var modResult = NoteModifier.ModifyContent(currentContent!, note, date);
         
-        return updateResult.Match<(string Error, string? Message)>(
+        return modResult.Match<(string Error, string? Message)>(
             error => (error.Message, null),
-            _ => 
+            success =>
             {
-                Log.Information("Note added via GitHub API: {Note}, Date: {Date}", note, date?.ToString("dd.MM.yyyy") ?? "none");
-                return ("", resultMessage);
+                // Step 3: Update file in GitHub
+                var updateResult = _gitHubClient.UpdateFileContentAsync(success.ModifiedContent, sha!).Result;
+                
+                return updateResult.Match<(string Error, string? Message)>(
+                    updateError => (updateError.Message, null),
+                    _ => 
+                    {
+                        Log.Information("Note added via GitHub API: {Note}, Date: {Date}", note, date?.ToString("dd.MM.yyyy") ?? "none");
+                        return ("", success.ResultMessage);
+                    }
+                );
             }
         );
     }
