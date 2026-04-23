@@ -1,4 +1,4 @@
-using OneOf;
+﻿using Microsoft.VisualStudio.TestPlatform.Utilities;
 using ReminderApp.EventStorage;
 using Xunit.Abstractions;
 
@@ -27,8 +27,7 @@ public static class NoteModifierTestHelper
     /// </summary>
     public static void WriteComparison(ITestOutputHelper output, string expected, string? modified)
     {
-        output.WriteLine($"EXPECTED:{Environment.NewLine}{expected}");
-        output.WriteLine($"MODIFIED:{Environment.NewLine}{modified}");
+        TestHelper.WriteSideBySide(output, expected, modified);
     }
 
     /// <summary>
@@ -313,7 +312,6 @@ public class NoteModifierTests
         
         var expected = """
             #different_dates_section#
-
             15.04.2026 first entry
             """;
         
@@ -337,7 +335,6 @@ public class NoteModifierTests
         
         var expected = """
             #different_dates_section#
-
             01.04.2026 new earliest
 
             05.04.2026 earliest
@@ -368,7 +365,6 @@ public class NoteModifierTests
             01.04.2026 early
 
             15.04.2026 middle entry
-
 
             20.04.2026 late
             """;
@@ -421,6 +417,52 @@ public class NoteModifierTests
             15.04.2026 new
             """;
         
+        NoteModifierTestHelper.WriteComparison(_output, expected, modified);
+        NoteModifierTestHelper.AssertEqual(expected, modified);
+    }
+
+    [Fact]
+    public void ModifyContent_WithDate_NoMatchingDateButBothSections_AddsToDifferentDatesSection()
+    {
+        // When no date matches but both different_dates_section and notes_section exist
+        // (in that order), the note with date should go to different_dates_section
+        var content = """
+            #22.04.2026#
+
+            event1
+
+            #different_dates_section#
+            
+            03.05.2026 event2
+
+            #notes_section#
+
+            note1
+
+            03.05.2026 note2
+            
+            """;
+        
+        var modified = "новая запись".AddToModified(content, "02.05.2026");
+        
+        var expected = """
+            #22.04.2026#
+
+            event1
+
+            #different_dates_section#
+
+            02.05.2026 новая запись
+
+            03.05.2026 event2
+
+            #notes_section#
+
+            note1
+
+            03.05.2026 note2
+            """;
+
         NoteModifierTestHelper.WriteComparison(_output, expected, modified);
         NoteModifierTestHelper.AssertEqual(expected, modified);
     }
