@@ -69,15 +69,29 @@ public class TwoWeekDigestProcessor : ProcessorBase, ITwoWeekDigestProcessor
         sb.AppendLine($"📅 Ближайшие 14 дней ({startDate:dd.MM} - {endDate:dd.MM}):");
         sb.AppendLine();
 
-        foreach (var e in events)
-        {
-            var dayName = e.Date.ToString("dddd", new System.Globalization.CultureInfo("ru-RU"));
-            var timeStr = e.Time?.ToString("HH:mm") ?? "---";
-            sb.AppendLine($"• {e.Date:dd.MM} ({dayName}) {timeStr} - {e.Subject}");
+        // Группируем события по дате
+        var eventsByDate = events
+            .GroupBy(e => e.Date)
+            .OrderBy(g => g.Key);
 
-            if (!string.IsNullOrEmpty(e.Description))
+        foreach (var dateGroup in eventsByDate)
+        {
+            var dayName = dateGroup.Key.ToString("dddd", new System.Globalization.CultureInfo("ru-RU"));
+            sb.AppendLine();
+            sb.AppendLine($"{dayName.ToUpper()} #{dateGroup.Key:dd.MM.yyyy}#");
+            
+            foreach (var e in dateGroup.OrderBy(ev => ev.Time ?? TimeOnly.MaxValue))
             {
-                sb.AppendLine($"  {e.Description}");
+                var timeStr = e.Time?.ToString("HH:mm") ?? "---";
+                sb.AppendLine($"    • {timeStr} {e.Subject}");
+
+                if (!string.IsNullOrEmpty(e.Description))
+                {
+                    foreach (var descLine in e.Description.Split('\n'))
+                    {
+                        sb.AppendLine($"      {descLine.Trim()}");
+                    }
+                }
             }
         }
 
