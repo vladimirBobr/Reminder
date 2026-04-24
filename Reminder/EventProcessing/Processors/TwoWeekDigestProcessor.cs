@@ -5,13 +5,14 @@ using ReminderApp.FileStorage;
 
 namespace ReminderApp.EventProcessing.Processors;
 
-public class CurrentWeekDigestProcessor : ProcessorBase, ICurrentWeekDigestProcessor
+public class TwoWeekDigestProcessor : ProcessorBase, ITwoWeekDigestProcessor
 {
     private const int DigestHour = 9;
+    private const int DaysAhead = 14;
     private DateOnly? _lastDigestDate;
-    private const string LastDigestKey = "last_current_week_digest_date";
+    private const string LastDigestKey = "last_two_week_digest_date";
 
-    public CurrentWeekDigestProcessor(
+    public TwoWeekDigestProcessor(
         IDateTimeProvider dateTimeProvider,
         IFileStorage fileStorage,
         IEnumerable<INotifier> notifiers)
@@ -31,47 +32,41 @@ public class CurrentWeekDigestProcessor : ProcessorBase, ICurrentWeekDigestProce
         // Проверяем: если уже 9:00 и сегодня ещё не отправляли
         if (now.Hour >= DigestHour && _lastDigestDate != today)
         {
-            await SendCurrentWeekDigestAsync(events, now);
+            await SendUpcoming14DaysDigestAsync(events, now);
             _lastDigestDate = today;
             await SaveLastDigestDateAsync(today);
         }
     }
 
-    public async Task SendCurrentWeekDigestAsync(List<EventData> events, DateTime now)
+    public async Task SendUpcoming14DaysDigestAsync(List<EventData> events, DateTime now)
     {
         var today = DateOnly.FromDateTime(now);
-        var weekEnd = GetEndOfWeek(today);
+        var endDate = today.AddDays(DaysAhead);
 
-        // Фильтруем события с текущего дня до конца недели
-        var weekEvents = events
-            .Where(e => e.Date >= today && e.Date <= weekEnd)
+        // Фильтруем события с текущего дня до +14 дней
+        var upcomingEvents = events
+            .Where(e => e.Date >= today && e.Date <= endDate)
             .OrderBy(e => e.Date)
             .ThenBy(e => e.Time ?? TimeOnly.MaxValue)
             .ToList();
 
-        if (weekEvents.Count == 0)
+        if (upcomingEvents.Count == 0)
         {
-            Log.Information($"📅 {today:dd.MM} - {weekEnd:dd.MM} - нет событий");
+            Log.Information($"📅 {today:dd.MM} - {endDate:dd.MM} - нет событий");
             return;
         }
 
-        Log.Information($"📅 Текущая неделя {today:dd.MM} - {weekEnd:dd.MM}: {weekEvents.Count} событий, отправляю Current Week Digest...");
+        Log.Information($"📅 Ближайшие 14 дней ({today:dd.MM} - {endDate:dd.MM}): {upcomingEvents.Count} событий, отправляю Two Week Digest...");
 
-        var digest = BuildCurrentWeekDigestMessage(today, weekEnd, weekEvents);
+        var digest = BuildTwoWeekDigestMessage(today, endDate, upcomingEvents);
         await NotifyAllAsync(digest);
-        Log.Information("✅ Current Week Digest отправлен");
+        Log.Information("✅ Two Week Digest отправлен");
     }
 
-    private static DateOnly GetEndOfWeek(DateOnly date)
-    {
-        var daysUntilSunday = ((int)DayOfWeek.Sunday - (int)date.DayOfWeek + 7) % 7;
-        return date.AddDays(daysUntilSunday);
-    }
-
-    private string BuildCurrentWeekDigestMessage(DateOnly weekStart, DateOnly weekEnd, List<EventData> events)
+    private string BuildTwoWeekDigestMessage(DateOnly startDate, DateOnly endDate, List<EventData> events)
     {
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"📅 Текущая неделя ({weekStart:dd.MM} - {weekEnd:dd.MM}):");
+        sb.AppendLine($"📅 Ближайшие 14 дней ({startDate:dd.MM} - {endDate:dd.MM}):");
         sb.AppendLine();
 
         foreach (var e in events)
@@ -104,8 +99,8 @@ public class CurrentWeekDigestProcessor : ProcessorBase, ICurrentWeekDigestProce
     }
 }
 
-public interface ICurrentWeekDigestProcessor
+public interface ITwoWeekDigestProcessor
 {
     Task SendIfNeededAsync(List<EventData> events, DateTime now);
-    Task SendCurrentWeekDigestAsync(List<EventData> events, DateTime now);
+    Task SendUpcoming14DaysDigestAsync(List<EventData> events, DateTime now);
 }

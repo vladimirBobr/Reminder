@@ -62,7 +62,7 @@ internal class Program
         var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, notifiers);
         var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, notifiers);
         var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, notifiers);
-        var currentWeekDigestProcessor = new CurrentWeekDigestProcessor(dateTimeProvider, fileStorage, notifiers);
+        var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, notifiers);
         var printer = new EventOutputPrinter(dateTimeProvider);
 
         var runner = new EventRunner(
@@ -73,7 +73,7 @@ internal class Program
             dailyDigestProcessor,
             reminderProcessor,
             weeklyDigestProcessor,
-            currentWeekDigestProcessor,
+            twoWeekDigestProcessor,
             printer);
 
         AdminApi.Start(runner, gitHubClient);

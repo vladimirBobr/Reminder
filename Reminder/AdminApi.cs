@@ -79,6 +79,12 @@ public static class AdminApi
             return Results.Json(new { message = "Weekly digest sent" });
         });
 
+        protectedGroup.MapGet("/two-week", (HttpContext ctx) =>
+        {
+            _ = Task.Run(() => runner.SendTwoWeekDigest());
+            return Results.Json(new { message = "Two week digest sent" });
+        });
+
         protectedGroup.MapGet("/add-note", (HttpContext ctx) =>
         {
             var note = ctx.Request.Query["note"].FirstOrDefault();
@@ -183,6 +189,7 @@ public static class AdminApi
 <ul>
 <li><a href=""/today"">GET /today - Send today's digest</a></li>
 <li><a href=""/week"">GET /week - Send weekly digest</a></li>
+<li><a href=""/two-week"">GET /two-week - Send two week digest (14 days ahead)</a></li>
 <li><a href=""/add-note?note=Test note"">GET /add-note?note={note} - Add note to events file (optional: &date=dd.MM.yyyy)</a></li>
 <li>POST /github-webhook - GitHub webhook receiver</li>
 </ul>" 
