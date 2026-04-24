@@ -82,8 +82,9 @@ public class TwoWeekDigestProcessor : ProcessorBase, ITwoWeekDigestProcessor
             
             foreach (var e in dateGroup.OrderBy(ev => ev.Time ?? TimeOnly.MaxValue))
             {
-                var timeStr = e.Time?.ToString("HH:mm") ?? "---";
-                sb.AppendLine($"    • {timeStr} {e.Subject}");
+                var timeStr = e.Time?.ToString("HH:mm");
+                var prefix = timeStr != null ? $"    • {timeStr} " : "    • ";
+                sb.AppendLine($"{prefix}{e.Subject}");
 
                 if (!string.IsNullOrEmpty(e.Description))
                 {
