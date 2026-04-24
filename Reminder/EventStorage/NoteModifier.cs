@@ -1,6 +1,6 @@
 ﻿using System.Text;
-using System.Text.RegularExpressions;
 using OneOf;
+using ReminderApp.EventParsing;
 
 namespace ReminderApp.EventStorage;
 
@@ -18,67 +18,103 @@ public static class NoteModifier
             throw new ArgumentException("Note cannot be empty", nameof(note));
 
         var normalizedContent = content.Replace("\r\n", "\n").Replace("\r", "\n");
+        var parser = new FileParser();
+        var parseResult = parser.ParseFile(normalizedContent);
+        
         var lines = normalizedContent.Split('\n').ToList();
         string? resultMessage = null;
 
         if (date.HasValue)
         {
-            var dateSectionPattern = $@"#.*{date.Value:dd\.MM\.yyyy}.*#";
-
             // Попытка найти секцию с конкретной датой
-            bool found = false;
-            for (int i = 0; i < lines.Count; i++)
+            var dateSection = parseResult.DateSections.FirstOrDefault(s => s.Date == date.Value);
+            
+            if (dateSection != null)
             {
-                if (Regex.IsMatch(lines[i], dateSectionPattern, RegexOptions.IgnoreCase))
+                // Вставляем в начало контента секции (перед существующими событиями)
+                var insertIndex = dateSection.ContentStartLineIndex + 1;
+                
+                // Вставляем пустую строку перед заметкой
+                if (insertIndex <= dateSection.ContentEndLineIndex 
+                    && !string.IsNullOrWhiteSpace(lines[insertIndex]))
                 {
-                    lines.Insert(i + 1, "");
-                    lines.Insert(i + 2, note);
-                    lines.Insert(i + 3, "");
-                    resultMessage = "Добавили в существующую секцию";
-                    found = true;
-                    break;
+                    lines.Insert(insertIndex, "");
+                    insertIndex++;
                 }
-            }
-
-            if (!found)
-            {
-                // Ищем different_dates_section
-                var sectionFound = false;
-                for (int i = 0; i < lines.Count; i++)
+                else if (insertIndex <= dateSection.ContentEndLineIndex)
                 {
-                    if (lines[i].Contains("#different_dates_section#"))
+                    // Уже есть пустая строка, пропускаем её
+                    while (insertIndex <= dateSection.ContentEndLineIndex 
+                           && string.IsNullOrWhiteSpace(lines[insertIndex]))
                     {
-                        var lastContentIndex = FindLastContentIndex(lines, i + 1);
-                        var insertIndex = FindInsertIndexForDate(lines, lastContentIndex, date.Value);
-
-                        // Проверяем, нужна ли пустая строка перед новой записью
-                        var needEmptyBefore = insertIndex > i + 1
-                            && insertIndex > 0
-                            && !string.IsNullOrWhiteSpace(lines[insertIndex - 1]);
-
-                        // Проверяем, нужна ли пустая строка после новой записи
-                        var needEmptyAfter = insertIndex < lines.Count
-                            && !string.IsNullOrWhiteSpace(lines[insertIndex]);
-
-                        if (needEmptyBefore)
-                        {
-                            lines.Insert(insertIndex, "");
-                            insertIndex++;
-                        }
-
-                        lines.Insert(insertIndex, $"{date.Value:dd.MM.yyyy} {note}");
-
-                        if (needEmptyAfter)
-                        {
-                            lines.Insert(insertIndex + 1, "");
-                        }
-
-                        sectionFound = true;
-                        break;
+                        insertIndex++;
                     }
                 }
+                
+                lines.Insert(insertIndex, note);
+                
+                // Вставляем пустую строку после заметки
+                if (insertIndex + 1 < lines.Count 
+                    && !string.IsNullOrWhiteSpace(lines[insertIndex + 1]))
+                {
+                    lines.Insert(insertIndex + 1, "");
+                }
+                
+                resultMessage = "Добавили в существующую секцию";
+            }
+            else
+            {
+                // Ищем different_dates_section
+                var diffDates = parseResult.DifferentDates;
+                
+                if (diffDates != null)
+                {
+                    // Находим позицию для вставки по дате
+                    var events = diffDates.Events;
+                    var insertPos = events.FindIndex(e => e.Event.Date > date.Value);
+                    
+                    int insertIndex;
+                    if (insertPos >= 0)
+                    {
+                        // Вставляем перед событием с большей датой
+                        insertIndex = events[insertPos].StartLineIndex;
+                    }
+                    else if (events.Count > 0)
+                    {
+                        // Все события имеют меньшую дату - вставляем после последнего
+                        insertIndex = events[^1].EndLineIndex + 1;
+                    }
+                    else
+                    {
+                        // Секция пуста - вставляем после заголовка
+                        insertIndex = diffDates.ContentStartLineIndex + 1;
+                    }
+                    
+                    // Проверяем, нужна ли пустая строка перед новой записью
+                    var needEmptyBefore = insertIndex > diffDates.ContentStartLineIndex + 1
+                        && insertIndex > 0
+                        && !string.IsNullOrWhiteSpace(lines[insertIndex - 1]);
 
-                if (!sectionFound)
+                    // Проверяем, нужна ли пустая строка после новой записи
+                    var needEmptyAfter = insertIndex < lines.Count
+                        && !string.IsNullOrWhiteSpace(lines[insertIndex]);
+
+                    if (needEmptyBefore)
+                    {
+                        lines.Insert(insertIndex, "");
+                        insertIndex++;
+                    }
+
+                    lines.Insert(insertIndex, $"{date.Value:dd.MM.yyyy} {note}");
+
+                    if (needEmptyAfter)
+                    {
+                        lines.Insert(insertIndex + 1, "");
+                    }
+                    
+                    resultMessage = "Добавили в #different_dates_section#";
+                }
+                else
                 {
                     // Секция different_dates_section отсутствует — создаём в конце файла
                     lines.Add("");
@@ -88,104 +124,52 @@ public static class NoteModifier
                     lines.Add("");
                     resultMessage = "Добавили в #different_dates_section#";
                 }
-                else
-                {
-                    resultMessage = "Добавили в #different_dates_section#";
-                }
             }
         }
         else
         {
             // Без даты – добавляем в notes_section
-            var sectionFound = false;
-            for (int i = 0; i < lines.Count; i++)
+            var notesSection = parseResult.NotesSection;
+            
+            if (notesSection != null)
             {
-                if (lines[i].Contains("#notes_section#"))
+                // Вставляем в начало контента секции (перед существующими заметками)
+                var insertIndex = notesSection.ContentStartLineIndex + 1;
+                
+                // Если контент пустой (секция пуста), вставляем сразу после заголовка
+                if (notesSection.Events.Count == 0)
                 {
-                    var lastContentIndex = FindLastContentIndex(lines, i + 1);
-                    if (lastContentIndex > i)
-                    {
-                        lines.Insert(i + 1, "");
-                        lines.Insert(i + 2, note);
-                        lines.Insert(i + 3, "");
-                    }
-                    else
-                    {
-                        lines.Insert(i + 1, "");
-                        lines.Insert(i + 2, note);
-                        lines.Insert(i + 3, "");
-                    }
-                    sectionFound = true;
-                    break;
+                    lines.Insert(insertIndex, "");
+                    insertIndex++;
+                    lines.Insert(insertIndex, note);
+                    lines.Insert(insertIndex + 1, "");
                 }
+                else
+                {
+                    // Есть существующий контент - вставляем перед ним
+                    var firstEventStart = notesSection.Events[0].StartLineIndex;
+                    
+                    // Вставляем перед первой заметкой
+                    lines.Insert(firstEventStart, note);
+                    
+                    // Вставляем пустую строку после новой заметки (перед старой)
+                    lines.Insert(firstEventStart + 1, "");
+                }
+                
+                resultMessage = "Добавили в #notes_section#";
             }
-
-            if (!sectionFound)
+            else
             {
+                // Секция notes_section отсутствует - создаём в конце файла
                 lines.Add("");
                 lines.Add("#notes_section#");
                 lines.Add("");
                 lines.Add(note);
                 lines.Add("");
+                resultMessage = "Добавили в #notes_section#";
             }
-            resultMessage = "Добавили в #notes_section#";
         }
 
         return new NoteModifierSuccess(string.Join("\n", lines), resultMessage!);
-    }
-
-
-    private static int FindLastContentIndex(List<string> lines, int startIndex)
-    {
-        var lastIndex = startIndex - 1;
-        for (int i = startIndex; i < lines.Count; i++)
-        {
-            var trimmed = lines[i].Trim();
-            if (trimmed.StartsWith('#') && trimmed.EndsWith('#') && trimmed.Length > 2)
-                break;
-            if (!string.IsNullOrWhiteSpace(trimmed))
-                lastIndex = i;
-        }
-        return lastIndex;
-    }
-
-    private static int FindInsertIndexForDate(List<string> lines, int lastContentIndex, DateOnly newDate)
-    {
-        int? firstDateIndex = null;
-
-        for (int i = lastContentIndex; i >= 0; i--)
-        {
-            var line = lines[i].Trim();
-
-            // Остановка на заголовке секции
-            if (line.StartsWith('#') && line.EndsWith('#') && line.Length > 2)
-                break;
-
-            var existingDate = TryParseDateEntry(line);
-            if (existingDate.HasValue)
-            {
-                firstDateIndex = i; // самая верхняя (ранняя) встреченная дата
-                if (existingDate <= newDate)
-                {
-                    // Вставляем после этой даты
-                    return i + 1;
-                }
-            }
-        }
-
-        // Все даты больше newDate — вставляем перед самой первой
-        if (firstDateIndex.HasValue)
-            return firstDateIndex.Value;
-
-        // Нет ни одной даты — вставляем после заголовка
-        return lastContentIndex + 1;
-    }
-
-    private static DateOnly? TryParseDateEntry(string line)
-    {
-        var parts = line.Split(' ', 2);
-        if (parts.Length > 0 && DateOnly.TryParseExact(parts[0], "dd.MM.yyyy", out var date))
-            return date;
-        return null;
     }
 }

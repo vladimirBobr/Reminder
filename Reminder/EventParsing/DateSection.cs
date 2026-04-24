@@ -1,7 +1,7 @@
 namespace ReminderApp.EventParsing;
 
 /// <summary>
-/// Секция с конкретной датой. Содержит дату из заголовка и список текстовых блоков (событий).
+/// Секция с конкретной датой. Содержит дату из заголовка и список событий.
 /// </summary>
 public class DateSection
 {
@@ -11,8 +11,22 @@ public class DateSection
     public required DateOnly Date { get; init; }
 
     /// <summary>
-    /// Список текстовых блоков (событий) в этой секции. 
-    /// Каждый блок - это многострочный текст события.
+    /// Список распарсенных событий в этой секции.
     /// </summary>
-    public required List<string> EventBlocks { get; init; }
+    public required List<ParsedEvent> Events { get; init; }
+
+    /// <summary>
+    /// Индекс строки заголовка секции в исходном файле (0-based).
+    /// </summary>
+    public int HeaderLineIndex { get; init; }
+
+    /// <summary>
+    /// Индекс первой строки контента (после заголовка) в исходном файле (0-based).
+    /// </summary>
+    public int ContentStartLineIndex { get; init; }
+
+    /// <summary>
+    /// Индекс последней строки контента (до следующего заголовка или конца) в исходном файле (0-based).
+    /// </summary>
+    public int ContentEndLineIndex { get; init; }
 }

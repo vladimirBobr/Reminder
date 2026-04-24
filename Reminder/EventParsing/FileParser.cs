@@ -33,23 +33,86 @@ public class FileParser
             var nextIndex = h + 1 < headers.Count ? headers[h + 1].Index : lines.Length;
 
             // Собрать строки между текущим и следующим заголовком
-            var contentLines = new List<string>();
-            for (int i = current.Index + 1; i < nextIndex; i++)
-                contentLines.Add(lines[i]);
+            var contentStartLineIndex = current.Index + 1;
+            var contentEndLineIndex = nextIndex - 1;
 
-            var blocks = ToBlocks(contentLines);
+            // Получаем блоки с информацией о строках
+            var blockInfos = ToBlocksWithIndices(lines, contentStartLineIndex, contentEndLineIndex);
 
             if (current.Type == SectionType.Date && current.Date.HasValue)
             {
-                dateSections.Add(new DateSection { Date = current.Date.Value, EventBlocks = blocks });
+                var parsedEvents = new List<ParsedEvent>();
+                foreach (var blockInfo in blockInfos)
+                {
+                    var eventData = ParseEventBlock(blockInfo.Text, current.Date.Value);
+                    parsedEvents.Add(new ParsedEvent
+                    {
+                        Event = eventData,
+                        StartLineIndex = blockInfo.StartLineIndex,
+                        EndLineIndex = blockInfo.EndLineIndex
+                    });
+                }
+
+                dateSections.Add(new DateSection
+                {
+                    Date = current.Date.Value,
+                    Events = parsedEvents,
+                    HeaderLineIndex = current.Index,
+                    ContentStartLineIndex = contentStartLineIndex,
+                    ContentEndLineIndex = contentEndLineIndex
+                });
             }
             else if (current.Type == SectionType.DifferentDates)
             {
-                diffDates = new DifferentDatesSection { EventBlocks = blocks };
+                var parsedEvents = new List<ParsedEvent>();
+                foreach (var blockInfo in blockInfos)
+                {
+                    var eventData = ParseEventBlockWithDateInText(blockInfo.Text);
+                    if (eventData != null)
+                    {
+                        parsedEvents.Add(new ParsedEvent
+                        {
+                            Event = eventData,
+                            StartLineIndex = blockInfo.StartLineIndex,
+                            EndLineIndex = blockInfo.EndLineIndex
+                        });
+                    }
+                }
+
+                diffDates = new DifferentDatesSection
+                {
+                    Events = parsedEvents,
+                    HeaderLineIndex = current.Index,
+                    ContentStartLineIndex = contentStartLineIndex,
+                    ContentEndLineIndex = contentEndLineIndex
+                };
             }
             else if (current.Type == SectionType.Notes)
             {
-                notes = new NotesSection { EventBlocks = blocks };
+                var parsedEvents = new List<ParsedEvent>();
+                foreach (var blockInfo in blockInfos)
+                {
+                    // Для NotesSection создаём EventData с Date = minValue (специальный маркер)
+                    var eventData = new EventData
+                    {
+                        Date = DateOnly.MinValue,
+                        Subject = blockInfo.Text
+                    };
+                    parsedEvents.Add(new ParsedEvent
+                    {
+                        Event = eventData,
+                        StartLineIndex = blockInfo.StartLineIndex,
+                        EndLineIndex = blockInfo.EndLineIndex
+                    });
+                }
+
+                notes = new NotesSection
+                {
+                    Events = parsedEvents,
+                    HeaderLineIndex = current.Index,
+                    ContentStartLineIndex = contentStartLineIndex,
+                    ContentEndLineIndex = contentEndLineIndex
+                };
             }
         }
 
@@ -107,30 +170,64 @@ public class FileParser
         return (false, default, null);
     }
 
-    private List<string> ToBlocks(List<string> lines)
+    /// <summary>
+    /// Преобразует строки в блоки, возвращая также информацию об индексах строк.
+    /// </summary>
+    private List<BlockInfo> ToBlocksWithIndices(string[] allLines, int startIndex, int endIndex)
     {
-        var blocks = new List<string>();
+        var blocks = new List<BlockInfo>();
         var sb = new System.Text.StringBuilder();
+        int blockStartLineIndex = -1;
 
-        foreach (var line in lines)
+        for (int i = startIndex; i <= endIndex; i++)
         {
+            var line = allLines[i];
+
             if (string.IsNullOrWhiteSpace(line))
             {
                 if (sb.Length > 0)
                 {
-                    blocks.Add(sb.ToString().Trim());
+                    blocks.Add(new BlockInfo
+                    {
+                        Text = sb.ToString().Trim(),
+                        StartLineIndex = blockStartLineIndex,
+                        EndLineIndex = i - 1
+                    });
                     sb.Clear();
+                    blockStartLineIndex = -1;
                 }
             }
             else
             {
+                if (blockStartLineIndex == -1)
+                    blockStartLineIndex = i;
+
                 if (sb.Length > 0) sb.AppendLine();
                 sb.Append(line);
             }
         }
 
-        if (sb.Length > 0) blocks.Add(sb.ToString().Trim());
+        if (sb.Length > 0)
+        {
+            blocks.Add(new BlockInfo
+            {
+                Text = sb.ToString().Trim(),
+                StartLineIndex = blockStartLineIndex,
+                EndLineIndex = endIndex
+            });
+        }
+
         return blocks;
+    }
+
+    /// <summary>
+    /// Информация о блоке текста с индексами строк.
+    /// </summary>
+    private class BlockInfo
+    {
+        public string Text { get; init; } = "";
+        public int StartLineIndex { get; init; }
+        public int EndLineIndex { get; init; }
     }
 
     public List<EventData> ParseEvents(string content)
@@ -141,21 +238,18 @@ public class FileParser
         // Обрабатываем DateSections
         foreach (var section in parseResult.DateSections)
         {
-            foreach (var block in section.EventBlocks)
+            foreach (var parsedEvent in section.Events)
             {
-                var eventData = ParseEventBlock(block, section.Date);
-                events.Add(eventData);
+                events.Add(parsedEvent.Event);
             }
         }
 
         // Обрабатываем DifferentDatesSection - даты в самом тексте блока
         if (parseResult.DifferentDates != null)
         {
-            foreach (var block in parseResult.DifferentDates.EventBlocks)
+            foreach (var parsedEvent in parseResult.DifferentDates.Events)
             {
-                var eventData = ParseEventBlockWithDateInText(block);
-                if (eventData != null)
-                    events.Add(eventData);
+                events.Add(parsedEvent.Event);
             }
         }
 
