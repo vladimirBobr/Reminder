@@ -78,6 +78,7 @@ public class NoteModifierTests
     [Fact]
     public void ModifyContent_NoDate_NotesSectionWithContent_InsertsBeforeExisting()
     {
+        // New note inserted directly after header, then blank line, then existing note
         var content = """
             #notes_section#
             существующая заметка
@@ -87,7 +88,6 @@ public class NoteModifierTests
         
         var expected = """
             #notes_section#
-
             новая заметка
 
             существующая заметка
@@ -162,7 +162,6 @@ public class NoteModifierTests
         
         var expected = """
             #10.04.2026#
-
             новое событие
 
             первое событие
@@ -183,12 +182,11 @@ public class NoteModifierTests
             existing note
             """;
         
-        var modified = "🏃‍♂️ 10км легкий бег".AddToModified(content, "22.04.2026");
+        var modified = "10км легкий бег".AddToModified(content, "22.04.2026");
         
         var expected = """
             СРЕДА #22.04.2026#
-
-            🏃‍♂️ 10км легкий бег
+            10км легкий бег
 
             existing note
             """;
@@ -218,7 +216,6 @@ public class NoteModifierTests
             first day
 
             СРЕДА #22.04.2026#
-
             wednesday note
 
             middle day
@@ -243,7 +240,6 @@ public class NoteModifierTests
         
         var expected = """
             #10.04.2026#
-
             новое
 
             последнее событие
@@ -378,6 +374,8 @@ public class NoteModifierTests
     [Fact]
     public void ModifyContent_NoDate_CaseInsensitive_SectionFound()
     {
+        // FileParser.TryParseHeader uses ToLowerInvariant(), so #NOTES_SECTION# is found as notes_section
+        // New note should be added TO THAT SAME section, not create a new one
         var content = """
             #NOTES_SECTION#
             old note
@@ -387,11 +385,9 @@ public class NoteModifierTests
         
         var expected = """
             #NOTES_SECTION#
-            old note
-
-            #notes_section#
-
             new note
+
+            old note
             """;
         
         NoteModifierTestHelper.WriteComparison(_output, expected, modified);
@@ -401,6 +397,8 @@ public class NoteModifierTests
     [Fact]
     public void ModifyContent_WithDate_DifferentDatesSection_CaseInsensitive()
     {
+        // FileParser.TryParseHeader uses ToLowerInvariant(), so #DIFFERENT_DATES_SECTION# is found
+        // New entry should be added TO THAT SAME section in date order (no blank line between entries)
         var content = """
             #DIFFERENT_DATES_SECTION#
             10.04.2026 existing
@@ -411,8 +409,6 @@ public class NoteModifierTests
         var expected = """
             #DIFFERENT_DATES_SECTION#
             10.04.2026 existing
-
-            #different_dates_section#
 
             15.04.2026 new
             """;

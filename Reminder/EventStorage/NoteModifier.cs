@@ -31,33 +31,25 @@ public static class NoteModifier
             
             if (dateSection != null)
             {
-                // Вставляем в начало контента секции (перед существующими событиями)
-                var insertIndex = dateSection.ContentStartLineIndex + 1;
-                
-                // Вставляем пустую строку перед заметкой
-                if (insertIndex <= dateSection.ContentEndLineIndex 
-                    && !string.IsNullOrWhiteSpace(lines[insertIndex]))
+                if (dateSection.Events.Count == 0)
                 {
+                    // Секция пуста - вставляем сразу после заголовка
+                    var insertIndex = dateSection.ContentStartLineIndex + 1;
                     lines.Insert(insertIndex, "");
                     insertIndex++;
-                }
-                else if (insertIndex <= dateSection.ContentEndLineIndex)
-                {
-                    // Уже есть пустая строка, пропускаем её
-                    while (insertIndex <= dateSection.ContentEndLineIndex 
-                           && string.IsNullOrWhiteSpace(lines[insertIndex]))
-                    {
-                        insertIndex++;
-                    }
-                }
-                
-                lines.Insert(insertIndex, note);
-                
-                // Вставляем пустую строку после заметки
-                if (insertIndex + 1 < lines.Count 
-                    && !string.IsNullOrWhiteSpace(lines[insertIndex + 1]))
-                {
+                    lines.Insert(insertIndex, note);
                     lines.Insert(insertIndex + 1, "");
+                }
+                else
+                {
+                    // Есть существующие события - вставляем перед первым
+                    var firstEventStart = dateSection.Events[0].StartLineIndex;
+                    
+                    // Вставляем перед первым событием
+                    lines.Insert(firstEventStart, note);
+                    
+                    // Вставляем пустую строку после новой заметки (перед старой)
+                    lines.Insert(firstEventStart + 1, "");
                 }
                 
                 resultMessage = "Добавили в существующую секцию";
@@ -69,7 +61,6 @@ public static class NoteModifier
                 
                 if (diffDates != null)
                 {
-                    // Находим позицию для вставки по дате
                     var events = diffDates.Events;
                     var insertPos = events.FindIndex(e => e.Event.Date > date.Value);
                     
@@ -78,16 +69,44 @@ public static class NoteModifier
                     {
                         // Вставляем перед событием с большей датой
                         insertIndex = events[insertPos].StartLineIndex;
+                        
+                        // Вставляем новую запись
+                        lines.Insert(insertIndex, $"{date.Value:dd.MM.yyyy} {note}");
+                        insertIndex++;
+                        
+                        // Вставляем blank line ПОСЛЕ новой записи (между new и old)
+                        lines.Insert(insertIndex, "");
+                        
+                        resultMessage = "Добавили в #different_dates_section#";
+                        return new NoteModifierSuccess(string.Join("\n", lines), resultMessage);
                     }
                     else if (events.Count > 0)
                     {
-                        // Все события имеют меньшую дату - вставляем после последнего
-                        insertIndex = events[^1].EndLineIndex + 1;
+                        // Все события имеют меньшую дату - вставляем ПОСЛЕ последнего (с blank line)
+                        var lastEvent = events[^1];
+                        insertIndex = lastEvent.EndLineIndex + 1;
+                        
+                        // Вставляем blank line перед новой записью (между существующим и новым)
+                        lines.Insert(insertIndex, "");
+                        insertIndex++;
+                        lines.Insert(insertIndex, $"{date.Value:dd.MM.yyyy} {note}");
+                        insertIndex++;
+                        
+                        // Вставляем blank line после новой записи
+                        lines.Insert(insertIndex, "");
+                        
+                        resultMessage = "Добавили в #different_dates_section#";
+                        return new NoteModifierSuccess(string.Join("\n", lines), resultMessage);
                     }
                     else
                     {
-                        // Секция пуста - вставляем после заголовка
-                        insertIndex = diffDates.ContentStartLineIndex + 1;
+                        // Секция пуста - вставляем после заголовка (используем ContentEndLineIndex)
+                        // Для пустой секции НЕ добавляем blank line - сразу запись после заголовка
+                        insertIndex = diffDates.ContentEndLineIndex + 1;
+                        lines.Insert(insertIndex, $"{date.Value:dd.MM.yyyy} {note}");
+                        
+                        resultMessage = "Добавили в #different_dates_section#";
+                        return new NoteModifierSuccess(string.Join("\n", lines), resultMessage);
                     }
                     
                     // Проверяем, нужна ли пустая строка перед новой записью
@@ -96,8 +115,8 @@ public static class NoteModifier
                         && !string.IsNullOrWhiteSpace(lines[insertIndex - 1]);
 
                     // Проверяем, нужна ли пустая строка после новой записи
-                    var needEmptyAfter = insertIndex < lines.Count
-                        && !string.IsNullOrWhiteSpace(lines[insertIndex]);
+                    var needEmptyAfter = insertIndex + 1 < lines.Count
+                        && !string.IsNullOrWhiteSpace(lines[insertIndex + 1]);
 
                     if (needEmptyBefore)
                     {
@@ -139,10 +158,13 @@ public static class NoteModifier
                 // Если контент пустой (секция пуста), вставляем сразу после заголовка
                 if (notesSection.Events.Count == 0)
                 {
-                    lines.Insert(insertIndex, "");
-                    insertIndex++;
-                    lines.Insert(insertIndex, note);
-                    lines.Insert(insertIndex + 1, "");
+                    // Секция пуста - вставляем после заголовка (используем ContentEndLineIndex)
+                    var insertIdx = notesSection.ContentEndLineIndex + 1;
+                    lines.Insert(insertIdx, "");
+                    insertIdx++;
+                    lines.Insert(insertIdx, note);
+                    insertIdx++;
+                    lines.Insert(insertIdx, "");
                 }
                 else
                 {
