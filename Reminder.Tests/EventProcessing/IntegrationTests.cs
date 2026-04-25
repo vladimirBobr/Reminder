@@ -57,6 +57,7 @@ public class IntegrationTests
         dateTimeProvider.SetNow(friday);
         
         var fileStorage = new InMemoryFileStorage();
+        var ntfyNotifier = new TestNtfyNotifier();
         var notifier = new TestNotifier();
         var notifiers = new List<INotifier> { notifier };
         
@@ -65,7 +66,7 @@ public class IntegrationTests
 
         // Создаём процессоры
         var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, notifiers);
-        var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, notifiers);
+        var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, ntfyNotifier);
         var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, notifiers);
         var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, notifiers);
         var printer = new EventOutputPrinter(dateTimeProvider);
@@ -90,11 +91,15 @@ public class IntegrationTests
         dateTimeProvider.SetNow(new DateTime(2026, 4, 10, 18, 0, 0));
         await weeklyDigestProcessor.SendIfNeededAsync(events, new DateTime(2026, 4, 10, 18, 0, 0));
 
-        // Assert - проверяем что все три отправлены
-        Assert.Equal(3, notifier.NotifiedMessages.Count);
+        // Assert - проверяем что все отправлены
+        // reminderProcessor -> ntfyNotifier (1 сообщение)
+        // dailyDigestProcessor -> notifier (1 сообщение)
+        // weeklyDigestProcessor -> notifier (1 сообщение)
+        Assert.Single(ntfyNotifier.NotifiedMessages);
+        Assert.Equal(2, notifier.NotifiedMessages.Count);
         
         // Проверяем что есть напоминание (содержит "Через")
-        Assert.Contains(notifier.NotifiedMessages, m => m.Contains("Встреча через час"));
+        Assert.Contains(ntfyNotifier.NotifiedMessages, m => m.Contains("Встреча через час"));
         
         // Проверяем что есть ежедневный дайджест (содержит "Ежедневное")
         Assert.Contains(notifier.NotifiedMessages, m => m.Contains("Ежедневное событие"));
@@ -125,22 +130,22 @@ public class IntegrationTests
             }
         };
 
-        var notifier = new TestNotifier();
+        var ntfyNotifier = new TestNtfyNotifier();
         var dateTimeProvider = new MockDateTimeProvider();
         dateTimeProvider.SetNow(now);
         
         var processor = new ReminderProcessor(
             dateTimeProvider,
             new InMemoryFileStorage(),
-            new List<INotifier> { notifier });
+            ntfyNotifier);
 
         // Act
         await processor.SendIfNeededAsync(events, now);
 
         // Assert
-        Assert.Single(notifier.NotifiedMessages);
-        Assert.Contains("Вовремя", notifier.NotifiedMessages[0]);
-        Assert.DoesNotContain("Слишком рано", notifier.NotifiedMessages[0]);
+        Assert.Single(ntfyNotifier.NotifiedMessages);
+        Assert.Contains("Вовремя", ntfyNotifier.NotifiedMessages[0]);
+        Assert.DoesNotContain("Слишком рано", ntfyNotifier.NotifiedMessages[0]);
     }
 
     [Fact]

@@ -1,13 +1,16 @@
 using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
-using ReminderApp.EventNotification;
+using ReminderApp.EventNotification.Ntfy;
 using ReminderApp.FileStorage;
 
 namespace ReminderApp.EventProcessing.Processors;
 
-public class ReminderProcessor : ProcessorBase, IReminderProcessor
+public class ReminderProcessor : IReminderProcessor
 {
     private readonly int _remindMinutesBefore;
+    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IFileStorage _fileStorage;
+    private readonly INtfyNotifier _ntfy;
 
     // Кэш отправленных напоминаний (ключ = "yyyy-MM-dd HH:mm-Subject")
     private readonly HashSet<string> _sentReminders = new();
@@ -16,19 +19,23 @@ public class ReminderProcessor : ProcessorBase, IReminderProcessor
     public ReminderProcessor(
         IDateTimeProvider dateTimeProvider,
         IFileStorage fileStorage,
-        IEnumerable<INotifier> notifiers,
+        INtfyNotifier ntfy,
         int remindMinutesBefore = 60)
-        : base(dateTimeProvider, fileStorage, notifiers)
     {
+        _dateTimeProvider = dateTimeProvider;
+        _fileStorage = fileStorage;
+        _ntfy = ntfy;
         _remindMinutesBefore = remindMinutesBefore;
+
+        InitializeAsync().GetAwaiter().GetResult();
     }
 
-    protected override async Task OnInitializeAsync()
+    private async Task InitializeAsync()
     {
         await LoadSentRemindersAsync();
     }
 
-    public override async Task SendIfNeededAsync(List<EventData> events, DateTime now)
+    public async Task SendIfNeededAsync(List<EventData> events, DateTime now)
     {
         var today = DateOnly.FromDateTime(now);
 
@@ -69,13 +76,13 @@ public class ReminderProcessor : ProcessorBase, IReminderProcessor
             message += $"\n{evt.Description}";
         }
 
-        await NotifyAllAsync(message);
+        await _ntfy.NotifyAsync(message);
         Log.Information($"✅ Напоминание отправлено: {evt.Subject}");
     }
 
     private async Task LoadSentRemindersAsync()
     {
-        var data = await LoadAsync(SentRemindersKey);
+        var data = await _fileStorage.LoadStringAsync(SentRemindersKey);
         if (!string.IsNullOrEmpty(data))
         {
             var keys = data.Split(';', StringSplitOptions.RemoveEmptyEntries);
@@ -89,6 +96,6 @@ public class ReminderProcessor : ProcessorBase, IReminderProcessor
     private async Task SaveSentRemindersAsync()
     {
         var data = string.Join(";", _sentReminders);
-        await SaveAsync(SentRemindersKey, data);
+        await _fileStorage.SaveStringAsync(SentRemindersKey, data);
     }
 }

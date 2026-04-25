@@ -89,7 +89,7 @@ public class ReminderProcessorTests
             new() { Date = new DateOnly(2026, 4, 11), Subject = "Событие без времени" } // нет Time
         };
 
-        var notifier = new TestNotifier();
+        var notifier = new TestNtfyNotifier();
         var processor = CreateReminderProcessor(now: now, events: events, notifier: notifier);
 
         // Act
@@ -115,7 +115,7 @@ public class ReminderProcessorTests
             }
         };
 
-        var notifier = new TestNotifier();
+        var notifier = new TestNtfyNotifier();
         var processor = CreateReminderProcessor(now: now, events: events, notifier: notifier);
 
         // Act
@@ -143,7 +143,7 @@ public class ReminderProcessorTests
             }
         };
 
-        var notifier = new TestNotifier();
+        var notifier = new TestNtfyNotifier();
         var processor = CreateReminderProcessor(now: now, events: events, notifier: notifier);
 
         // Act
@@ -169,7 +169,7 @@ public class ReminderProcessorTests
             }
         };
 
-        var notifier = new TestNotifier();
+        var notifier = new TestNtfyNotifier();
         var processor = CreateReminderProcessor(now: now, events: events, notifier: notifier);
 
         // Act
@@ -195,7 +195,7 @@ public class ReminderProcessorTests
             }
         };
 
-        var notifier = new TestNotifier();
+        var notifier = new TestNtfyNotifier();
         var processor = CreateReminderProcessor(now: now, events: events, notifier: notifier);
 
         // Act
@@ -223,7 +223,7 @@ public class ReminderProcessorTests
             }
         };
 
-        var notifier = new TestNotifier();
+        var notifier = new TestNtfyNotifier();
         var processor = CreateReminderProcessor(now: now, events: events, notifier: notifier);
 
         // Act
