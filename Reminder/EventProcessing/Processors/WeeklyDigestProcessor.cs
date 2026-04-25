@@ -1,11 +1,11 @@
-﻿using ReminderApp.Common;
+using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
-using ReminderApp.EventNotification;
+using ReminderApp.EventNotification.Ntfy;
 using ReminderApp.FileStorage;
 
 namespace ReminderApp.EventProcessing.Processors;
 
-public class WeeklyDigestProcessor : ProcessorBase, IWeeklyDigestProcessor
+public class WeeklyDigestProcessor : IWeeklyDigestProcessor
 {
     // Пятница 18:00 и Воскресенье 20:00
     private static readonly (DayOfWeek Day, int Hour)[] Schedule =
@@ -14,6 +14,10 @@ public class WeeklyDigestProcessor : ProcessorBase, IWeeklyDigestProcessor
         (DayOfWeek.Sunday, 20)
     ];
 
+    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IFileStorage _fileStorage;
+    private readonly INtfyNotifier _ntfy;
+
     // Отслеживаем отдельно для каждого слота: "yyyy-MM-dd-HH" (день+час)
     private readonly HashSet<string> _sentSlots = new();
     private const string SentSlotsKey = "last_weekly_digest_slots";
@@ -21,17 +25,21 @@ public class WeeklyDigestProcessor : ProcessorBase, IWeeklyDigestProcessor
     public WeeklyDigestProcessor(
         IDateTimeProvider dateTimeProvider,
         IFileStorage fileStorage,
-        IEnumerable<INotifier> notifiers)
-        : base(dateTimeProvider, fileStorage, notifiers)
+        INtfyNotifier ntfy)
     {
+        _dateTimeProvider = dateTimeProvider;
+        _fileStorage = fileStorage;
+        _ntfy = ntfy;
+
+        InitializeAsync().GetAwaiter().GetResult();
     }
 
-    protected override async Task OnInitializeAsync()
+    private async Task InitializeAsync()
     {
         await LoadSentSlotsAsync();
     }
 
-    public override async Task SendIfNeededAsync(List<EventData> events, DateTime now)
+    public async Task SendIfNeededAsync(List<EventData> events, DateTime now)
     {
         var slotKey = $"{now:yyyy-MM-dd-HH}";
 
@@ -71,7 +79,7 @@ public class WeeklyDigestProcessor : ProcessorBase, IWeeklyDigestProcessor
         Log.Information($"📅 План на неделю {nextWeekStart:dd.MM} - {nextWeekEnd:dd.MM}: {weekEvents.Count} событий, отправляю Weekly Digest...");
 
         var digest = BuildWeeklyDigestMessage(nextWeekStart, nextWeekEnd, weekEvents);
-        await NotifyAllAsync(digest);
+        await _ntfy.NotifyAsync(digest);
         Log.Information("✅ Weekly Digest отправлен");
     }
 
@@ -105,7 +113,7 @@ public class WeeklyDigestProcessor : ProcessorBase, IWeeklyDigestProcessor
 
     private async Task LoadSentSlotsAsync()
     {
-        var data = await LoadAsync(SentSlotsKey);
+        var data = await _fileStorage.LoadStringAsync(SentSlotsKey);
         if (string.IsNullOrEmpty(data))
             return;
 
@@ -119,7 +127,7 @@ public class WeeklyDigestProcessor : ProcessorBase, IWeeklyDigestProcessor
     private async Task SaveSentSlotsAsync()
     {
         var data = string.Join(";", _sentSlots);
-        await SaveAsync(SentSlotsKey, data);
+        await _fileStorage.SaveStringAsync(SentSlotsKey, data);
     }
 }
 

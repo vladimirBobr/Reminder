@@ -1,13 +1,16 @@
 using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
-using ReminderApp.EventNotification;
+using ReminderApp.EventNotification.Ntfy;
 using ReminderApp.FileStorage;
 
 namespace ReminderApp.EventProcessing.Processors;
 
-public class DailyDigestProcessor : ProcessorBase, IDailyDigestProcessor
+public class DailyDigestProcessor : IDailyDigestProcessor
 {
     private readonly int _digestHour;
+    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IFileStorage _fileStorage;
+    private readonly INtfyNotifier _ntfy;
 
     private DateOnly? _lastDigestDate;
     private const string LastDigestKey = "last_digest_date";
@@ -15,19 +18,23 @@ public class DailyDigestProcessor : ProcessorBase, IDailyDigestProcessor
     public DailyDigestProcessor(
         IDateTimeProvider dateTimeProvider,
         IFileStorage fileStorage,
-        IEnumerable<INotifier> notifiers,
+        INtfyNotifier ntfy,
         int digestHour = 7)
-        : base(dateTimeProvider, fileStorage, notifiers)
     {
+        _dateTimeProvider = dateTimeProvider;
+        _fileStorage = fileStorage;
+        _ntfy = ntfy;
         _digestHour = digestHour;
+
+        InitializeAsync().GetAwaiter().GetResult();
     }
 
-    protected override async Task OnInitializeAsync()
+    private async Task InitializeAsync()
     {
         _lastDigestDate = await LoadLastDigestDateAsync();
     }
 
-    public override async Task SendIfNeededAsync(List<EventData> events, DateTime now)
+    public async Task SendIfNeededAsync(List<EventData> events, DateTime now)
     {
         var today = DateOnly.FromDateTime(now);
 
@@ -59,7 +66,7 @@ public class DailyDigestProcessor : ProcessorBase, IDailyDigestProcessor
         Log.Information($"📅 {today:dd.MM.yyyy} - найдено {todayEvents.Count} событий, отправляю Digest...");
 
         var digest = BuildDigestMessage(todayEvents);
-        await NotifyAllAsync(digest);
+        await _ntfy.NotifyAsync(digest);
         Log.Information("✅ Daily Digest отправлен");
     }
 
@@ -85,7 +92,7 @@ public class DailyDigestProcessor : ProcessorBase, IDailyDigestProcessor
 
     private async Task<DateOnly?> LoadLastDigestDateAsync()
     {
-        var data = await LoadAsync(LastDigestKey);
+        var data = await _fileStorage.LoadStringAsync(LastDigestKey);
         if (string.IsNullOrEmpty(data))
             return null;
 
@@ -94,6 +101,6 @@ public class DailyDigestProcessor : ProcessorBase, IDailyDigestProcessor
 
     private async Task SaveLastDigestDateAsync(DateOnly date)
     {
-        await SaveAsync(LastDigestKey, date.ToString("yyyy-MM-dd"));
+        await _fileStorage.SaveStringAsync(LastDigestKey, date.ToString("yyyy-MM-dd"));
     }
 }

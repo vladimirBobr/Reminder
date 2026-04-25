@@ -1,6 +1,4 @@
-using ReminderApp.DateTimeProviding;
-using ReminderApp.EventNotification;
-using ReminderApp.EventNotification.ConsoleOutput;
+﻿using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification.Ntfy;
 using ReminderApp.EventNotification.YandexMail;
 using ReminderApp.EventOutput;
@@ -30,21 +28,14 @@ internal class Program
         var dateTimeProvider = new DateTimeProvider();
         var fileStorage = new JsonFileStorage();
         
-        // Создаём NtfyNotifier (в debug работает как заглушка)
         var ntfyNotifier = new NtfyNotifier(new NtfyCredentialsProvider());
         await ntfyNotifier.NotifyAsync("▶️ Reminder started");
 
-        // Все notifiers для процессоров которые работают со списком (без Ntfy - он отдельно для ReminderProcessor)
-        var notifiers = new List<INotifier>
-        {
-            new YandexMailNotifier(new YandexMailCredentialsProvider())
-        };
-
-        // Создаём процессоры
-        var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, notifiers);
+        // Создаём процессоры - каждый получает ntfyNotifier напрямую
+        var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, ntfyNotifier);
         var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, ntfyNotifier);
-        var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, notifiers);
-        var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, notifiers);
+        var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, ntfyNotifier);
+        var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, ntfyNotifier);
         var printer = new EventOutputPrinter(dateTimeProvider);
 
         var gitHubClient = new GitHubClient(new GitHubCredentialsProvider());

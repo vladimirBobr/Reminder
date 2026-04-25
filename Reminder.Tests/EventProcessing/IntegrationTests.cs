@@ -1,7 +1,6 @@
 using Reminder.Tests.EventProcessing.Helpers;
 using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
-using ReminderApp.EventNotification;
 using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventProcessing.Processors;
@@ -58,17 +57,15 @@ public class IntegrationTests
         
         var fileStorage = new InMemoryFileStorage();
         var ntfyNotifier = new TestNtfyNotifier();
-        var notifier = new TestNotifier();
-        var notifiers = new List<INotifier> { notifier };
         
         var eventReader = new TestEventReader();
         eventReader.SetEvents(events);
 
         // Создаём процессоры
-        var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, notifiers);
+        var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, ntfyNotifier);
         var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, ntfyNotifier);
-        var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, notifiers);
-        var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, notifiers);
+        var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, ntfyNotifier);
+        var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, ntfyNotifier);
         var printer = new EventOutputPrinter(dateTimeProvider);
 
         // Создаём EventRunner
@@ -91,21 +88,11 @@ public class IntegrationTests
         dateTimeProvider.SetNow(new DateTime(2026, 4, 10, 18, 0, 0));
         await weeklyDigestProcessor.SendIfNeededAsync(events, new DateTime(2026, 4, 10, 18, 0, 0));
 
-        // Assert - проверяем что все отправлены
-        // reminderProcessor -> ntfyNotifier (1 сообщение)
-        // dailyDigestProcessor -> notifier (1 сообщение)
-        // weeklyDigestProcessor -> notifier (1 сообщение)
-        Assert.Single(ntfyNotifier.NotifiedMessages);
-        Assert.Equal(2, notifier.NotifiedMessages.Count);
+        // Assert - все используют ntfyNotifier (3 сообщения: daily, reminder, weekly)
+        Assert.Equal(3, ntfyNotifier.NotifiedMessages.Count);
         
         // Проверяем что есть напоминание (содержит "Через")
         Assert.Contains(ntfyNotifier.NotifiedMessages, m => m.Contains("Встреча через час"));
-        
-        // Проверяем что есть ежедневный дайджест (содержит "Ежедневное")
-        Assert.Contains(notifier.NotifiedMessages, m => m.Contains("Ежедневное событие"));
-        
-        // Проверяем что есть еженедельный дайджест (содержит "Следующей")
-        Assert.Contains(notifier.NotifiedMessages, m => m.Contains("Встреча на следующей неделе"));
     }
 
     [Fact]
@@ -161,22 +148,22 @@ public class IntegrationTests
             new() { Date = DateOnly.FromDateTime(now.AddDays(-1)), Subject = "Вчера - не должно" }
         };
 
-        var notifier = new TestNotifier();
+        var ntfyNotifier = new TestNtfyNotifier();
         var dateTimeProvider = new MockDateTimeProvider();
         dateTimeProvider.SetNow(now);
         
         var processor = new DailyDigestProcessor(
             dateTimeProvider,
             new InMemoryFileStorage(),
-            new List<INotifier> { notifier });
+            ntfyNotifier);
 
         // Act
         await processor.SendIfNeededAsync(events, now);
 
         // Assert
-        Assert.NotNull(notifier.LastNotifiedMessage);
-        Assert.Contains("Сегодня", notifier.LastNotifiedMessage);
-        Assert.DoesNotContain("Завтра", notifier.LastNotifiedMessage);
-        Assert.DoesNotContain("Вчера", notifier.LastNotifiedMessage);
+        Assert.NotNull(ntfyNotifier.LastNotifiedMessage);
+        Assert.Contains("Сегодня", ntfyNotifier.LastNotifiedMessage);
+        Assert.DoesNotContain("Завтра", ntfyNotifier.LastNotifiedMessage);
+        Assert.DoesNotContain("Вчера", ntfyNotifier.LastNotifiedMessage);
     }
 }

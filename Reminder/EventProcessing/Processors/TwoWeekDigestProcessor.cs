@@ -1,31 +1,40 @@
 using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
-using ReminderApp.EventNotification;
+using ReminderApp.EventNotification.Ntfy;
 using ReminderApp.FileStorage;
 
 namespace ReminderApp.EventProcessing.Processors;
 
-public class TwoWeekDigestProcessor : ProcessorBase, ITwoWeekDigestProcessor
+public class TwoWeekDigestProcessor : ITwoWeekDigestProcessor
 {
     private const int DigestHour = 9;
     private const int DaysAhead = 14;
+    
+    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IFileStorage _fileStorage;
+    private readonly INtfyNotifier _ntfy;
+    
     private DateOnly? _lastDigestDate;
     private const string LastDigestKey = "last_two_week_digest_date";
 
     public TwoWeekDigestProcessor(
         IDateTimeProvider dateTimeProvider,
         IFileStorage fileStorage,
-        IEnumerable<INotifier> notifiers)
-        : base(dateTimeProvider, fileStorage, notifiers)
+        INtfyNotifier ntfy)
     {
+        _dateTimeProvider = dateTimeProvider;
+        _fileStorage = fileStorage;
+        _ntfy = ntfy;
+
+        InitializeAsync().GetAwaiter().GetResult();
     }
 
-    protected override async Task OnInitializeAsync()
+    private async Task InitializeAsync()
     {
         _lastDigestDate = await LoadLastDigestDateAsync();
     }
 
-    public override async Task SendIfNeededAsync(List<EventData> events, DateTime now)
+    public async Task SendIfNeededAsync(List<EventData> events, DateTime now)
     {
         var today = DateOnly.FromDateTime(now);
 
@@ -59,7 +68,7 @@ public class TwoWeekDigestProcessor : ProcessorBase, ITwoWeekDigestProcessor
         Log.Information($"📅 Ближайшие 14 дней ({today:dd.MM} - {endDate:dd.MM}): {upcomingEvents.Count} событий, отправляю Two Week Digest...");
 
         var digest = BuildTwoWeekDigestMessage(today, endDate, upcomingEvents);
-        await NotifyAllAsync(digest);
+        await _ntfy.NotifyAsync(digest);
         Log.Information("✅ Two Week Digest отправлен");
     }
 
@@ -101,7 +110,7 @@ public class TwoWeekDigestProcessor : ProcessorBase, ITwoWeekDigestProcessor
 
     private async Task<DateOnly?> LoadLastDigestDateAsync()
     {
-        var data = await LoadAsync(LastDigestKey);
+        var data = await _fileStorage.LoadStringAsync(LastDigestKey);
         if (string.IsNullOrEmpty(data))
             return null;
 
@@ -110,7 +119,7 @@ public class TwoWeekDigestProcessor : ProcessorBase, ITwoWeekDigestProcessor
 
     private async Task SaveLastDigestDateAsync(DateOnly date)
     {
-        await SaveAsync(LastDigestKey, date.ToString("yyyy-MM-dd"));
+        await _fileStorage.SaveStringAsync(LastDigestKey, date.ToString("yyyy-MM-dd"));
     }
 }
 

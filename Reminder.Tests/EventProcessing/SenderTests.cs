@@ -18,7 +18,7 @@ public class DailyDigestProcessorTests
             new() { Date = new DateOnly(2026, 4, 11), Subject = "Событие" }
         };
 
-        var notifier = new TestNotifier();
+        var notifier = new TestNtfyNotifier();
         var processor = CreateDailyDigestProcessor(now: now, events: events, notifier: notifier);
 
         // Act
@@ -40,7 +40,7 @@ public class DailyDigestProcessorTests
             new() { Date = new DateOnly(2026, 4, 11), Subject = "Событие 2" }
         };
 
-        var notifier = new TestNotifier();
+        var notifier = new TestNtfyNotifier();
         var processor = CreateDailyDigestProcessor(now: now, events: events, notifier: notifier);
 
         // Act
@@ -63,7 +63,7 @@ public class DailyDigestProcessorTests
             new() { Date = new DateOnly(2026, 4, 12), Subject = "Завтра" }
         };
 
-        var notifier = new TestNotifier();
+        var notifier = new TestNtfyNotifier();
         var processor = CreateDailyDigestProcessor(now: now, events: events, notifier: notifier);
 
         // Act
@@ -247,7 +247,7 @@ public class WeeklyDigestProcessorTests
             new() { Date = new DateOnly(2026, 4, 13), Subject = "Понедельник" }
         };
 
-        var notifier = new TestNotifier();
+        var notifier = new TestNtfyNotifier();
         var processor = CreateWeeklyDigestProcessor(now: now, events: events, notifier: notifier);
 
         // Act
@@ -270,7 +270,7 @@ public class WeeklyDigestProcessorTests
             new() { Date = new DateOnly(2026, 4, 14), Subject = "Встреча во вторник" }
         };
 
-        var notifier = new TestNotifier();
+        var notifier = new TestNtfyNotifier();
         var processor = CreateWeeklyDigestProcessor(now: now, events: events, notifier: notifier);
 
         // Act
@@ -294,7 +294,7 @@ public class WeeklyDigestProcessorTests
             new() { Date = new DateOnly(2026, 4, 13), Subject = "Встреча в понедельник" }
         };
 
-        var notifier = new TestNotifier();
+        var notifier = new TestNtfyNotifier();
         var processor = CreateWeeklyDigestProcessor(now: now, events: events, notifier: notifier);
 
         // Act
@@ -320,7 +320,7 @@ public class WeeklyDigestProcessorTests
             new() { Date = new DateOnly(2026, 4, 19), Subject = "Воскресенье" }
         };
 
-        var notifier = new TestNotifier();
+        var notifier = new TestNtfyNotifier();
         var processor = CreateWeeklyDigestProcessor(now: now, events: events, notifier: notifier);
 
         // Act
@@ -346,7 +346,7 @@ public class WeeklyDigestProcessorTests
             new() { Date = new DateOnly(2026, 4, 10), Subject = "Сегодня" }  // только сегодня
         };
 
-        var notifier = new TestNotifier();
+        var notifier = new TestNtfyNotifier();
         var processor = CreateWeeklyDigestProcessor(now: now, events: events, notifier: notifier);
 
         // Act
@@ -367,7 +367,7 @@ public class WeeklyDigestProcessorTests
             new() { Date = new DateOnly(2026, 4, 13), Subject = "Встреча" }
         };
 
-        var notifier = new TestNotifier();
+        var notifier = new TestNtfyNotifier();
         var processor = CreateWeeklyDigestProcessor(now: now, events: events, notifier: notifier);
 
         // Act - первый вызов (пятница)
@@ -375,7 +375,7 @@ public class WeeklyDigestProcessorTests
 
         // Assert - первый раз отправилось
         Assert.NotNull(notifier.LastNotifiedMessage);
-        Assert.Equal(1, notifier.NotifiedMessages.Count);
+        Assert.Single(notifier.NotifiedMessages);
 
         // Меняем время на воскресенье 20:00
         var sunday = new DateTime(2026, 4, 12, 20, 0, 0);
