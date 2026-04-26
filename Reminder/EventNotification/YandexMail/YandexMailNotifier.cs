@@ -3,7 +3,7 @@ using System.Net.Mail;
 
 namespace ReminderApp.EventNotification.YandexMail;
 
-public class YandexMailNotifier : INotifier
+public class YandexMailNotifier
 {
     private readonly string _email;
     private readonly string _password;

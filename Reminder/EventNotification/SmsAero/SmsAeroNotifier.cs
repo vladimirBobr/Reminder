@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace ReminderApp.EventNotification.SmsAero;
 
-public class SmsAeroNotifier : INotifier
+public class SmsAeroNotifier
 {
     private readonly HttpClient _httpClient;
     private readonly string _email;

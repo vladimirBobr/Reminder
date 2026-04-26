@@ -1,6 +1,8 @@
+using ReminderApp.EventNotification.Ntfy;
+
 namespace ReminderApp.EventNotification.ConsoleOutput;
 
-public class ConsoleNotifier : INotifier
+public class ConsoleNotifier : INtfyNotifier
 {
     public Task NotifyAsync(string message)
     {

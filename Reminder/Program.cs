@@ -1,4 +1,5 @@
-﻿using ReminderApp.DateTimeProviding;
+using ReminderApp.DateTimeProviding;
+using ReminderApp.EventNotification.ConsoleOutput;
 using ReminderApp.EventNotification.Ntfy;
 using ReminderApp.EventNotification.YandexMail;
 using ReminderApp.EventOutput;
@@ -28,14 +29,25 @@ internal class Program
         var dateTimeProvider = new DateTimeProvider();
         var fileStorage = new JsonFileStorage();
         
-        var ntfyNotifier = new NtfyNotifier(new NtfyCredentialsProvider());
-        await ntfyNotifier.NotifyAsync("▶️ Reminder started");
+        // В DEBUG режиме используем заглушку для консоли, в RELEASE - Ntfy
+        INtfyNotifier notifier;
+        if (DebugHelper.IsDebug)
+        {
+            notifier = new ConsoleNotifier();
+            Log.Information("🔧 DEBUG MODE: используется ConsoleNotifier (без отправки в Ntfy)");
+        }
+        else
+        {
+            notifier = new NtfyNotifier(new NtfyCredentialsProvider());
+        }
+        
+        await notifier.NotifyAsync("▶️ Reminder started");
 
-        // Создаём процессоры - каждый получает ntfyNotifier напрямую
-        var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, ntfyNotifier);
-        var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, ntfyNotifier);
-        var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, ntfyNotifier);
-        var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, ntfyNotifier);
+        // Создаём процессоры - каждый получает notifier напрямую
+        var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, notifier);
+        var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, notifier);
+        var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, notifier);
+        var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, notifier);
         var printer = new EventOutputPrinter(dateTimeProvider);
 
         var gitHubClient = new GitHubClient(new GitHubCredentialsProvider());

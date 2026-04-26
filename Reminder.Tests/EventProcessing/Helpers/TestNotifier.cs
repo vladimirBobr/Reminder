@@ -1,8 +1,6 @@
-using ReminderApp.EventNotification;
-
 namespace Reminder.Tests.EventProcessing.Helpers;
 
-public class TestNotifier : INotifier
+public class TestNotifier
 {
     public string? LastNotifiedMessage { get; private set; }
     public List<string> NotifiedMessages { get; } = new();

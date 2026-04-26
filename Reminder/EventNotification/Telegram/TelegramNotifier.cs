@@ -1,6 +1,6 @@
 ﻿namespace ReminderApp.EventNotification.Telegram;
 
-public class TelegramNotifier : INotifier
+public class TelegramNotifier
 {
     private readonly HttpClient _httpClient;
     private readonly string _botToken;

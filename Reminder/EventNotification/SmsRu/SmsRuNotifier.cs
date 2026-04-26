@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace ReminderApp.EventNotification.SmsRu;
 
-public class SmsRuNotifier : INotifier
+public class SmsRuNotifier
 {
     private readonly HttpClient _httpClient;
     private readonly string _apiId;

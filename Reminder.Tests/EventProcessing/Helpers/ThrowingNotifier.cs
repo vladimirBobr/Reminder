@@ -1,8 +1,6 @@
-using ReminderApp.EventNotification;
-
 namespace Reminder.Tests.EventProcessing.Helpers;
 
-public class ThrowingNotifier : INotifier
+public class ThrowingNotifier
 {
     public Task NotifyAsync(string message)
     {

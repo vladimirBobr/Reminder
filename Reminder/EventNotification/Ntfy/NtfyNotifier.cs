@@ -1,10 +1,10 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
 using ReminderApp.EventNotification;
 
 namespace ReminderApp.EventNotification.Ntfy;
 
-public class NtfyNotifier : INtfyNotifier, INotifier
+public class NtfyNotifier : INtfyNotifier
 {
     private readonly HttpClient _httpClient;
     private readonly string _serverUrl;
