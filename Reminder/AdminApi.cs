@@ -182,7 +182,7 @@ public static class AdminApi
             var html = $@"<!DOCTYPE html>
 <html>
 <head><title>Admin API</title>
-<link rel=""icon"" type=""image/svg+xml"" href=""data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FFA500'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 13c-1.6 0-3.1-.6-4.2-1.7 1.1-.8 2.6-1.3 4.2-1.3s3.1.5 4.2 1.3c-1.1 1.1-2.6 1.7-4.2 1.7z'/></svg>"">
+<link rel=""icon"" type=""image/svg+xml"" href=""data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' version='1.1' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='url(%23gradient)'/%3E%3Cdefs%3E%3ClinearGradient id='gradient' gradientTransform='rotate(0 0.5 0.5)'%3E%3Cstop offset='0%25' stop-color='%23c48f4d'/%3E%3Cstop offset='100%25' stop-color='%23985351'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg fill='%23084966' transform='matrix(12.659340659340659 0 0 12.659340659340659 16.32043168734718 190.007288644602)' stroke='%23e26122' stroke-width='0.3'%3E%3Cpath d='M3.77-14.22L6.59-3.87L9.42-14.22L13.25-14.22L8.47 0L4.72 0L-0.03-14.22L3.77-14.22Z'/%3E%3C/g%3E%3C/svg%3E"">
 </head>
 <body>
 <h1>Admin API {(!isLoggedIn ? "(Not logged in)" : "")}</h1>
