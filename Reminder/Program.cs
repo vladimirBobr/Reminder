@@ -1,10 +1,12 @@
-using ReminderApp.DateTimeProviding;
+﻿using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification.ConsoleOutput;
 using ReminderApp.EventNotification.Ntfy;
 using ReminderApp.EventNotification.YandexMail;
 using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventProcessing.Processors;
+using ReminderApp.EventReading;
+using ReminderApp.EventReading.Debug;
 using ReminderApp.EventReading.GitHub;
 using ReminderApp.FileStorage;
 using ReminderApp.GitHubApi;
@@ -50,8 +52,18 @@ internal class Program
         var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, notifier);
         var printer = new EventOutputPrinter(dateTimeProvider);
 
-        var gitHubClient = new GitHubClient(new GitHubCredentialsProvider());
-        var eventReader = new GitHubEventReader(gitHubClient);
+        IEventReader eventReader;
+        IGitHubClient? gitHubClient = null;
+        if (DebugHelper.IsDebug)
+        {
+            eventReader = new DebugEventReader();
+            Log.Information("🔧 DEBUG MODE: используется DebugEventReader (без чтения из GitHub)");
+        }
+        else
+        {
+            gitHubClient = new GitHubClient(new GitHubCredentialsProvider());
+            eventReader = new GitHubEventReader(gitHubClient);
+        }
 
         var runner = new EventRunner(
             dateTimeProvider,
@@ -64,7 +76,8 @@ internal class Program
             twoWeekDigestProcessor,
             printer);
 
-        AdminApi.Start(runner, gitHubClient);
+        if (gitHubClient != null)
+            AdminApi.Start(runner, gitHubClient);
 
         await runner.StartAsync();
 
