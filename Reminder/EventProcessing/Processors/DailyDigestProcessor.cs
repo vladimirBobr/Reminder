@@ -7,6 +7,7 @@ namespace ReminderApp.EventProcessing.Processors;
 
 public class DailyDigestProcessor : IDailyDigestProcessor
 {
+    private static readonly ILogger _log = Log.ForContext<DailyDigestProcessor>();
     private readonly int _digestHour;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IFileStorage _fileStorage;
@@ -59,15 +60,15 @@ public class DailyDigestProcessor : IDailyDigestProcessor
 
         if (todayEvents.Count == 0)
         {
-            Log.Information($"📅 {today:dd.MM.yyyy} - нет событий");
+            _log.Information("📅 {Date:dd.MM.yyyy} - нет событий", today);
             return;
         }
 
-        Log.Information($"📅 {today:dd.MM.yyyy} - найдено {todayEvents.Count} событий, отправляю Digest...");
+        _log.Information("📅 {Date:dd.MM.yyyy} - найдено {Count} событий, отправляю Digest...", today, todayEvents.Count);
 
         var digest = BuildDigestMessage(todayEvents);
         await _ntfy.NotifyAsync(digest);
-        Log.Information("✅ Daily Digest отправлен");
+        _log.Information("✅ Daily Digest отправлен");
     }
 
     private string BuildDigestMessage(List<EventData> events)

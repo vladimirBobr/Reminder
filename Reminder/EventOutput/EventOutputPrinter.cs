@@ -5,6 +5,7 @@ namespace ReminderApp.EventOutput;
 
 public class EventOutputPrinter : IEventOutputPrinter
 {
+    private static readonly ILogger _log = Log.ForContext<EventOutputPrinter>();
     private readonly HashSet<string> _seenEvents = [];
     private readonly IDateTimeProvider _dateTimeProvider;
 
@@ -88,7 +89,7 @@ public class EventOutputPrinter : IEventOutputPrinter
         }
 
         if (sb.Length > 0)
-            Log.Information("{Events}", sb.ToString().TrimEnd());
+            _log.Information("{Events}", sb.ToString().TrimEnd());
     }
 
     private string FormatTodayEvent(EventData e)

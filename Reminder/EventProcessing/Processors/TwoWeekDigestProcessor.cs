@@ -7,6 +7,7 @@ namespace ReminderApp.EventProcessing.Processors;
 
 public class TwoWeekDigestProcessor : ITwoWeekDigestProcessor
 {
+    private static readonly ILogger _log = Log.ForContext<TwoWeekDigestProcessor>();
     private const int DigestHour = 9;
     private const int DaysAhead = 14;
     
@@ -61,15 +62,15 @@ public class TwoWeekDigestProcessor : ITwoWeekDigestProcessor
 
         if (upcomingEvents.Count == 0)
         {
-            Log.Information($"📅 {today:dd.MM} - {endDate:dd.MM} - нет событий");
+            _log.Information("📅 {Today:dd.MM} - {EndDate:dd.MM} - нет событий", today, endDate);
             return;
         }
 
-        Log.Information($"📅 Ближайшие 14 дней ({today:dd.MM} - {endDate:dd.MM}): {upcomingEvents.Count} событий, отправляю Two Week Digest...");
+        _log.Information("📅 Ближайшие 14 дней ({Today:dd.MM} - {EndDate:dd.MM}): {Count} событий, отправляю Two Week Digest...", today, endDate, upcomingEvents.Count);
 
         var digest = BuildTwoWeekDigestMessage(today, endDate, upcomingEvents);
         await _ntfy.NotifyAsync(digest);
-        Log.Information("✅ Two Week Digest отправлен");
+        _log.Information("✅ Two Week Digest отправлен");
     }
 
     private string BuildTwoWeekDigestMessage(DateOnly startDate, DateOnly endDate, List<EventData> events)

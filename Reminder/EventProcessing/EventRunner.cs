@@ -11,6 +11,7 @@ namespace ReminderApp.EventProcessing;
 
 public class EventRunner : IEventRunner
 {
+    private static readonly ILogger _log = Log.ForContext<EventRunner>();
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IEventReader _eventReader;
     private readonly IDailyDigestProcessor _dailyDigestProcessor;
@@ -50,7 +51,7 @@ public class EventRunner : IEventRunner
         _cts = new CancellationTokenSource();
 
         var intervalSec = DebugHelper.LoopDelayMs / 1000;
-        Log.Information($"▶️ EventRunner запущен. Проверка каждые {intervalSec} сек.");
+        _log.Information("▶️ EventRunner запущен. Проверка каждые {Interval} сек.", intervalSec);
 
         _ = RunLoopAsync(_cts.Token);
     }
@@ -59,7 +60,7 @@ public class EventRunner : IEventRunner
     {
         _cts?.Cancel();
         _isRunning = false;
-        Log.Information("⏸️ EventRunner остановлен.");
+        _log.Information("⏸️ EventRunner остановлен.");
     }
 
     internal void SendDigest()
@@ -96,7 +97,7 @@ public class EventRunner : IEventRunner
             }
             catch (Exception ex)
             {
-                Log.Information($"❌ Ошибка: {ex.Message}");
+                _log.Information("❌ Ошибка: {Error}", ex.Message);
             }
 
             try

@@ -7,6 +7,7 @@ namespace ReminderApp.EventProcessing.Processors;
 
 public class WeeklyDigestProcessor : IWeeklyDigestProcessor
 {
+    private static readonly ILogger _log = Log.ForContext<WeeklyDigestProcessor>();
     // Пятница 18:00 и Воскресенье 20:00
     private static readonly (DayOfWeek Day, int Hour)[] Schedule =
     [
@@ -72,15 +73,15 @@ public class WeeklyDigestProcessor : IWeeklyDigestProcessor
 
         if (weekEvents.Count == 0)
         {
-            Log.Information($"📅 {nextWeekStart:dd.MM} - {nextWeekEnd:dd.MM} - нет событий");
+            _log.Information("📅 {WeekStart:dd.MM} - {WeekEnd:dd.MM} - нет событий", nextWeekStart, nextWeekEnd);
             return;
         }
 
-        Log.Information($"📅 План на неделю {nextWeekStart:dd.MM} - {nextWeekEnd:dd.MM}: {weekEvents.Count} событий, отправляю Weekly Digest...");
+        _log.Information("📅 План на неделю {WeekStart:dd.MM} - {WeekEnd:dd.MM}: {Count} событий, отправляю Weekly Digest...", nextWeekStart, nextWeekEnd, weekEvents.Count);
 
         var digest = BuildWeeklyDigestMessage(nextWeekStart, nextWeekEnd, weekEvents);
         await _ntfy.NotifyAsync(digest);
-        Log.Information("✅ Weekly Digest отправлен");
+        _log.Information("✅ Weekly Digest отправлен");
     }
 
     private static DateOnly GetNextWeekMonday(DateTime date)

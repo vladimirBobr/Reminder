@@ -4,11 +4,11 @@ namespace ReminderApp.EventNotification.ConsoleOutput;
 
 public class ConsoleNotifier : INtfyNotifier
 {
+    private static readonly ILogger _log = Log.ForContext<ConsoleNotifier>();
+
     public Task NotifyAsync(string message)
     {
-        Console.WriteLine($"🔔 УВЕДОМЛЕНИЕ:");
-        Console.WriteLine(message);
-        Console.WriteLine("---");
+        _log.Information("🔔 УВЕДОМЛЕНИЕ:\n{Msg}\n---", message);
         return Task.CompletedTask;
     }
 }

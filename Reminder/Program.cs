@@ -15,18 +15,16 @@ namespace ReminderApp;
 
 internal class Program
 {
+    private static ILogger? _log;
+
     static async Task Main()
     {
         // Ensure console supports UTF-8 emoji output on Windows
         Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
-            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss}] {Message:lj}{NewLine}{Exception}")
-            .WriteTo.Seq("http://localhost:5341")
-            .CreateLogger();
+        _log = ConfigureLogger();
 
-        Log.Information("▶️ Starting Reminder");
+        _log.Information("▶️ Starting Reminder");
 
         var dateTimeProvider = new DateTimeProvider();
         var fileStorage = new JsonFileStorage();
@@ -36,7 +34,7 @@ internal class Program
         if (DebugHelper.IsDebug)
         {
             notifier = new ConsoleNotifier();
-            Log.Information("🔧 DEBUG MODE: используется ConsoleNotifier (без отправки в Ntfy)");
+            _log.Information("🔧 DEBUG MODE: используется ConsoleNotifier (без отправки в Ntfy)");
         }
         else
         {
@@ -57,7 +55,7 @@ internal class Program
         if (DebugHelper.IsDebug)
         {
             eventReader = new DebugEventReader();
-            Log.Information("🔧 DEBUG MODE: используется DebugEventReader (без чтения из GitHub)");
+            _log.Information("🔧 DEBUG MODE: используется DebugEventReader (без чтения из GitHub)");
         }
         else
         {
@@ -82,5 +80,17 @@ internal class Program
         await runner.StartAsync();
 
         await Task.Delay(-1);
+    }
+
+    private static ILogger ConfigureLogger()
+    {
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .Enrich.WithProperty("Application", "Reminder")
+            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+            .WriteTo.Seq("http://localhost:5341")
+            .CreateLogger();
+
+        return Log.ForContext<Program>();
     }
 }
