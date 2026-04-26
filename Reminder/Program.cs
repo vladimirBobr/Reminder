@@ -40,11 +40,13 @@ internal class Program
         {
             notifier = new NtfyNotifier(new NtfyCredentialsProvider());
         }
+
+        var localIp = GetLocalIpAddress();
         
-        await notifier.NotifyAsync("""
+        await notifier.NotifyAsync($"""
             ▶ Reminder started
-            Admin API: http://localhost:5000"
-            Sec: http://localhost:5341
+            Admin API: http://{localIp}:5000
+            Seq: http://{localIp}:5341
             """);
 
         // Создаём процессоры - каждый получает notifier напрямую
@@ -78,12 +80,24 @@ internal class Program
             twoWeekDigestProcessor,
             printer);
 
-        if (gitHubClient != null)
-            AdminApi.Start(runner, gitHubClient);
+        AdminApi.Start(runner, gitHubClient);
 
         await runner.StartAsync();
 
         await Task.Delay(-1);
+    }
+
+    private static string GetLocalIpAddress()
+    {
+        try
+        {
+            var host = System.Net.Dns.GetHostAddresses(System.Net.Dns.GetHostName());
+            return host.FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.ToString() ?? "localhost";
+        }
+        catch
+        {
+            return "localhost";
+        }
     }
 
     private static ILogger ConfigureLogger()
