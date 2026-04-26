@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -200,7 +200,7 @@ public static class AdminApi
             return Results.Text(html, "text/html");
         });
 
-        app.Run("http://0.0.0.0:5000");
+        app.Run("http://127.0.0.1:5000");
     }
 
     private static async Task<GitHubPushEvent?> ParsePayload(HttpContext ctx)
