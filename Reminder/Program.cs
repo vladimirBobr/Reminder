@@ -1,7 +1,7 @@
-﻿using ReminderApp.DateTimeProviding;
+﻿using ReminderApp.Common;
+using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification.ConsoleOutput;
 using ReminderApp.EventNotification.Ntfy;
-using ReminderApp.EventNotification.YandexMail;
 using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventProcessing.Processors;
@@ -24,7 +24,7 @@ internal class Program
 
         _log = ConfigureLogger();
 
-        _log.Information("▶️ Starting Reminder");
+        _log.Information("▶ Starting Reminder");
 
         var dateTimeProvider = new DateTimeProvider();
         var fileStorage = new JsonFileStorage();
@@ -34,14 +34,14 @@ internal class Program
         if (DebugHelper.IsDebug)
         {
             notifier = new ConsoleNotifier();
-            _log.Information("🔧 DEBUG MODE: используется ConsoleNotifier (без отправки в Ntfy)");
+            _log.Information("DEBUG MODE: используется ConsoleNotifier (без отправки в Ntfy)");
         }
         else
         {
             notifier = new NtfyNotifier(new NtfyCredentialsProvider());
         }
         
-        await notifier.NotifyAsync("▶️ Reminder started");
+        await notifier.NotifyAsync("▶ Reminder started");
 
         // Создаём процессоры - каждый получает notifier напрямую
         var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, notifier);
@@ -55,7 +55,7 @@ internal class Program
         if (DebugHelper.IsDebug)
         {
             eventReader = new DebugEventReader();
-            _log.Information("🔧 DEBUG MODE: используется DebugEventReader (без чтения из GitHub)");
+            _log.Information("DEBUG MODE: используется DebugEventReader (без чтения из GitHub)");
         }
         else
         {
@@ -87,7 +87,8 @@ internal class Program
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
             .Enrich.WithProperty("Application", "Reminder")
-            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+            .Enrich.With<ShortClassNameEnricher>()
+            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss}] [{ClassName,-20}] {Message:lj}{NewLine}{Exception}")
             .WriteTo.Seq("http://localhost:5341")
             .CreateLogger();
 
