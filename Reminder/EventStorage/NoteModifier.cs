@@ -1,4 +1,3 @@
-﻿using System.Text;
 using OneOf;
 using ReminderApp.EventParsing;
 
@@ -108,30 +107,6 @@ public static class NoteModifier
                         resultMessage = "Добавили в #different_dates_section#";
                         return new NoteModifierSuccess(string.Join("\n", lines), resultMessage);
                     }
-                    
-                    // Проверяем, нужна ли пустая строка перед новой записью
-                    var needEmptyBefore = insertIndex > diffDates.ContentStartLineIndex + 1
-                        && insertIndex > 0
-                        && !string.IsNullOrWhiteSpace(lines[insertIndex - 1]);
-
-                    // Проверяем, нужна ли пустая строка после новой записи
-                    var needEmptyAfter = insertIndex + 1 < lines.Count
-                        && !string.IsNullOrWhiteSpace(lines[insertIndex + 1]);
-
-                    if (needEmptyBefore)
-                    {
-                        lines.Insert(insertIndex, "");
-                        insertIndex++;
-                    }
-
-                    lines.Insert(insertIndex, $"{date.Value:dd.MM.yyyy} {note}");
-
-                    if (needEmptyAfter)
-                    {
-                        lines.Insert(insertIndex + 1, "");
-                    }
-                    
-                    resultMessage = "Добавили в #different_dates_section#";
                 }
                 else
                 {
