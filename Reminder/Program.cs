@@ -41,7 +41,11 @@ internal class Program
             notifier = new NtfyNotifier(new NtfyCredentialsProvider());
         }
         
-        await notifier.NotifyAsync("▶ Reminder started");
+        await notifier.NotifyAsync("""
+            ▶ Reminder started
+            Admin API: http://localhost:5000"
+            Sec: http://localhost:5341
+            """);
 
         // Создаём процессоры - каждый получает notifier напрямую
         var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, notifier);
