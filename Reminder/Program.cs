@@ -47,13 +47,12 @@ internal class Program
             ▶ Reminder started
             Admin API: http://{localIp}:5000
             Seq: http://{localIp}:5341
-            """);
+            """, NtfyTopics.Reminders);
 
-        // Создаём процессоры - каждый получает notifier напрямую
-        var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, notifier);
-        var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, notifier);
-        var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, notifier);
-        var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, notifier);
+        var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.DailyDigest);
+        var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.Reminders);
+        var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.WeeklyDigest);
+        var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.TwoWeekDigest);
         var printer = new EventOutputPrinter(dateTimeProvider);
 
         IEventReader eventReader;

@@ -8,6 +8,7 @@ namespace ReminderApp.EventProcessing.Processors;
 public class DailyDigestProcessor : IDailyDigestProcessor
 {
     private static readonly ILogger _log = Log.ForContext<DailyDigestProcessor>();
+    private readonly string _topic;
     private readonly int _digestHour;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IFileStorage _fileStorage;
@@ -20,11 +21,13 @@ public class DailyDigestProcessor : IDailyDigestProcessor
         IDateTimeProvider dateTimeProvider,
         IFileStorage fileStorage,
         INtfyNotifier ntfy,
+        string topic,
         int digestHour = 7)
     {
         _dateTimeProvider = dateTimeProvider;
         _fileStorage = fileStorage;
         _ntfy = ntfy;
+        _topic = topic;
         _digestHour = digestHour;
 
         InitializeAsync().GetAwaiter().GetResult();
@@ -67,7 +70,7 @@ public class DailyDigestProcessor : IDailyDigestProcessor
         _log.Information("📅 {Date:dd.MM.yyyy} - найдено {Count} событий, отправляю Digest...", today, todayEvents.Count);
 
         var digest = BuildDigestMessage(todayEvents);
-        await _ntfy.NotifyAsync(digest);
+        await _ntfy.NotifyAsync(digest, _topic);
         _log.Information("✅ Daily Digest отправлен");
     }
 

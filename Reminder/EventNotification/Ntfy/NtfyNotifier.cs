@@ -35,16 +35,9 @@ public class NtfyNotifier : INtfyNotifier
         }
     }
 
-    public async Task NotifyAsync(string message)
+    public async Task NotifyAsync(string message, string topic)
     {
-        if (DebugHelper.IsDebug)
-        {
-            Log.Information($"[NTFY DEBUG] Topic: /{_topic}");
-            Log.Information($"[NTFY DEBUG] {message}");
-            return;
-        }
-
-        var url = $"{_serverUrl}/{_topic}";
+        var url = $"{_serverUrl}/{topic}";
 
         try
         {
@@ -57,7 +50,7 @@ public class NtfyNotifier : INtfyNotifier
             }
             else
             {
-                Log.Information("✅ Уведомление отправлено в Ntfy");
+                Log.Information($"✅ Уведомление отправлено в Ntfy {topic}");
             }
         }
         catch (Exception ex)

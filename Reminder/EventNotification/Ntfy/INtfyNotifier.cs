@@ -2,5 +2,5 @@ namespace ReminderApp.EventNotification.Ntfy;
 
 public interface INtfyNotifier
 {
-    Task NotifyAsync(string message);
+    Task NotifyAsync(string message, string topic);
 }

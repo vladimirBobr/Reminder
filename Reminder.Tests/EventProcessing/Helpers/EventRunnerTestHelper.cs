@@ -20,7 +20,7 @@ public static class EventRunnerTestHelper
         var dateTimeProvider = new MockDateTimeProvider();
         dateTimeProvider.SetNow(now.Value);
 
-        return new DailyDigestProcessor(dateTimeProvider, fileStorage, notifier);
+        return new DailyDigestProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.DailyDigest);
     }
 
     public static ReminderProcessor CreateReminderProcessor(
@@ -36,7 +36,7 @@ public static class EventRunnerTestHelper
         var dateTimeProvider = new MockDateTimeProvider();
         dateTimeProvider.SetNow(now.Value);
 
-        return new ReminderProcessor(dateTimeProvider, fileStorage, notifier);
+        return new ReminderProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.Reminders);
     }
 
     public static WeeklyDigestProcessor CreateWeeklyDigestProcessor(
@@ -52,6 +52,6 @@ public static class EventRunnerTestHelper
         var dateTimeProvider = new MockDateTimeProvider();
         dateTimeProvider.SetNow(now.Value);
 
-        return new WeeklyDigestProcessor(dateTimeProvider, fileStorage, notifier);
+        return new WeeklyDigestProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.WeeklyDigest);
     }
 }

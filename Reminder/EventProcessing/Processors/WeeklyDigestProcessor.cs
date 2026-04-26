@@ -15,6 +15,7 @@ public class WeeklyDigestProcessor : IWeeklyDigestProcessor
         (DayOfWeek.Sunday, 20)
     ];
 
+    private readonly string _topic;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IFileStorage _fileStorage;
     private readonly INtfyNotifier _ntfy;
@@ -26,11 +27,13 @@ public class WeeklyDigestProcessor : IWeeklyDigestProcessor
     public WeeklyDigestProcessor(
         IDateTimeProvider dateTimeProvider,
         IFileStorage fileStorage,
-        INtfyNotifier ntfy)
+        INtfyNotifier ntfy,
+        string topic)
     {
         _dateTimeProvider = dateTimeProvider;
         _fileStorage = fileStorage;
         _ntfy = ntfy;
+        _topic = topic;
 
         InitializeAsync().GetAwaiter().GetResult();
     }
@@ -80,7 +83,7 @@ public class WeeklyDigestProcessor : IWeeklyDigestProcessor
         _log.Information("📅 План на неделю {WeekStart:dd.MM} - {WeekEnd:dd.MM}: {Count} событий, отправляю Weekly Digest...", nextWeekStart, nextWeekEnd, weekEvents.Count);
 
         var digest = BuildWeeklyDigestMessage(nextWeekStart, nextWeekEnd, weekEvents);
-        await _ntfy.NotifyAsync(digest);
+        await _ntfy.NotifyAsync(digest, _topic);
         _log.Information("✅ Weekly Digest отправлен");
     }
 

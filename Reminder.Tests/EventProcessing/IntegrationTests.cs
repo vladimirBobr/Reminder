@@ -1,6 +1,7 @@
 using Reminder.Tests.EventProcessing.Helpers;
 using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
+using ReminderApp.EventNotification.Ntfy;
 using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventProcessing.Processors;
@@ -62,10 +63,10 @@ public class IntegrationTests
         eventReader.SetEvents(events);
 
         // Создаём процессоры
-        var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, ntfyNotifier);
-        var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, ntfyNotifier);
-        var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, ntfyNotifier);
-        var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, ntfyNotifier);
+        var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, ntfyNotifier, NtfyTopics.DailyDigest);
+        var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, ntfyNotifier, NtfyTopics.Reminders);
+        var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, ntfyNotifier, NtfyTopics.WeeklyDigest);
+        var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, ntfyNotifier, NtfyTopics.TwoWeekDigest);
         var printer = new EventOutputPrinter(dateTimeProvider);
 
         // Создаём EventRunner
@@ -124,7 +125,8 @@ public class IntegrationTests
         var processor = new ReminderProcessor(
             dateTimeProvider,
             new InMemoryFileStorage(),
-            ntfyNotifier);
+            ntfyNotifier,
+            NtfyTopics.Reminders);
 
         // Act
         await processor.SendIfNeededAsync(events, now);
@@ -155,7 +157,8 @@ public class IntegrationTests
         var processor = new DailyDigestProcessor(
             dateTimeProvider,
             new InMemoryFileStorage(),
-            ntfyNotifier);
+            ntfyNotifier,
+            NtfyTopics.DailyDigest);
 
         // Act
         await processor.SendIfNeededAsync(events, now);

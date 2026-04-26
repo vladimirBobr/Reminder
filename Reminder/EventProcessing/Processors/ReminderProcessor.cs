@@ -8,6 +8,7 @@ namespace ReminderApp.EventProcessing.Processors;
 public class ReminderProcessor : IReminderProcessor
 {
     private static readonly ILogger _log = Log.ForContext<ReminderProcessor>();
+    private readonly string _topic;
     private readonly int _remindMinutesBefore;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IFileStorage _fileStorage;
@@ -21,11 +22,13 @@ public class ReminderProcessor : IReminderProcessor
         IDateTimeProvider dateTimeProvider,
         IFileStorage fileStorage,
         INtfyNotifier ntfy,
+        string topic,
         int remindMinutesBefore = 60)
     {
         _dateTimeProvider = dateTimeProvider;
         _fileStorage = fileStorage;
         _ntfy = ntfy;
+        _topic = topic;
         _remindMinutesBefore = remindMinutesBefore;
 
         InitializeAsync().GetAwaiter().GetResult();
@@ -77,7 +80,7 @@ public class ReminderProcessor : IReminderProcessor
             message += $"\n{evt.Description}";
         }
 
-        await _ntfy.NotifyAsync(message);
+        await _ntfy.NotifyAsync(message, _topic);
         _log.Information("✅ Напоминание отправлено: {Subject}", evt.Subject);
     }
 

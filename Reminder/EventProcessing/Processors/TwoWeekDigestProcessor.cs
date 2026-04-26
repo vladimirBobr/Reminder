@@ -11,6 +11,7 @@ public class TwoWeekDigestProcessor : ITwoWeekDigestProcessor
     private const int DigestHour = 9;
     private const int DaysAhead = 14;
     
+    private readonly string _topic;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IFileStorage _fileStorage;
     private readonly INtfyNotifier _ntfy;
@@ -21,11 +22,13 @@ public class TwoWeekDigestProcessor : ITwoWeekDigestProcessor
     public TwoWeekDigestProcessor(
         IDateTimeProvider dateTimeProvider,
         IFileStorage fileStorage,
-        INtfyNotifier ntfy)
+        INtfyNotifier ntfy,
+        string topic)
     {
         _dateTimeProvider = dateTimeProvider;
         _fileStorage = fileStorage;
         _ntfy = ntfy;
+        _topic = topic;
 
         InitializeAsync().GetAwaiter().GetResult();
     }
@@ -69,7 +72,7 @@ public class TwoWeekDigestProcessor : ITwoWeekDigestProcessor
         _log.Information("📅 Ближайшие 14 дней ({Today:dd.MM} - {EndDate:dd.MM}): {Count} событий, отправляю Two Week Digest...", today, endDate, upcomingEvents.Count);
 
         var digest = BuildTwoWeekDigestMessage(today, endDate, upcomingEvents);
-        await _ntfy.NotifyAsync(digest);
+        await _ntfy.NotifyAsync(digest, _topic);
         _log.Information("✅ Two Week Digest отправлен");
     }
 
