@@ -181,7 +181,9 @@ public static class AdminApi
             
             var html = $@"<!DOCTYPE html>
 <html>
-<head><title>Admin API</title></head>
+<head><title>Admin API</title>
+<link rel=""icon"" type=""image/svg+xml"" href=""data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FFA500'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 13c-1.6 0-3.1-.6-4.2-1.7 1.1-.8 2.6-1.3 4.2-1.3s3.1.5 4.2 1.3c-1.1 1.1-2.6 1.7-4.2 1.7z'/></svg>"">
+</head>
 <body>
 <h1>Admin API {(!isLoggedIn ? "(Not logged in)" : "")}</h1>
 " + (isLoggedIn 
