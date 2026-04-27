@@ -125,6 +125,30 @@ public static class AdminApi
             return Results.Json(new { message = message ?? "Ok" });
         });
 
+        protectedGroup.MapGet("/add-shopping-item", (HttpContext ctx) =>
+        {
+            var item = ctx.Request.Query["item"].FirstOrDefault();
+            if (string.IsNullOrEmpty(item))
+            {
+                return Results.Json(new { error = "Item is required" }, statusCode: 400);
+            }
+
+            if (gitHubClient == null)
+            {
+                return Results.Json(new { error = "GitHub client not available in debug mode" }, statusCode: 400);
+            }
+
+            var shopListService = new ShopListService(gitHubClient);
+            var (error, message) = shopListService.AddItem(item);
+
+            if (!string.IsNullOrEmpty(error))
+            {
+                return Results.Json(new { message = error });
+            }
+
+            return Results.Json(new { message = message ?? "Ok" });
+        });
+
         app.MapPost("/github-webhook", async (HttpContext ctx) =>
         {
             try

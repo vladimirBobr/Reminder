@@ -11,7 +11,7 @@ public class DebugEventReader : IEventReader
         _frozenNow = DateTime.Now;
     }
 
-    public Task<List<EventData>> ReadEventsAsync()
+    public Task<ParsedFileData> ReadEventsAsync()
     {
         var now = _frozenNow;
         var events = new List<EventData>
@@ -68,6 +68,6 @@ public class DebugEventReader : IEventReader
             },
         };
 
-        return Task.FromResult(events);
+        return Task.FromResult(new ParsedFileData { Events = events, ShoppingItems = [] });
     }
 }

@@ -67,6 +67,7 @@ public class IntegrationTests
         var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, ntfyNotifier, NtfyTopics.Reminders);
         var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, ntfyNotifier, NtfyTopics.WeeklyDigest);
         var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, ntfyNotifier, NtfyTopics.TwoWeekDigest);
+        var shopListProcessor = new TestShopListProcessor();
         var printer = new EventOutputPrinter(dateTimeProvider);
 
         // Создаём EventRunner
@@ -79,6 +80,7 @@ public class IntegrationTests
             reminderProcessor,
             weeklyDigestProcessor,
             twoWeekDigestProcessor,
+            shopListProcessor,
             printer);
 
         // Act - вызываем все процессоры
