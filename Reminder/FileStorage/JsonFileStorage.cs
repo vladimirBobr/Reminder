@@ -4,6 +4,13 @@ namespace ReminderApp.FileStorage;
 
 public class JsonFileStorage : IFileStorage
 {
+    private readonly string _basePath;
+
+    public JsonFileStorage(string? basePath = null)
+    {
+        _basePath = basePath ?? string.Empty;
+    }
+
     public async Task<Dictionary<string, DateTime>> LoadProcessedAsync(string filePath)
     {
         if (!File.Exists(filePath))
@@ -38,6 +45,11 @@ public class JsonFileStorage : IFileStorage
     {
         // Sanitize key for file name
         var safeKey = string.Join("_", key.Split(Path.GetInvalidFileNameChars()));
-        return $"{safeKey}.json";
+        var fileName = $"{safeKey}.json";
+        
+        if (string.IsNullOrEmpty(_basePath))
+            return fileName;
+            
+        return Path.Combine(_basePath, fileName);
     }
 }

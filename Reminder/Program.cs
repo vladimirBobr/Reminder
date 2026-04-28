@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using ReminderApp;
@@ -21,13 +21,32 @@ var builder = WebApplication.CreateBuilder(args);
 // Add MVC
 builder.Services.AddControllersWithViews();
 
+// В DEBUG режиме отключаем шумные ASP.NET Core логи (идут через Microsoft.Extensions.Logging, не через Serilog)
+if (DebugHelper.IsDebug)
+{
+    builder.Logging.ClearProviders();
+    builder.Logging.AddFilter("Microsoft.AspNetCore", LogLevel.Warning);
+    builder.Logging.AddFilter("Microsoft.WebTools", LogLevel.Warning);
+}
+
 // Configure logging before anything else
 var log = ConfigureLogger();
 log.Information("▶ Starting Reminder");
 
 // Initialize services
 var dateTimeProvider = new DateTimeProvider();
-var fileStorage = new JsonFileStorage();
+
+// В DEBUG режиме храним данные выше проекта, чтобы не попадать в GIT
+string? debugDataPath = null;
+if (DebugHelper.IsDebug)
+{
+    // Поднимаемся на 5 уровней вверх
+    debugDataPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "debug_data");
+    Directory.CreateDirectory(debugDataPath);
+    log.Information("DEBUG MODE: данные хранятся в {Path}", debugDataPath);
+}
+
+var fileStorage = new JsonFileStorage(debugDataPath);
 
 // В DEBUG режиме используем заглушку для консоли, в RELEASE - Ntfy
 INtfyNotifier notifier;
@@ -116,13 +135,22 @@ static string GetLocalIpAddress()
 
 static ILogger ConfigureLogger()
 {
-    Log.Logger = new LoggerConfiguration()
+    var config = new LoggerConfiguration()
         .MinimumLevel.Information()
         .Enrich.WithProperty("Application", "Reminder")
         .Enrich.With<ShortClassNameEnricher>()
         .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss}] [{ClassName,-20}] {Message:lj}{NewLine}{Exception}")
-        .WriteTo.Seq("http://localhost:5341")
-        .CreateLogger();
+        .WriteTo.Seq("http://localhost:5341");
 
+    // В DEBUG режиме фильтруем шумные ASP.NET Core логи
+    if (DebugHelper.IsDebug)
+    {
+        config.Filter.ByExcluding(e =>
+            e.Properties.ContainsKey("SourceContext") &&
+            (e.Properties["SourceContext"].ToString().Contains("Microsoft.AspNetCore") ||
+             e.Properties["SourceContext"].ToString().Contains("Microsoft.WebTools")));
+    }
+
+    Log.Logger = config.CreateLogger();
     return Log.ForContext(typeof(Program));
 }
