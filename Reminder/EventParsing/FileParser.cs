@@ -8,7 +8,7 @@ public class FileParser
     public FileParsingResult ParseFile(string content)
     {
         if (string.IsNullOrWhiteSpace(content))
-            return new() { DateSections = [], DifferentDates = null, NotesSection = null };
+            return new() { DateSections = [], DifferentDates = null, NotesSection = null, ShoppingSection = null };
 
         var lines = content.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
 
@@ -26,6 +26,7 @@ public class FileParser
         var dateSections = new List<DateSection>();
         DifferentDatesSection? diffDates = null;
         NotesSection? notes = null;
+        ShoppingSection? shopping = null;
 
         for (int h = 0; h < headers.Count; h++)
         {
@@ -114,13 +115,35 @@ public class FileParser
                     ContentEndLineIndex = contentEndLineIndex
                 };
             }
+            else if (current.Type == SectionType.Shopping)
+            {
+                var shoppingItems = new List<ShoppingItem>();
+                foreach (var blockInfo in blockInfos)
+                {
+                    shoppingItems.Add(new ShoppingItem
+                    {
+                        Subject = blockInfo.Text,
+                        StartLineIndex = blockInfo.StartLineIndex,
+                        EndLineIndex = blockInfo.EndLineIndex
+                    });
+                }
+
+                shopping = new ShoppingSection
+                {
+                    Items = shoppingItems,
+                    HeaderLineIndex = current.Index,
+                    ContentStartLineIndex = contentStartLineIndex,
+                    ContentEndLineIndex = contentEndLineIndex
+                };
+            }
         }
 
         return new()
         {
             DateSections = dateSections,
             DifferentDates = diffDates,
-            NotesSection = notes
+            NotesSection = notes,
+            ShoppingSection = shopping
         };
     }
 
@@ -166,6 +189,10 @@ public class FileParser
         // Проверяем notes_section
         if (lower == "notes_section")
             return (true, SectionType.Notes, null);
+
+        // Проверяем shopping_section
+        if (lower == "shopping_section" || lower == "shopping")
+            return (true, SectionType.Shopping, null);
 
         return (false, default, null);
     }
@@ -416,5 +443,5 @@ public class FileParser
         return false;
     }
 
-    private enum SectionType { Date, DifferentDates, Notes }
+    private enum SectionType { Date, DifferentDates, Notes, Shopping }
 }

@@ -14,26 +14,49 @@ public class FileEventReader : IEventReader
         _parser = new FileParser();
     }
 
-    public async Task<List<EventData>> ReadEventsAsync()
+    public async Task<ParsedFileData> ReadEventsAsync()
     {
         try
         {
             if (!File.Exists(_filePath))
             {
                 Log.Information($"📁 Файл событий не найден: {_filePath}");
-                return new List<EventData>();
+                return new ParsedFileData { Events = [], ShoppingItems = [] };
             }
 
             var content = await File.ReadAllTextAsync(_filePath);
-            var events = _parser.ParseEvents(content);
+            var parseResult = _parser.ParseFile(content);
             
-            Log.Information($"📁 Прочитано событий из файла: {events.Count}");
-            return events;
+            var events = new List<EventData>();
+            foreach (var section in parseResult.DateSections)
+            {
+                foreach (var parsedEvent in section.Events)
+                {
+                    events.Add(parsedEvent.Event);
+                }
+            }
+            
+            if (parseResult.DifferentDates != null)
+            {
+                foreach (var parsedEvent in parseResult.DifferentDates.Events)
+                {
+                    events.Add(parsedEvent.Event);
+                }
+            }
+            
+            var shoppingItems = new List<ShoppingItem>();
+            if (parseResult.ShoppingSection != null)
+            {
+                shoppingItems.AddRange(parseResult.ShoppingSection.Items);
+            }
+            
+            Log.Information($"📁 Прочитано событий из файла: {events.Count}, покупок: {shoppingItems.Count}");
+            return new ParsedFileData { Events = events, ShoppingItems = shoppingItems };
         }
         catch (Exception ex)
         {
             Log.Error($"❌ Ошибка чтения файла: {ex.Message}");
-            return new List<EventData>();
+            return new ParsedFileData { Events = [], ShoppingItems = [] };
         }
     }
 }

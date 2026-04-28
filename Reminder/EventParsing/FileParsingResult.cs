@@ -19,4 +19,9 @@ public class FileParsingResult
     /// Секция заметок (Notes). Игнорируется при парсинге событий.
     /// </summary>
     public NotesSection? NotesSection { get; init; }
+
+    /// <summary>
+    /// Секция списка покупок (Shopping). Может быть null если секция отсутствует.
+    /// </summary>
+    public ShoppingSection? ShoppingSection { get; init; }
 }

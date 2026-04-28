@@ -3,16 +3,16 @@ using ReminderApp.GitHubApi;
 
 namespace ReminderApp.EventStorage;
 
-public class NotesService : INotesService
+public class ShopListService : IShopListService
 {
     private readonly IGitHubClient _gitHubClient;
 
-    public NotesService(IGitHubClient gitHubClient)
+    public ShopListService(IGitHubClient gitHubClient)
     {
         _gitHubClient = gitHubClient;
     }
 
-    public (string Error, string? Message) AddNote(string note, DateOnly? date = null)
+    public (string Error, string? Message) AddItem(string item)
     {
         // Step 1: Get file from GitHub
         var fetchResult = _gitHubClient.GetFileContentAsync().Result;
@@ -33,9 +33,7 @@ public class NotesService : INotesService
         }
 
         // Step 2: Modify content
-        Log.Information("[NotesService] Calling ModifyContent - note: {Note}, date: {Date}",
-            note, date?.ToString("dd.MM.yyyy") ?? "null");
-        var modResult = NoteModifier.ModifyContent(currentContent!, note, date);
+        var modResult = ShopListModifier.ModifyContent(currentContent!, item);
         
         return modResult.Match<(string Error, string? Message)>(
             error => (error.Message, null),
@@ -48,7 +46,7 @@ public class NotesService : INotesService
                     updateError => (updateError.Message, null),
                     _ => 
                     {
-                        Log.Information("Note added via GitHub API: {Note}, Date: {Date}", note, date?.ToString("dd.MM.yyyy") ?? "none");
+                        Log.Information("Shopping item added via GitHub API: {Item}", item);
                         return ("", success.ResultMessage);
                     }
                 );

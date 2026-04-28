@@ -1,4 +1,4 @@
-﻿using ReminderApp.Common;
+using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification.ConsoleOutput;
 using ReminderApp.EventNotification.Ntfy;
@@ -53,6 +53,7 @@ internal class Program
         var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.Reminders);
         var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.WeeklyDigest);
         var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.TwoWeekDigest);
+        var shopListProcessor = new ShopListProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.Shopping);
         var printer = new EventOutputPrinter(dateTimeProvider);
 
         IEventReader eventReader;
@@ -77,6 +78,7 @@ internal class Program
             reminderProcessor,
             weeklyDigestProcessor,
             twoWeekDigestProcessor,
+            shopListProcessor,
             printer);
 
         AdminApi.Start(runner, gitHubClient);

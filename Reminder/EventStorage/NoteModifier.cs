@@ -1,5 +1,6 @@
 using OneOf;
 using ReminderApp.EventParsing;
+using System.Diagnostics;
 
 namespace ReminderApp.EventStorage;
 
@@ -25,11 +26,21 @@ public static class NoteModifier
 
         if (date.HasValue)
         {
+            Log.Debug("[NoteModifier] Searching for date: {Date}, format: {DateFormatted}",
+                date.Value, date.Value.ToString("yyyy-MM-dd"));
+            
             // Попытка найти секцию с конкретной датой
             var dateSection = parseResult.DateSections.FirstOrDefault(s => s.Date == date.Value);
             
+            Log.Debug("[NoteModifier] DateSections found: {Count}, dates: {Dates}",
+                parseResult.DateSections.Count,
+                string.Join(", ", parseResult.DateSections.Select(s => s.Date.ToString("yyyy-MM-dd"))));
+            
             if (dateSection != null)
             {
+                Log.Debug("[NoteModifier] Found DateSection for {Date}, Events: {EventCount}, ContentStartLineIndex: {StartLine}",
+                    dateSection.Date, dateSection.Events.Count, dateSection.ContentStartLineIndex);
+                
                 if (dateSection.Events.Count == 0)
                 {
                     // Секция пуста - вставляем сразу после заголовка
@@ -55,19 +66,31 @@ public static class NoteModifier
             }
             else
             {
+                Log.Debug("[NoteModifier] DateSection not found for {Date}, searching different_dates_section", date.Value);
+                
                 // Ищем different_dates_section
                 var diffDates = parseResult.DifferentDates;
                 
                 if (diffDates != null)
                 {
+                    Log.Debug("[NoteModifier] DifferentDatesSection exists, Events: {Count}", diffDates.Events.Count);
+                    
                     var events = diffDates.Events;
                     var insertPos = events.FindIndex(e => e.Event.Date > date.Value);
+                    
+                    Log.Debug("[NoteModifier] Events in DifferentDates: {Events}",
+                        string.Join("; ", events.Select(e => $"{e.Event.Date:yyyy-MM-dd} '{e.Event.Subject}' line {e.StartLineIndex}")));
                     
                     int insertIndex;
                     if (insertPos >= 0)
                     {
+                        Log.Debug("[NoteModifier] Insert position: {Pos}, event at that pos: {EventDate} '{EventSubject}' at line {Line}",
+                            insertPos, events[insertPos].Event.Date, events[insertPos].Event.Subject, events[insertPos].StartLineIndex);
+                        
                         // Вставляем перед событием с большей датой
                         insertIndex = events[insertPos].StartLineIndex;
+                        
+                        Log.Debug("[NoteModifier] Inserting at line index: {Index}", insertIndex);
                         
                         // Вставляем новую запись
                         lines.Insert(insertIndex, $"{date.Value:dd.MM.yyyy} {note}");
@@ -75,6 +98,8 @@ public static class NoteModifier
                         
                         // Вставляем blank line ПОСЛЕ новой записи (между new и old)
                         lines.Insert(insertIndex, "");
+                        
+                        Log.Debug("[NoteModifier] Inserted: '{Date} {Note}' at line {Line}", date.Value, note, insertIndex - 1);
                         
                         resultMessage = "Добавили в #different_dates_section#";
                         return new NoteModifierSuccess(string.Join("\n", lines), resultMessage);
@@ -85,6 +110,9 @@ public static class NoteModifier
                         var lastEvent = events[^1];
                         insertIndex = lastEvent.EndLineIndex + 1;
                         
+                        Log.Debug("[NoteModifier] All events have smaller date. Last event: {Date} '{Subject}' at line {Line}. InsertIndex: {Idx}",
+                            lastEvent.Event.Date, lastEvent.Event.Subject, lastEvent.EndLineIndex, insertIndex);
+                        
                         // Вставляем blank line перед новой записью (между существующим и новым)
                         lines.Insert(insertIndex, "");
                         insertIndex++;
@@ -94,6 +122,8 @@ public static class NoteModifier
                         // Вставляем blank line после новой записи
                         lines.Insert(insertIndex, "");
                         
+                        Log.Debug("[NoteModifier] Inserted after last event: '{Date} {Note}' at line {Line}", date.Value, note, insertIndex - 2);
+                        
                         resultMessage = "Добавили в #different_dates_section#";
                         return new NoteModifierSuccess(string.Join("\n", lines), resultMessage);
                     }
@@ -102,7 +132,13 @@ public static class NoteModifier
                         // Секция пуста - вставляем после заголовка (используем ContentEndLineIndex)
                         // Для пустой секции НЕ добавляем blank line - сразу запись после заголовка
                         insertIndex = diffDates.ContentEndLineIndex + 1;
+                        
+                        Log.Debug("[NoteModifier] DifferentDates section is empty. ContentEndLineIndex: {Idx}, inserting at: {InsertIdx}",
+                            diffDates.ContentEndLineIndex, insertIndex);
+                        
                         lines.Insert(insertIndex, $"{date.Value:dd.MM.yyyy} {note}");
+                        
+                        Log.Debug("[NoteModifier] Inserted in empty DifferentDates: '{Date} {Note}'", date.Value, note);
                         
                         resultMessage = "Добавили в #different_dates_section#";
                         return new NoteModifierSuccess(string.Join("\n", lines), resultMessage);
@@ -110,12 +146,17 @@ public static class NoteModifier
                 }
                 else
                 {
+                    Log.Debug("[NoteModifier] No DateSection, no DifferentDatesSection - creating new DifferentDatesSection at end of file");
+                    
                     // Секция different_dates_section отсутствует — создаём в конце файла
                     lines.Add("");
                     lines.Add("#different_dates_section#");
                     lines.Add("");
                     lines.Add($"{date.Value:dd.MM.yyyy} {note}");
                     lines.Add("");
+                    
+                    Log.Debug("[NoteModifier] Created new DifferentDatesSection with: '{Date} {Note}'", date.Value, note);
+                    
                     resultMessage = "Добавили в #different_dates_section#";
                 }
             }

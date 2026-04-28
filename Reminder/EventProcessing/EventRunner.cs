@@ -18,10 +18,11 @@ public class EventRunner : IEventRunner
     private readonly IReminderProcessor _reminderProcessor;
     private readonly IWeeklyDigestProcessor _weeklyDigestProcessor;
     private readonly ITwoWeekDigestProcessor _twoWeekDigestProcessor;
+    private readonly IShopListProcessor _shopListProcessor;
     private readonly IEventOutputPrinter _printer;
     private CancellationTokenSource? _cts;
     private bool _isRunning = false;
-    private List<EventData> _events;
+    private ParsedFileData _parsedData = null!;
 
     public EventRunner(
         IDateTimeProvider dateTimeProvider,
@@ -32,6 +33,7 @@ public class EventRunner : IEventRunner
         IReminderProcessor reminderProcessor,
         IWeeklyDigestProcessor weeklyDigestProcessor,
         ITwoWeekDigestProcessor twoWeekDigestProcessor,
+        IShopListProcessor shopListProcessor,
         IEventOutputPrinter printer)
     {
         _dateTimeProvider = dateTimeProvider;
@@ -40,6 +42,7 @@ public class EventRunner : IEventRunner
         _reminderProcessor = reminderProcessor;
         _weeklyDigestProcessor = weeklyDigestProcessor;
         _twoWeekDigestProcessor = twoWeekDigestProcessor;
+        _shopListProcessor = shopListProcessor;
         _printer = printer;
     }
 
@@ -65,17 +68,17 @@ public class EventRunner : IEventRunner
 
     internal void SendDigest()
     {
-        _dailyDigestProcessor.SendDailyDigestAsync(_events, _dateTimeProvider.Now);
+        _dailyDigestProcessor.SendDailyDigestAsync(_parsedData.Events, _dateTimeProvider.Now);
     }
 
     internal void SendWeeklyDigest()
     {
-        _weeklyDigestProcessor.SendWeeklyDigestAsync(_events, _dateTimeProvider.Now);
+        _weeklyDigestProcessor.SendWeeklyDigestAsync(_parsedData.Events, _dateTimeProvider.Now);
     }
 
     internal void SendTwoWeekDigest()
     {
-        _twoWeekDigestProcessor.SendUpcoming14DaysDigestAsync(_events, _dateTimeProvider.Now);
+        _twoWeekDigestProcessor.SendUpcoming14DaysDigestAsync(_parsedData.Events, _dateTimeProvider.Now);
     }
 
     private async Task RunLoopAsync(CancellationToken ct)
@@ -84,16 +87,17 @@ public class EventRunner : IEventRunner
         {
             try
             {
-                // Читаем события из источника
-                _events = await _eventReader.ReadEventsAsync();
-                _printer.PrintEvents(_events);
+                // Читаем данные из источника
+                _parsedData = await _eventReader.ReadEventsAsync();
+                _printer.PrintEvents(_parsedData.Events);
                 var now = _dateTimeProvider.Now;
 
                 // Вызываем обработчики
-                await _dailyDigestProcessor.SendIfNeededAsync(_events, now);
-                await _reminderProcessor.SendIfNeededAsync(_events, now);
-                await _weeklyDigestProcessor.SendIfNeededAsync(_events, now);
-                await _twoWeekDigestProcessor.SendIfNeededAsync(_events, now);
+                await _dailyDigestProcessor.SendIfNeededAsync(_parsedData.Events, now);
+                await _reminderProcessor.SendIfNeededAsync(_parsedData.Events, now);
+                await _weeklyDigestProcessor.SendIfNeededAsync(_parsedData.Events, now);
+                await _twoWeekDigestProcessor.SendIfNeededAsync(_parsedData.Events, now);
+                await _shopListProcessor.ProcessShoppingListAsync(_parsedData.ShoppingItems, now);
             }
             catch (Exception ex)
             {

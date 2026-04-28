@@ -1,4 +1,4 @@
-﻿using ReminderApp.Common;
+using ReminderApp.Common;
 using ReminderApp.EventParsing;
 
 namespace ReminderApp.EventReading.LocalFile;
@@ -10,16 +10,45 @@ public abstract class EventReaderBase : IEventReader
 {
     protected readonly FileParser Parser = new();
 
-    public async Task<List<EventData>> ReadEventsAsync()
+    public async Task<ParsedFileData> ReadEventsAsync()
     {
         var content = await ReadContentAsync();
         
         if (string.IsNullOrEmpty(content))
         {
-            return new List<EventData>();
+            return new ParsedFileData { Events = [], ShoppingItems = [] };
         }
         
-        return Parser.ParseEvents(content);
+        var parseResult = Parser.ParseFile(content);
+        
+        var events = new List<EventData>();
+        foreach (var section in parseResult.DateSections)
+        {
+            foreach (var parsedEvent in section.Events)
+            {
+                events.Add(parsedEvent.Event);
+            }
+        }
+        
+        if (parseResult.DifferentDates != null)
+        {
+            foreach (var parsedEvent in parseResult.DifferentDates.Events)
+            {
+                events.Add(parsedEvent.Event);
+            }
+        }
+        
+        var shoppingItems = new List<ShoppingItem>();
+        if (parseResult.ShoppingSection != null)
+        {
+            shoppingItems.AddRange(parseResult.ShoppingSection.Items);
+        }
+        
+        return new ParsedFileData 
+        { 
+            Events = events,
+            ShoppingItems = shoppingItems
+        };
     }
 
     /// <summary>
