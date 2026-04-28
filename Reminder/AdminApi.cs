@@ -95,6 +95,8 @@ public static class AdminApi
 
             DateOnly? date = null;
             var dateStr = ctx.Request.Query["date"].FirstOrDefault();
+            Log.Information("[AdminApi] /add-note called - note: {Note}, raw dateStr: {DateStr}", note, dateStr);
+            
             if (!string.IsNullOrEmpty(dateStr))
             {
                 if (DateOnly.TryParseExact(dateStr, "dd.MM.yyyy",
@@ -102,6 +104,7 @@ public static class AdminApi
                     System.Globalization.DateTimeStyles.None, out var parsedDate))
                 {
                     date = parsedDate;
+                    Log.Information("[AdminApi] Parsed date: {Date}", parsedDate);
                 }
                 else
                 {

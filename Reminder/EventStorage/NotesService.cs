@@ -33,6 +33,8 @@ public class NotesService : INotesService
         }
 
         // Step 2: Modify content
+        Log.Information("[NotesService] Calling ModifyContent - note: {Note}, date: {Date}",
+            note, date?.ToString("dd.MM.yyyy") ?? "null");
         var modResult = NoteModifier.ModifyContent(currentContent!, note, date);
         
         return modResult.Match<(string Error, string? Message)>(
