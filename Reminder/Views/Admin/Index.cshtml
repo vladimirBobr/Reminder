@@ -1,0 +1,75 @@
+@model AdminIndexViewModel
+
+@{
+    ViewData["Title"] = "Admin API";
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">@TempData["Message"]</div>
+}
+
+<h1>Admin API @(Model.IsLoggedIn ? "" : "(Not logged in)")</h1>
+
+@if (!Model.IsLoggedIn)
+{
+    <p>Please <a href="@Url.Action("Login", "Admin")">login</a> to access protected endpoints.</p>
+    <p>For API calls use header: <code>Authorization: Bearer @Model.AdminToken</code></p>
+}
+else
+{
+    <p><a href="@Url.Action("Logout", "Admin")">Logout</a></p>
+
+    <h2>Send Digests</h2>
+    <ul>
+        <li>
+            <a href="@Url.Action("Today", "Api")" class="btn btn-primary">Send Today's Digest</a>
+            GET /api/today - Send today's digest
+        </li>
+        <li>
+            <a href="@Url.Action("Week", "Api")" class="btn btn-primary">Send Weekly Digest</a>
+            GET /api/week - Send weekly digest
+        </li>
+        <li>
+            <a href="@Url.Action("TwoWeek", "Api")" class="btn btn-primary">Send Two Week Digest</a>
+            GET /api/two-week - Send two week digest (14 days ahead)
+        </li>
+    </ul>
+
+    <h2>Add Note</h2>
+    <form method="get" action="@Url.Action("AddNote", "Api")">
+        <div class="row mb-3">
+            <div class="col-auto">
+                <input type="text" name="note" class="form-control" placeholder="Note text" required />
+            </div>
+            <div class="col-auto">
+                <input type="text" name="date" class="form-control" placeholder="dd.MM.yyyy (optional)" />
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-success">Add Note</button>
+            </div>
+        </div>
+    </form>
+
+    <h2>Add Shopping Item</h2>
+    <form method="get" action="@Url.Action("AddShoppingItem", "Api")">
+        <div class="row mb-3">
+            <div class="col-auto">
+                <input type="text" name="item" class="form-control" placeholder="Item name" required />
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-success">Add Item</button>
+            </div>
+        </div>
+    </form>
+
+    <h2>API Reference</h2>
+    <ul>
+        <li>POST /api/github-webhook - GitHub webhook receiver</li>
+    </ul>
+}

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -16,8 +16,8 @@
 
   <ItemGroup>
     <PackageReference Include="OneOf" Version="3.0.271" />
-    <Using Include="Serilog" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <Using Include="Serilog" />
     <PackageReference Include="Serilog" Version="4.3.1" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
