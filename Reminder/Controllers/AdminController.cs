@@ -18,8 +18,7 @@ public class AdminController : Controller
         var isLoggedIn = IsAuthorized();
         var model = new AdminIndexViewModel
         {
-            IsLoggedIn = isLoggedIn,
-            AdminToken = DebugHelper.AdminToken
+            IsLoggedIn = isLoggedIn
         };
         return View(model);
     }
@@ -58,5 +57,4 @@ public class AdminController : Controller
 public class AdminIndexViewModel
 {
     public bool IsLoggedIn { get; set; }
-    public string? AdminToken { get; set; }
 }

@@ -10,13 +10,16 @@ public static class AdminApi
 
         if (string.IsNullOrEmpty(adminToken))
         {
-            Log.Information("Добавь токен удалённого доступа:");
+            if (DebugHelper.IsDebug)
+            {
+                Log.Information("Добавь токен удалённого доступа:");
 
-            // Сохраняем в переменные окружения для текущей сессии
-            adminToken = Console.ReadLine();
-            Environment.SetEnvironmentVariable("ADMIN_API_TOKEN", adminToken, EnvironmentVariableTarget.User);
-            Log.Warning("Remote control is not configured");
-            return;
+                // Сохраняем в переменные окружения для текущей сессии
+                adminToken = Console.ReadLine();
+                Environment.SetEnvironmentVariable("ADMIN_API_TOKEN", adminToken, EnvironmentVariableTarget.User);
+            }
+
+            throw new Exception("Remote control is not configured");
         }
 
         if (DebugHelper.IsDebug)
