@@ -34,7 +34,7 @@ public class AdminController : Controller
             Response.Cookies.Append("token", token, new CookieOptions
             {
                 HttpOnly = true,
-                SameSite = SameSiteMode.Strict
+                SameSite = SameSiteMode.Lax
             });
         }
         return Redirect("/admin");

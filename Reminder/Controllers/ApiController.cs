@@ -28,7 +28,7 @@ public class ApiController : Controller
         if (!IsAuthorized()) return Unauthorized();
         
         _ = Task.Run(() => _runner.SendDigest());
-        TempData["Message"] = "Digest sent";
+        TempData["Message"] = "Рассылка отправлена";
         return RedirectToAction("Index", "Admin");
     }
 
@@ -38,7 +38,7 @@ public class ApiController : Controller
         if (!IsAuthorized()) return Unauthorized();
         
         _ = Task.Run(() => _runner.SendWeeklyDigest());
-        TempData["Message"] = "Weekly digest sent";
+        TempData["Message"] = "Недельная рассылка отправлена";
         return RedirectToAction("Index", "Admin");
     }
 
@@ -48,7 +48,7 @@ public class ApiController : Controller
         if (!IsAuthorized()) return Unauthorized();
         
         _ = Task.Run(() => _runner.SendTwoWeekDigest());
-        TempData["Message"] = "Two week digest sent";
+        TempData["Message"] = "Рассылка на две недели отправлена";
         return RedirectToAction("Index", "Admin");
     }
 
