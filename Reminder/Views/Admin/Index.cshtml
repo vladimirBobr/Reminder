@@ -1,20 +1,7 @@
-﻿@model AdminIndexViewModel
-
 @{
     ViewData["Title"] = "Админка";
 }
 
-@if (!Model.IsLoggedIn)
-{
-    <div class="card">
-        <div class="card-body text-center">
-            <h5 class="card-title">Войдите для доступа к админке</h5>
-            <a href="@Url.Action("Login", "Admin")" class="btn btn-primary btn-lg mt-3">Войти</a>
-        </div>
-    </div>
-}
-else
-{
     <div class="row g-2 px-1">
         <!-- Add Note -->
         <div class="col-12">
@@ -140,18 +127,6 @@ else
                     <a href="@Url.Action("TwoWeek", "Api")" class="btn btn-lg btn-outline-secondary">
                         Отправить на две недели
                     </a>
-                    @if (TempData["Message"] != null)
-                    {
-                        <div class="alert alert-success py-2 px-3 mb-0" style="font-size: 0.9rem;">
-                            @TempData["Message"]
-                        </div>
-                    }
-                    @if (TempData["Error"] != null)
-                    {
-                        <div class="alert alert-danger py-2 px-3 mb-0" style="font-size: 0.9rem;">
-                            @TempData["Error"]
-                        </div>
-                    }
                 </div>
             </div>
         </div>
@@ -160,7 +135,6 @@ else
             <a href="@Url.Action("Logout", "Admin")" class="btn btn-outline-secondary">Выйти</a>
         </div>
     </div>
-}
 
 
 @section Scripts {

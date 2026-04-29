@@ -1,10 +1,13 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ReminderApp.Authentication;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventStorage;
 using ReminderApp.GitHubApi;
 
 namespace ReminderApp.Controllers;
 
+[Authorize(Policy = AdminAuthenticationExtensions.AdminPolicy)]
 public class ApiController : Controller
 {
     private readonly EventRunner _runner;
@@ -14,19 +17,11 @@ public class ApiController : Controller
         _runner = runner;
     }
 
-    protected bool IsAuthorized()
-    {
-        var cookieToken = HttpContext.Request.Cookies["token"];
-        return !string.IsNullOrEmpty(cookieToken) && cookieToken == DebugHelper.AdminToken;
-    }
-
     // ==================== Digest API ====================
 
     [HttpGet]
     public IActionResult Today()
     {
-        if (!IsAuthorized()) return Unauthorized();
-        
         _ = Task.Run(() => _runner.SendDigest());
         TempData["Message"] = "Рассылка отправлена";
         return RedirectToAction("Index", "Admin");
@@ -35,8 +30,6 @@ public class ApiController : Controller
     [HttpGet]
     public IActionResult Week()
     {
-        if (!IsAuthorized()) return Unauthorized();
-        
         _ = Task.Run(() => _runner.SendWeeklyDigest());
         TempData["Message"] = "Недельная рассылка отправлена";
         return RedirectToAction("Index", "Admin");
@@ -45,8 +38,6 @@ public class ApiController : Controller
     [HttpGet]
     public IActionResult TwoWeek()
     {
-        if (!IsAuthorized()) return Unauthorized();
-        
         _ = Task.Run(() => _runner.SendTwoWeekDigest());
         TempData["Message"] = "Рассылка на две недели отправлена";
         return RedirectToAction("Index", "Admin");
@@ -57,8 +48,6 @@ public class ApiController : Controller
     [HttpGet]
     public IActionResult AddNote(string? note, string? date)
     {
-        if (!IsAuthorized()) return Unauthorized();
-
         if (string.IsNullOrEmpty(note))
         {
             TempData["Error"] = "Note is required";
@@ -102,8 +91,6 @@ public class ApiController : Controller
     [HttpGet]
     public IActionResult AddShoppingItem(string? item)
     {
-        if (!IsAuthorized()) return Unauthorized();
-
         if (string.IsNullOrEmpty(item))
         {
             TempData["Error"] = "Item is required";
@@ -128,6 +115,7 @@ public class ApiController : Controller
 
     // ==================== Webhook ====================
 
+    [AllowAnonymous]
     [HttpPost]
     public IActionResult GitHubWebhook()
     {

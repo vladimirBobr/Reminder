@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using ReminderApp;
+using ReminderApp.Authentication;
 using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification.ConsoleOutput;
@@ -20,6 +21,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add MVC
 builder.Services.AddControllersWithViews();
+
+// Add Admin Authentication (Cookie + Bearer)
+builder.Services.AddAdminAuthentication();
 
 // В DEBUG режиме отключаем шумные ASP.NET Core логи (идут через Microsoft.Extensions.Logging, не через Serilog)
 if (DebugHelper.IsDebug)
@@ -106,12 +110,14 @@ builder.Services.AddSingleton(runner);
 // Build the app
 var app = builder.Build();
 
-// Настраиваем аутентификацию и Admin API
-AdminApi.Configure(app);
+// Add authentication and authorization middleware
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Admin}/{action=Index}/{id?}");
+    pattern: "{controller}/{action}",
+    defaults: new { controller = "Admin", action = "Index" });
 
 log.Information("Admin API available at http://{Ip}:5000", localIp);
 

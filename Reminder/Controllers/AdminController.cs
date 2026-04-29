@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ReminderApp.Authentication;
 using ReminderApp.EventProcessing;
-using Microsoft.AspNetCore.Http;
 
 namespace ReminderApp.Controllers;
 
@@ -13,48 +15,47 @@ public class AdminController : Controller
         _runner = runner;
     }
 
+    [Authorize]
     public IActionResult Index()
     {
-        var isLoggedIn = IsAuthorized();
-        var model = new AdminIndexViewModel
-        {
-            IsLoggedIn = isLoggedIn
-        };
-        return View(model);
+        return View();
     }
 
+    [AllowAnonymous]
     [HttpGet]
     public IActionResult Login() => View();
 
+    [AllowAnonymous]
     [HttpPost]
-    public IActionResult LoginPost(string token)
+    public async Task<IActionResult> LoginPost(string token)
     {
         if (!string.IsNullOrEmpty(token) && token == DebugHelper.AdminToken)
         {
-            Response.Cookies.Append("token", token, new CookieOptions
+            var claims = new[]
             {
-                HttpOnly = true,
-                SameSite = SameSiteMode.Lax
-            });
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "Admin"),
+                new System.Security.Claims.Claim("Token", token)
+            };
+            var identity = new System.Security.Claims.ClaimsIdentity(claims, AdminAuthenticationExtensions.AdminCookieScheme);
+            var principal = new System.Security.Claims.ClaimsPrincipal(identity);
+
+            await HttpContext.SignInAsync(
+                AdminAuthenticationExtensions.AdminCookieScheme,
+                principal,
+                new Microsoft.AspNetCore.Authentication.AuthenticationProperties
+                {
+                    IsPersistent = true,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(90)
+                });
         }
-        return Redirect("/admin");
+        return Redirect("/");
     }
 
+    [Authorize]
     [HttpGet]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout()
     {
-        Response.Cookies.Delete("token");
-        return Redirect("/admin");
+        await HttpContext.SignOutAsync(AdminAuthenticationExtensions.AdminCookieScheme);
+        return RedirectToAction("Login");
     }
-
-    private bool IsAuthorized()
-    {
-        var cookieToken = HttpContext.Request.Cookies["token"];
-        return !string.IsNullOrEmpty(cookieToken) && cookieToken == DebugHelper.AdminToken;
-    }
-}
-
-public class AdminIndexViewModel
-{
-    public bool IsLoggedIn { get; set; }
 }
