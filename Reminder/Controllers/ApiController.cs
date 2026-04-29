@@ -19,39 +19,35 @@ public class ApiController : Controller
 
     // ==================== Digest API ====================
 
-    [HttpGet]
+    [HttpPost]
     public IActionResult Today()
     {
         _ = Task.Run(() => _runner.SendDigest());
-        TempData["Message"] = "Рассылка отправлена";
-        return RedirectToAction("Index", "Admin");
+        return Json(new { success = true, message = "Рассылка отправлена" });
     }
 
-    [HttpGet]
+    [HttpPost]
     public IActionResult Week()
     {
         _ = Task.Run(() => _runner.SendWeeklyDigest());
-        TempData["Message"] = "Недельная рассылка отправлена";
-        return RedirectToAction("Index", "Admin");
+        return Json(new { success = true, message = "Недельная рассылка отправлена" });
     }
 
-    [HttpGet]
+    [HttpPost]
     public IActionResult TwoWeek()
     {
         _ = Task.Run(() => _runner.SendTwoWeekDigest());
-        TempData["Message"] = "Рассылка на две недели отправлена";
-        return RedirectToAction("Index", "Admin");
+        return Json(new { success = true, message = "Рассылка на две недели отправлена" });
     }
 
     // ==================== Notes API ====================
 
-    [HttpGet]
-    public IActionResult AddNote(string? note, string? date)
+    [HttpPost]
+    public IActionResult AddNote([FromForm] string note, [FromForm] string date)
     {
         if (string.IsNullOrEmpty(note))
         {
-            TempData["Error"] = "Note is required";
-            return RedirectToAction("Index", "Admin");
+            return Json(new { success = false, message = "Note is required" });
         }
 
         DateOnly? parsedDate = null;
@@ -65,8 +61,7 @@ public class ApiController : Controller
             }
             else
             {
-                TempData["Error"] = "Invalid date format. Use dd.MM.yyyy";
-                return RedirectToAction("Index", "Admin");
+                return Json(new { success = false, message = "Invalid date format. Use dd.MM.yyyy" });
             }
         }
 
@@ -76,25 +71,22 @@ public class ApiController : Controller
 
         if (!string.IsNullOrEmpty(error))
         {
-            TempData["Error"] = error;
+            return Json(new { success = false, message = error });
         }
         else
         {
-            TempData["Message"] = message ?? "Note added";
+            return Json(new { success = true, message = message ?? "Note added" });
         }
-
-        return RedirectToAction("Index", "Admin");
     }
 
     // ==================== Shopping API ====================
 
-    [HttpGet]
-    public IActionResult AddShoppingItem(string? item)
+    [HttpPost]
+    public IActionResult AddShoppingItem([FromForm] string item)
     {
         if (string.IsNullOrEmpty(item))
         {
-            TempData["Error"] = "Item is required";
-            return RedirectToAction("Index", "Admin");
+            return Json(new { success = false, message = "Item is required" });
         }
 
         var gitHubClient = new GitHubClient(new GitHubCredentialsProvider());
@@ -103,14 +95,12 @@ public class ApiController : Controller
 
         if (!string.IsNullOrEmpty(error))
         {
-            TempData["Error"] = error;
+            return Json(new { success = false, message = error });
         }
         else
         {
-            TempData["Message"] = message ?? "Item added";
+            return Json(new { success = true, message = message ?? "Item added" });
         }
-
-        return RedirectToAction("Index", "Admin");
     }
 
     // ==================== Webhook ====================
