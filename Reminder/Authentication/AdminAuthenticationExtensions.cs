@@ -26,7 +26,7 @@ public static class AdminAuthenticationExtensions
             options.Cookie.Name = "admin_token";
             options.Cookie.HttpOnly = true;
             options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-            options.Cookie.SameSite = SameSiteMode.Strict;
+            options.Cookie.SameSite = SameSiteMode.Lax;
             options.ExpireTimeSpan = TimeSpan.FromDays(90);
             options.SlidingExpiration = true;
             options.LoginPath = "/Admin/Login";
