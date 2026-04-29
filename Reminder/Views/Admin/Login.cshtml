@@ -1,0 +1,23 @@
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">🔐 Login</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="@Url.Action("LoginPost", "Admin")">
+                    <div class="mb-3">
+                        <label for="token" class="form-label">Token</label>
+                        <input type="password" class="form-control form-control-lg" 
+                               id="token" name="token" placeholder="Enter token" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
