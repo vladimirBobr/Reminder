@@ -110,6 +110,10 @@ builder.Services.AddSingleton(runner);
 // Build the app
 var app = builder.Build();
 
+// Serve static files from wwwroot
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 // Add authentication and authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();
