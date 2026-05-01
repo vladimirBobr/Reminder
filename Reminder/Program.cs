@@ -8,6 +8,7 @@ using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventProcessing.Processors;
 using ReminderApp.EventReading;
+using ReminderApp.EventReading.Parsers;
 using ReminderApp.FileStorage;
 using ReminderApp.GitHubApi;
 
@@ -82,7 +83,8 @@ if (DebugHelper.IsDebug)
 else
 {
     gitHubClient = new GitHubClient(new GitHubCredentialsProvider());
-    eventReader = new DebugEventReader();
+    eventReader = new GitHubEventReader(gitHubClient, new YamlDotNetParser());
+    log.Information("RELEASE MODE: используется GitHubEventReader с YamlDotNetParser");
 }
 
 var runner = new EventRunner(

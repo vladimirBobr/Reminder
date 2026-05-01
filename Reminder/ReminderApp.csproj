@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="OneOf" Version="3.0.271" />
+    <PackageReference Include="YamlDotNet" Version="15.1.0" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <Using Include="Serilog" />
     <PackageReference Include="Serilog" Version="4.3.1" />
