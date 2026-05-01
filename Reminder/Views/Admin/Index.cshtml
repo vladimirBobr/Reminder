@@ -4,12 +4,12 @@
 
 <ul class="nav nav-tabs mb-3" id="adminTabs" role="tablist">
     <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes-tab-pane" type="button" role="tab">
+        <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes-tab-pane" type="button" role="tab" data-tab="notes">
             📝 Заметки
         </button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link" id="events-tab" data-bs-toggle="tab" data-bs-target="#events-tab-pane" type="button" role="tab">
+        <button class="nav-link" id="events-tab" data-bs-toggle="tab" data-bs-target="#events-tab-pane" type="button" role="tab" data-tab="events">
             📋 События
         </button>
     </li>
@@ -328,11 +328,36 @@ function showToast(message, type, anchorElement) {
 var eventsData = [];
 var eventsLoaded = false;
 
+// Restore tab from URL hash
+function restoreTabFromUrl() {
+    var hash = window.location.hash.replace('#', '');
+    if (hash === 'events') {
+        // Manually switch tabs - Bootstrap CSS classes
+        document.getElementById('notes-tab-pane').classList.remove('show', 'active');
+        document.getElementById('notes-tab').classList.remove('active');
+        document.getElementById('events-tab-pane').classList.add('show', 'active');
+        document.getElementById('events-tab').classList.add('active');
+        
+        if (!eventsLoaded) {
+            loadEvents();
+            eventsLoaded = true;
+        }
+    }
+}
+
+// Restore tab on page load
+restoreTabFromUrl();
+
 document.getElementById('events-tab').addEventListener('shown.bs.tab', function() {
     if (!eventsLoaded) {
         loadEvents();
         eventsLoaded = true;
     }
+    window.location.hash = 'events';
+});
+
+document.getElementById('notes-tab').addEventListener('shown.bs.tab', function() {
+    window.location.hash = 'notes';
 });
 
 function loadEvents() {
