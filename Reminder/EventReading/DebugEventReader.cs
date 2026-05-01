@@ -1,6 +1,6 @@
-using ReminderApp.Common;
+﻿using ReminderApp.Common;
 
-namespace ReminderApp.EventReading.Debug;
+namespace ReminderApp.EventReading;
 
 public class DebugEventReader : IEventReader
 {

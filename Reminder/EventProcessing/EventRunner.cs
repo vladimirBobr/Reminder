@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
 using ReminderApp.EventNotification;
@@ -18,7 +18,6 @@ public class EventRunner : IEventRunner
     private readonly IReminderProcessor _reminderProcessor;
     private readonly IWeeklyDigestProcessor _weeklyDigestProcessor;
     private readonly ITwoWeekDigestProcessor _twoWeekDigestProcessor;
-    private readonly IShopListProcessor _shopListProcessor;
     private readonly IEventOutputPrinter _printer;
     private CancellationTokenSource? _cts;
     private bool _isRunning = false;
@@ -33,7 +32,6 @@ public class EventRunner : IEventRunner
         IReminderProcessor reminderProcessor,
         IWeeklyDigestProcessor weeklyDigestProcessor,
         ITwoWeekDigestProcessor twoWeekDigestProcessor,
-        IShopListProcessor shopListProcessor,
         IEventOutputPrinter printer)
     {
         _dateTimeProvider = dateTimeProvider;
@@ -42,7 +40,6 @@ public class EventRunner : IEventRunner
         _reminderProcessor = reminderProcessor;
         _weeklyDigestProcessor = weeklyDigestProcessor;
         _twoWeekDigestProcessor = twoWeekDigestProcessor;
-        _shopListProcessor = shopListProcessor;
         _printer = printer;
     }
 
@@ -97,7 +94,6 @@ public class EventRunner : IEventRunner
                 await _reminderProcessor.SendIfNeededAsync(_parsedData.Events, now);
                 await _weeklyDigestProcessor.SendIfNeededAsync(_parsedData.Events, now);
                 await _twoWeekDigestProcessor.SendIfNeededAsync(_parsedData.Events, now);
-                await _shopListProcessor.ProcessShoppingListAsync(_parsedData.ShoppingItems, now);
             }
             catch (Exception ex)
             {

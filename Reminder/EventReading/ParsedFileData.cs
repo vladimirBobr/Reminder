@@ -1,5 +1,4 @@
-using ReminderApp.Common;
-using ReminderApp.EventParsing;
+﻿using ReminderApp.Common;
 
 namespace ReminderApp.EventReading;
 

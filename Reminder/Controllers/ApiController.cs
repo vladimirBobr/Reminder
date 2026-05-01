@@ -1,8 +1,7 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ReminderApp.Authentication;
 using ReminderApp.EventProcessing;
-using ReminderApp.EventStorage;
 using ReminderApp.GitHubApi;
 
 namespace ReminderApp.Controllers;
@@ -42,66 +41,66 @@ public class ApiController : Controller
 
     // ==================== Notes API ====================
 
-    [HttpPost]
-    public IActionResult AddNote([FromForm] string note, [FromForm] string date)
-    {
-        if (string.IsNullOrEmpty(note))
-        {
-            return Json(new { success = false, message = "Note is required" });
-        }
+    //[HttpPost]
+    //public IActionResult AddNote([FromForm] string note, [FromForm] string date)
+    //{
+    //    if (string.IsNullOrEmpty(note))
+    //    {
+    //        return Json(new { success = false, message = "Note is required" });
+    //    }
 
-        DateOnly? parsedDate = null;
-        if (!string.IsNullOrEmpty(date))
-        {
-            if (DateOnly.TryParseExact(date, "dd.MM.yyyy",
-                System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.None, out var d))
-            {
-                parsedDate = d;
-            }
-            else
-            {
-                return Json(new { success = false, message = "Invalid date format. Use dd.MM.yyyy" });
-            }
-        }
+    //    DateOnly? parsedDate = null;
+    //    if (!string.IsNullOrEmpty(date))
+    //    {
+    //        if (DateOnly.TryParseExact(date, "dd.MM.yyyy",
+    //            System.Globalization.CultureInfo.InvariantCulture,
+    //            System.Globalization.DateTimeStyles.None, out var d))
+    //        {
+    //            parsedDate = d;
+    //        }
+    //        else
+    //        {
+    //            return Json(new { success = false, message = "Invalid date format. Use dd.MM.yyyy" });
+    //        }
+    //    }
 
-        var gitHubClient = new GitHubClient(new GitHubCredentialsProvider());
-        var notesService = new NotesService(gitHubClient);
-        var (error, message) = notesService.AddNote(note, parsedDate);
+    //    var gitHubClient = new GitHubClient(new GitHubCredentialsProvider());
+    //    var notesService = new NotesService(gitHubClient);
+    //    var (error, message) = notesService.AddNote(note, parsedDate);
 
-        if (!string.IsNullOrEmpty(error))
-        {
-            return Json(new { success = false, message = error });
-        }
-        else
-        {
-            return Json(new { success = true, message = message ?? "Note added" });
-        }
-    }
+    //    if (!string.IsNullOrEmpty(error))
+    //    {
+    //        return Json(new { success = false, message = error });
+    //    }
+    //    else
+    //    {
+    //        return Json(new { success = true, message = message ?? "Note added" });
+    //    }
+    //}
 
     // ==================== Shopping API ====================
 
-    [HttpPost]
-    public IActionResult AddShoppingItem([FromForm] string item)
-    {
-        if (string.IsNullOrEmpty(item))
-        {
-            return Json(new { success = false, message = "Item is required" });
-        }
+    //[HttpPost]
+    //public IActionResult AddShoppingItem([FromForm] string item)
+    //{
+    //    if (string.IsNullOrEmpty(item))
+    //    {
+    //        return Json(new { success = false, message = "Item is required" });
+    //    }
 
-        var gitHubClient = new GitHubClient(new GitHubCredentialsProvider());
-        var shopListService = new ShopListService(gitHubClient);
-        var (error, message) = shopListService.AddItem(item);
+    //    var gitHubClient = new GitHubClient(new GitHubCredentialsProvider());
+    //    var shopListService = new ShopListService(gitHubClient);
+    //    var (error, message) = shopListService.AddItem(item);
 
-        if (!string.IsNullOrEmpty(error))
-        {
-            return Json(new { success = false, message = error });
-        }
-        else
-        {
-            return Json(new { success = true, message = message ?? "Item added" });
-        }
-    }
+    //    if (!string.IsNullOrEmpty(error))
+    //    {
+    //        return Json(new { success = false, message = error });
+    //    }
+    //    else
+    //    {
+    //        return Json(new { success = true, message = message ?? "Item added" });
+    //    }
+    //}
 
     // ==================== Webhook ====================
 

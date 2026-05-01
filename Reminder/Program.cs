@@ -1,7 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using ReminderApp;
+﻿using ReminderApp;
 using ReminderApp.Authentication;
 using ReminderApp.Common;
 using ReminderApp.DateTimeProviding;
@@ -11,11 +8,8 @@ using ReminderApp.EventOutput;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventProcessing.Processors;
 using ReminderApp.EventReading;
-using ReminderApp.EventReading.Debug;
-using ReminderApp.EventReading.GitHub;
 using ReminderApp.FileStorage;
 using ReminderApp.GitHubApi;
-using ReminderApp.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,7 +70,6 @@ var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorag
 var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.Reminders);
 var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.WeeklyDigest);
 var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.TwoWeekDigest);
-var shopListProcessor = new ShopListProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.Shopping);
 var printer = new EventOutputPrinter(dateTimeProvider);
 
 IEventReader eventReader;
@@ -89,7 +82,7 @@ if (DebugHelper.IsDebug)
 else
 {
     gitHubClient = new GitHubClient(new GitHubCredentialsProvider());
-    eventReader = new GitHubEventReader(gitHubClient);
+    eventReader = new DebugEventReader();
 }
 
 var runner = new EventRunner(
@@ -101,7 +94,6 @@ var runner = new EventRunner(
     reminderProcessor,
     weeklyDigestProcessor,
     twoWeekDigestProcessor,
-    shopListProcessor,
     printer);
 
 // Register EventRunner (MUST be before Build())
