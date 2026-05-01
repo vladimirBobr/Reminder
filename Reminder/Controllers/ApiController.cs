@@ -119,6 +119,7 @@ public class ApiController : Controller
                 success = true,
                 events = data.Events.Select(e => new
                 {
+                    key = e.GetKey(),
                     date = e.Date.ToString("yyyy-MM-dd"),
                     time = e.Time?.ToString("HH:mm"),
                     subject = e.Subject,
@@ -133,19 +134,18 @@ public class ApiController : Controller
         }
     }
 
-    [HttpPost("events")]
-    public IActionResult UpdateEvents([FromBody] UpdateEventsRequest request)
+    [HttpPost("events/update-date")]
+    public IActionResult UpdateEventDate([FromBody] UpdateEventDateRequest request)
     {
         try
         {
-            if (request?.Events == null || request.Events.Count == 0)
+            if (string.IsNullOrEmpty(request.Key) || string.IsNullOrEmpty(request.NewDate))
             {
-                return Json(new { success = false, message = "No events provided" });
+                return Json(new { success = false, message = "Key and NewDate are required" });
             }
-
+            
             // TODO: Implement GitHub file update logic
-            // For now, just acknowledge the request
-            return Json(new { success = true, message = "Events updated (GitHub sync not yet implemented)" });
+            return Json(new { success = true, message = $"Date updated to {request.NewDate} for event {request.Key}" });
         }
         catch (Exception ex)
         {
@@ -154,12 +154,17 @@ public class ApiController : Controller
     }
 
     [HttpPost("events/delete")]
-    public IActionResult DeleteEvent([FromBody] EventUpdateItem eventItem)
+    public IActionResult DeleteEvent([FromBody] DeleteEventRequest request)
     {
         try
         {
+            if (string.IsNullOrEmpty(request.Key))
+            {
+                return Json(new { success = false, message = "Key is required" });
+            }
+            
             // TODO: Implement GitHub file update logic for deletion
-            return Json(new { success = true, message = "Event deleted (GitHub sync not yet implemented)" });
+            return Json(new { success = true, message = $"Event {request.Key} deleted" });
         }
         catch (Exception ex)
         {

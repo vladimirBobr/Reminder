@@ -392,7 +392,7 @@ function renderEventsList() {
     });
     
     var html = '';
-    eventsData.forEach(function(event, index) {
+    eventsData.forEach(function(event) {
         var date = new Date(event.date);
         var dayName = daysRu[date.getDay()];
         var day = String(date.getDate()).padStart(2, '0');
@@ -404,12 +404,12 @@ function renderEventsList() {
         var isWeekend = date.getDay() === 6 || date.getDay() === 0;
         
         html += '<div class="list-group-item d-flex gap-2 py-2 align-items-center event-item">';
-        html += '<input type="date" class="form-control form-control-sm date-input" value="' + event.date + '" data-index="' + index + '" style="width: 140px;">';
+        html += '<input type="date" class="form-control form-control-sm date-input" value="' + event.date + '" data-key="' + event.key + '" style="width: 140px;">';
         html += '<div class="flex-shrink-0 text-center" style="min-width: 40px;">';
         html += '<div class="small ' + (isWeekend ? (date.getDay() === 6 ? 'text-warning' : 'text-danger') : 'text-muted') + '">' + dayName + '</div>';
         html += '</div>';
         html += '<div class="flex-grow-1">' + subject + '</div>';
-        html += '<button type="button" class="btn btn-outline-danger btn-sm delete-event-btn" data-index="' + index + '" title="Удалить">×</button>';
+        html += '<button type="button" class="btn btn-outline-danger btn-sm delete-event-btn" data-key="' + event.key + '" title="Удалить">×</button>';
         html += '</div>';
     });
     
@@ -418,10 +418,13 @@ function renderEventsList() {
     // Add change handlers for date inputs
     document.querySelectorAll('.date-input').forEach(function(input) {
         input.addEventListener('change', function() {
-            var index = parseInt(this.getAttribute('data-index'));
+            var key = this.getAttribute('data-key');
             var newDate = this.value;
-            eventsData[index].date = newDate;
-            saveEventDate(index, newDate);
+            var event = eventsData.find(function(e) { return e.key === key; });
+            if (event) {
+                event.date = newDate;
+                saveEventDate(key, newDate);
+            }
         });
     });
     
@@ -429,11 +432,12 @@ function renderEventsList() {
     document.querySelectorAll('.delete-event-btn').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
             e.stopPropagation();
-            var index = parseInt(this.getAttribute('data-index'));
-            var eventName = eventsData[index].subject || eventsData[index].description || 'Без названия';
+            var key = this.getAttribute('data-key');
+            var event = eventsData.find(function(ev) { return ev.key === key; });
+            var eventName = event ? (event.subject || event.description || 'Без названия') : '';
             document.getElementById('deleteEventName').textContent = eventName;
             document.getElementById('confirmDeleteBtn').onclick = function() {
-                deleteEvent(index);
+                deleteEvent(key);
                 bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
             };
             new bootstrap.Modal(document.getElementById('deleteModal')).show();
@@ -441,18 +445,17 @@ function renderEventsList() {
     });
 }
 
-function deleteEvent(index) {
-    var event = eventsData[index];
+function deleteEvent(key) {
     fetch('@Url.Action("DeleteEvent", "Api")', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: event.date, subject: event.subject, description: event.description, time: event.time })
+        body: JSON.stringify({ key: key })
     })
     .then(function(response) { return response.json(); })
     .then(function(data) {
         if (data.success) {
             showToast('Событие удалено', 'success');
-            eventsData.splice(index, 1);
+            eventsData = eventsData.filter(function(e) { return e.key !== key; });
             renderEventsList();
         } else {
             showToast('Ошибка: ' + data.message, 'error');
@@ -463,12 +466,11 @@ function deleteEvent(index) {
     });
 }
 
-function saveEventDate(index, newDate) {
-    var event = eventsData[index];
-    fetch('@Url.Action("UpdateEvents", "Api")', {
+function saveEventDate(key, newDate) {
+    fetch('@Url.Action("UpdateEventDate", "Api")', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ events: [{ date: newDate, subject: event.subject, description: event.description, time: event.time }] })
+        body: JSON.stringify({ key: key, newDate: newDate })
     })
     .then(function(response) { return response.json(); })
     .then(function(data) {
