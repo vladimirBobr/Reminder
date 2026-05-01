@@ -87,6 +87,9 @@ else
     log.Information("RELEASE MODE: используется GitHubEventReader с YamlDotNetParser");
 }
 
+// Register EventReader for DI
+builder.Services.AddSingleton(eventReader);
+
 var runner = new EventRunner(
     dateTimeProvider,
     fileStorage,

@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ReminderApp.Authentication;
 using ReminderApp.EventProcessing;
+using ReminderApp.EventReading;
 using ReminderApp.GitHubApi;
 
 namespace ReminderApp.Controllers;
@@ -10,10 +11,12 @@ namespace ReminderApp.Controllers;
 public class ApiController : Controller
 {
     private readonly EventRunner _runner;
+    private readonly IEventReader _eventReader;
 
-    public ApiController(EventRunner runner)
+    public ApiController(EventRunner runner, IEventReader eventReader)
     {
         _runner = runner;
+        _eventReader = eventReader;
     }
 
     // ==================== Digest API ====================
@@ -101,6 +104,33 @@ public class ApiController : Controller
     //        return Json(new { success = true, message = message ?? "Item added" });
     //    }
     //}
+
+    // ==================== Events API ====================
+
+    [HttpGet("events")]
+    public async Task<IActionResult> GetEvents()
+    {
+        try
+        {
+            var data = await _eventReader.ReadEventsAsync();
+            return Json(new
+            {
+                success = true,
+                events = data.Events.Select(e => new
+                {
+                    date = e.Date.ToString("yyyy-MM-dd"),
+                    time = e.Time?.ToString("HH:mm"),
+                    subject = e.Subject,
+                    description = e.Description
+                }),
+                shoppingItems = data.ShoppingItems.Select(s => s.Subject)
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
 
     // ==================== Webhook ====================
 
