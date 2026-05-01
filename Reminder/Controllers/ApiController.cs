@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ReminderApp.Authentication;
+using ReminderApp.Common;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventReading;
 using ReminderApp.GitHubApi;
@@ -125,6 +126,26 @@ public class ApiController : Controller
                 }),
                 shoppingItems = data.ShoppingItems.Select(s => s.Subject)
             });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost("events")]
+    public IActionResult UpdateEvents([FromBody] UpdateEventsRequest request)
+    {
+        try
+        {
+            if (request?.Events == null || request.Events.Count == 0)
+            {
+                return Json(new { success = false, message = "No events provided" });
+            }
+
+            // TODO: Implement GitHub file update logic
+            // For now, just acknowledge the request
+            return Json(new { success = true, message = "Events updated (GitHub sync not yet implemented)" });
         }
         catch (Exception ex)
         {
