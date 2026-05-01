@@ -153,6 +153,20 @@ public class ApiController : Controller
         }
     }
 
+    [HttpPost("events/delete")]
+    public IActionResult DeleteEvent([FromBody] EventUpdateItem eventItem)
+    {
+        try
+        {
+            // TODO: Implement GitHub file update logic for deletion
+            return Json(new { success = true, message = "Event deleted (GitHub sync not yet implemented)" });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
     // ==================== Webhook ====================
 
     [AllowAnonymous]

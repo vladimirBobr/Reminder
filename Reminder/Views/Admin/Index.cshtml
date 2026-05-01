@@ -155,14 +155,14 @@
 
     </div>
 
-    <!-- Tab 2: События (список с drag & drop) -->
+    <!-- Tab 2: События -->
     <div class="tab-pane fade" id="events-tab-pane" role="tabpanel" aria-labelledby="events-tab">
         <div class="card">
             <div class="card-header text-white" style="background-color: rgba(0, 57, 166, 0.4);">
-                <h5 class="mb-0">📋 События (перетащите для изменения даты)</h5>
+                <h5 class="mb-0">📋 События</h5>
             </div>
-            <div class="card-body">
-                <div id="eventsList" class="list-group">
+            <div class="card-body p-0">
+                <div id="eventsList" class="list-group list-group-flush">
                     <div class="text-center text-muted py-4">
                         <div class="spinner-border spinner-border-sm" role="status"></div>
                         Загрузка событий...
@@ -170,10 +170,24 @@
                 </div>
             </div>
         </div>
-        <div class="mt-3 text-end">
-            <button type="button" class="btn btn-primary" id="saveEventsBtn" disabled>
-                💾 Сохранить изменения
-            </button>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Удалить событие "<span id="deleteEventName"></span>"?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Удалить</button>
+            </div>
         </div>
     </div>
 </div>
@@ -312,7 +326,6 @@ function showToast(message, type, anchorElement) {
 // ==================== Events Tab Logic ====================
 
 var eventsData = [];
-var sortable = null;
 var eventsLoaded = false;
 
 document.getElementById('events-tab').addEventListener('shown.bs.tab', function() {
@@ -365,81 +378,86 @@ function renderEventsList() {
         var subject = event.subject || event.description || 'Без названия';
         var isWeekend = date.getDay() === 6 || date.getDay() === 0;
         
-        html += '<div class="list-group-item list-group-item-action d-flex gap-3 py-2" data-index="' + index + '" data-date="' + event.date + '" style="cursor: grab;">';
-        html += '<div class="flex-shrink-0 text-center" style="min-width: 50px;">';
-        html += '<div class="fw-bold">' + dateFormatted + '</div>';
+        html += '<div class="list-group-item d-flex gap-2 py-2 align-items-center event-item">';
+        html += '<input type="date" class="form-control form-control-sm date-input" value="' + event.date + '" data-index="' + index + '" style="width: 140px;">';
+        html += '<div class="flex-shrink-0 text-center" style="min-width: 40px;">';
         html += '<div class="small ' + (isWeekend ? (date.getDay() === 6 ? 'text-warning' : 'text-danger') : 'text-muted') + '">' + dayName + '</div>';
-        if (timeStr) {
-            html += '<div class="small text-muted">' + timeStr + '</div>';
-        }
         html += '</div>';
         html += '<div class="flex-grow-1">' + subject + '</div>';
-        html += '<div class="flex-shrink-0 align-self-center">⋮⋮</div>';
+        html += '<button type="button" class="btn btn-outline-danger btn-sm delete-event-btn" data-index="' + index + '" title="Удалить">×</button>';
         html += '</div>';
     });
     
     eventsList.innerHTML = html;
     
-    // Initialize Sortable
-    if (sortable) {
-        sortable.destroy();
-    }
+    // Add change handlers for date inputs
+    document.querySelectorAll('.date-input').forEach(function(input) {
+        input.addEventListener('change', function() {
+            var index = parseInt(this.getAttribute('data-index'));
+            var newDate = this.value;
+            eventsData[index].date = newDate;
+            saveEventDate(index, newDate);
+        });
+    });
     
-    sortable = new Sortable(eventsList, {
-        animation: 150,
-        ghostClass: 'sortable-ghost',
-        chosenClass: 'sortable-chosen',
-        dragClass: 'sortable-drag',
-        onEnd: function(evt) {
-            handleDragDrop(evt);
-        }
+    // Add delete handlers
+    document.querySelectorAll('.delete-event-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var index = parseInt(this.getAttribute('data-index'));
+            var eventName = eventsData[index].subject || eventsData[index].description || 'Без названия';
+            document.getElementById('deleteEventName').textContent = eventName;
+            document.getElementById('confirmDeleteBtn').onclick = function() {
+                deleteEvent(index);
+                bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+            };
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        });
     });
 }
 
-function handleDragDrop(evt) {
-    var fromIndex = evt.fromIndex;
-    var toIndex = evt.to;
-    var items = evt.items;
-    
-    // If moved down (to a later position), increment date by number of positions moved
-    if (toIndex > fromIndex) {
-        var positionsMoved = toIndex - fromIndex;
-        var event = eventsData[fromIndex];
-        var originalDate = new Date(event.date);
-        originalDate.setDate(originalDate.getDate() + positionsMoved);
-        event.date = originalDate.toISOString().split('T')[0];
-    }
-    
-    renderEventsList();
-    document.getElementById('saveEventsBtn').disabled = false;
-}
-
-document.getElementById('saveEventsBtn').addEventListener('click', function() {
-    var btn = this;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Сохранение...';
-    
-    fetch('@Url.Action("UpdateEvents", "Api")', {
+function deleteEvent(index) {
+    var event = eventsData[index];
+    fetch('@Url.Action("DeleteEvent", "Api")', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ events: eventsData })
+        body: JSON.stringify({ date: event.date, subject: event.subject, description: event.description, time: event.time })
     })
     .then(function(response) { return response.json(); })
     .then(function(data) {
         if (data.success) {
-            showToast('Изменения сохранены', 'success', btn);
+            showToast('Событие удалено', 'success');
+            eventsData.splice(index, 1);
+            renderEventsList();
         } else {
-            showToast('Ошибка: ' + data.message, 'error', btn);
+            showToast('Ошибка: ' + data.message, 'error');
         }
     })
     .catch(function(err) {
-        showToast('Ошибка: ' + err, 'error', btn);
-    })
-    .finally(function() {
-        btn.disabled = false;
-        btn.innerHTML = '💾 Сохранить изменения';
+        showToast('Ошибка: ' + err, 'error');
     });
-});
+}
+
+function saveEventDate(index, newDate) {
+    var event = eventsData[index];
+    fetch('@Url.Action("UpdateEvents", "Api")', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ events: [{ date: newDate, subject: event.subject, description: event.description, time: event.time }] })
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            showToast('Дата сохранена', 'success');
+            renderEventsList();
+        } else {
+            showToast('Ошибка: ' + data.message, 'error');
+        }
+    })
+    .catch(function(err) {
+        showToast('Ошибка: ' + err, 'error');
+    });
+}
 
 // ==================== Digest Buttons ====================
 
@@ -476,11 +494,5 @@ document.querySelectorAll('.digest-btn').forEach(function(btn) {
 .toast-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
 .toast-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
-/* Sortable styles */
-.sortable-ghost { opacity: 0.4; background-color: #e9ecef; }
-.sortable-chosen { background-color: #f8f9fa; }
-.sortable-drag { background-color: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-#eventsList .list-group-item { border-left: 3px solid #007bff; }
-#eventsList .list-group-item:hover { background-color: #f8f9fa; }
 </style>
 }
