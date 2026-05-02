@@ -206,4 +206,31 @@ public class ApiController : Controller
         TempData["Message"] = "Webhook received";
         return RedirectToAction("Index", "Admin");
     }
+
+    [HttpPost("events/update")]
+    public async Task<IActionResult> UpdateEvent([FromBody] UpdateEventRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(request.Key))
+            {
+                return Json(new { success = false, message = "Key is required" });
+            }
+            
+            var result = await _eventWriter.UpdateEventAsync(request.Key, request.Subject, request.Description);
+            
+            if (result.Success)
+            {
+                return Json(new { success = true, message = "Event updated" });
+            }
+            else
+            {
+                return Json(new { success = false, message = result.ErrorMessage ?? "Failed to update event" });
+            }
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
 }

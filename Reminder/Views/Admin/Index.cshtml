@@ -437,12 +437,15 @@ function showEditMenu(e, key) {
     menu.style.minWidth = '200px';
     menu.style.zIndex = '9999';
     
-    menu.innerHTML = '<div class="mb-2"><label class="form-label small text-muted">Название</label><input type="text" class="form-control form-control-sm" id="editSubject" value="' + (event.subject || '') + '"></div>' +
-                     '<div class="mb-2"><label class="form-label small text-muted">Описание</label><textarea class="form-control form-control-sm" rows="3" id="editDesc">' + (event.description || '') + '</textarea></div>' +
+    menu.innerHTML = '<div class="mb-2"><label class="form-label small text-muted">Название</label><input type="text" class="form-control" id="editSubject" value="' + (event.subject || '') + '"></div>' +
+                     '<div class="mb-2"><label class="form-label small text-muted">Описание</label><textarea class="form-control" rows="5" id="editDesc">' + (event.description || '') + '</textarea></div>' +
                      '<button class="btn btn-sm btn-primary w-100" onclick="saveEventEdit(\'' + key + '\')">Сохранить</button>';
     
     document.body.appendChild(menu);
     editMenu = menu;
+    
+    // Make menu wider
+    menu.style.minWidth = '400px';
     
     // Close on click outside (but not on menu itself)
     setTimeout(function() {
@@ -465,15 +468,30 @@ function saveEventEdit(key) {
     var subject = document.getElementById('editSubject').value;
     var description = document.getElementById('editDesc').value;
     
-    var event = eventsData.find(function(e) { return e.key === key; });
-    if (event) {
-        event.subject = subject;
-        event.description = description;
-    }
-    
-    closeEditMenu();
-    renderEventsList();
-    showToast('Сохранено', 'success');
+    fetch('@Url.Action("UpdateEvent", "Api")', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: key, subject: subject, description: description })
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            // Update local data
+            var event = eventsData.find(function(e) { return e.key === key; });
+            if (event) {
+                event.subject = subject;
+                event.description = description;
+            }
+            closeEditMenu();
+            renderEventsList();
+            showToast('Сохранено', 'success');
+        } else {
+            showToast('Ошибка: ' + data.message, 'error');
+        }
+    })
+    .catch(function(err) {
+        showToast('Ошибка: ' + err, 'error');
+    });
 }
 
 function deleteEvent(key) {
