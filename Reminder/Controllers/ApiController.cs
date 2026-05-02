@@ -4,6 +4,7 @@ using ReminderApp.Authentication;
 using ReminderApp.Common;
 using ReminderApp.EventProcessing;
 using ReminderApp.EventReading;
+using ReminderApp.EventWriting;
 using ReminderApp.GitHubApi;
 
 namespace ReminderApp.Controllers;
@@ -13,11 +14,13 @@ public class ApiController : Controller
 {
     private readonly EventRunner _runner;
     private readonly IEventReader _eventReader;
+    private readonly IEventWriter _eventWriter;
 
-    public ApiController(EventRunner runner, IEventReader eventReader)
+    public ApiController(EventRunner runner, IEventReader eventReader, IEventWriter eventWriter)
     {
         _runner = runner;
         _eventReader = eventReader;
+        _eventWriter = eventWriter;
     }
 
     // ==================== Digest API ====================
@@ -135,7 +138,7 @@ public class ApiController : Controller
     }
 
     [HttpPost("events/update-date")]
-    public IActionResult UpdateEventDate([FromBody] UpdateEventDateRequest request)
+    public async Task<IActionResult> UpdateEventDate([FromBody] UpdateEventDateRequest request)
     {
         try
         {
@@ -144,8 +147,21 @@ public class ApiController : Controller
                 return Json(new { success = false, message = "Key and NewDate are required" });
             }
             
-            // TODO: Implement GitHub file update logic
-            return Json(new { success = true, message = $"Date updated to {request.NewDate} for event {request.Key}" });
+            if (!DateOnly.TryParse(request.NewDate, out var newDate))
+            {
+                return Json(new { success = false, message = "Invalid date format" });
+            }
+            
+            var result = await _eventWriter.UpdateEventDateAsync(request.Key, newDate);
+            
+            if (result.Success)
+            {
+                return Json(new { success = true, message = $"Date updated to {request.NewDate}" });
+            }
+            else
+            {
+                return Json(new { success = false, message = result.ErrorMessage ?? "Failed to update date" });
+            }
         }
         catch (Exception ex)
         {

@@ -9,6 +9,7 @@ using ReminderApp.EventProcessing;
 using ReminderApp.EventProcessing.Processors;
 using ReminderApp.EventReading;
 using ReminderApp.EventReading.Parsers;
+using ReminderApp.EventWriting;
 using ReminderApp.FileStorage;
 using ReminderApp.GitHubApi;
 using Microsoft.Extensions.Options;
@@ -113,8 +114,8 @@ static (WebApplication app, EventRunner runner) InitializeApp(WebApplicationBuil
 
     if (DebugHelper.IsDebug)
     {
-        eventReader = new DebugEventReader();
-        //eventReader = new GitHubEventReader(gitHubClient, new YamlDotNetParser());
+        //eventReader = new DebugEventReader();
+        eventReader = new GitHubEventReader(gitHubClient, new YamlDotNetParser());
         log.Information("DEBUG MODE: используется DebugEventReader (для тестирования UI)");
     }
     else
@@ -124,8 +125,9 @@ static (WebApplication app, EventRunner runner) InitializeApp(WebApplicationBuil
         log.Information("RELEASE MODE: используется GitHubEventReader с YamlDotNetParser");
     }
 
-    // Register EventReader for DI
+    // Register EventReader and EventWriter for DI
     builder.Services.AddSingleton(eventReader);
+    builder.Services.AddSingleton<IEventWriter>(new GitHubEventWriter(gitHubClient, new YamlDotNetParser()));
 
     var runner = new EventRunner(
         dateTimeProvider,
