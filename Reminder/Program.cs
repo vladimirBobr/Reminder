@@ -120,8 +120,8 @@ static (WebApplication app, EventRunner runner) InitializeApp(WebApplicationBuil
     }
     else
     {
-        //eventReader = new GitHubEventReader(gitHubClient, new YamlDotNetParser());
-        eventReader = new DebugEventReader();
+        eventReader = new GitHubEventReader(gitHubClient, new YamlDotNetParser());
+        //eventReader = new DebugEventReader();
         log.Information("RELEASE MODE: используется GitHubEventReader с YamlDotNetParser");
     }
 
