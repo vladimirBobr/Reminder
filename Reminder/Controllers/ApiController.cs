@@ -170,7 +170,7 @@ public class ApiController : Controller
     }
 
     [HttpPost("events/delete")]
-    public IActionResult DeleteEvent([FromBody] DeleteEventRequest request)
+    public async Task<IActionResult> DeleteEvent([FromBody] DeleteEventRequest request)
     {
         try
         {
@@ -179,8 +179,16 @@ public class ApiController : Controller
                 return Json(new { success = false, message = "Key is required" });
             }
             
-            // TODO: Implement GitHub file update logic for deletion
-            return Json(new { success = true, message = $"Event {request.Key} deleted" });
+            var result = await _eventWriter.DeleteEventAsync(request.Key);
+            
+            if (result.Success)
+            {
+                return Json(new { success = true, message = "Event deleted" });
+            }
+            else
+            {
+                return Json(new { success = false, message = result.ErrorMessage ?? "Failed to delete event" });
+            }
         }
         catch (Exception ex)
         {
