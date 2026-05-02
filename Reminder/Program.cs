@@ -33,121 +33,131 @@ if (DebugHelper.IsDebug)
 var log = ConfigureLogger();
 log.Information("▶ Starting Reminder");
 
-// Initialize services
-var dateTimeProvider = new DateTimeProvider();
-
-// В DEBUG режиме храним данные выше проекта, чтобы не попадать в GIT
-string? debugDataPath = null;
-if (DebugHelper.IsDebug)
+try
 {
-    // Поднимаемся на 5 уровней вверх
-    debugDataPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "debug_data");
-    Directory.CreateDirectory(debugDataPath);
-    log.Information("DEBUG MODE: данные хранятся в {Path}", debugDataPath);
+    var (app, runner) = InitializeApp(builder, log);
+    
+    _ = runner.StartAsync();
+    app.Run();
+}
+catch (Exception ex)
+{
+    log.Fatal(ex, "❌ Application crashed. Error: {ErrorMessage}", ex.Message);
+    throw;
 }
 
-var fileStorage = new JsonFileStorage(debugDataPath);
-
-// В DEBUG режиме используем заглушку для консоли, в RELEASE - Ntfy
-INtfyNotifier notifier;
-if (DebugHelper.IsDebug)
+static (WebApplication app, EventRunner runner) InitializeApp(WebApplicationBuilder builder, ILogger log)
 {
-    notifier = new ConsoleNotifier();
-    log.Information("DEBUG MODE: используется ConsoleNotifier (без отправки в Ntfy)");
+    var dateTimeProvider = new DateTimeProvider();
+
+    // В DEBUG режиме храним данные выше проекта, чтобы не попадать в GIT
+    string? debugDataPath = null;
+    if (DebugHelper.IsDebug)
+    {
+        // Поднимаемся на 5 уровней вверх
+        debugDataPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "debug_data");
+        Directory.CreateDirectory(debugDataPath);
+        log.Information("DEBUG MODE: данные хранятся в {Path}", debugDataPath);
+    }
+
+    var fileStorage = new JsonFileStorage(debugDataPath);
+
+    // В DEBUG режиме используем заглушку для консоли, в RELEASE - Ntfy
+    INtfyNotifier notifier;
+    if (DebugHelper.IsDebug)
+    {
+        notifier = new ConsoleNotifier();
+        log.Information("DEBUG MODE: используется ConsoleNotifier (без отправки в Ntfy)");
+    }
+    else
+    {
+        notifier = new NtfyNotifier(new NtfyCredentialsProvider());
+    }
+
+    var localIp = GetLocalIpAddress();
+
+    _ = notifier.NotifyAsync($"""
+        ▶ Reminder started
+        Admin API: http://{localIp}:5000
+        Seq: http://{localIp}:5341
+        """, NtfyTopics.Reminders);
+
+    var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.DailyDigest);
+    var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.Reminders);
+    var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.WeeklyDigest);
+    var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.TwoWeekDigest);
+    var printer = new EventOutputPrinter(dateTimeProvider);
+
+    IEventReader eventReader;
+    IGitHubClient? gitHubClient = null;
+
+    // Configure GitHub options from appconfig.json with environment variable substitution
+    var githubUrl = Environment.GetEnvironmentVariable("GITHUB_URL", EnvironmentVariableTarget.User) ?? throw new InvalidOperationException("GITHUB_URL environment variable is not set.");
+    var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN", EnvironmentVariableTarget.User) ?? throw new InvalidOperationException("GITHUB_TOKEN environment variable is not set.");
+
+    builder.Services.Configure<GitHubOptions>(options =>
+    {
+        options.Url = githubUrl;
+        options.Token = githubToken;
+    });
+
+    // Validate GitHub configuration
+    var gitHubOptions = new GitHubOptions
+    {
+        Url = githubUrl,
+        Token = githubToken
+    };
+    gitHubOptions.Validate();
+
+    gitHubClient = new GitHubClient(gitHubOptions);
+
+    if (DebugHelper.IsDebug)
+    {
+        //eventReader = new DebugEventReader();
+        eventReader = new GitHubEventReader(gitHubClient, new YamlDotNetParser());
+        log.Information("DEBUG MODE: используется GitHubEventReader (GitHubClient доступен для тестирования)");
+    }
+    else
+    {
+        eventReader = new GitHubEventReader(gitHubClient, new YamlDotNetParser());
+        log.Information("RELEASE MODE: используется GitHubEventReader с YamlDotNetParser");
+    }
+
+    // Register EventReader for DI
+    builder.Services.AddSingleton(eventReader);
+
+    var runner = new EventRunner(
+        dateTimeProvider,
+        fileStorage,
+        eventReader,
+        new EventOutputPrinter(dateTimeProvider),
+        dailyDigestProcessor,
+        reminderProcessor,
+        weeklyDigestProcessor,
+        twoWeekDigestProcessor,
+        printer);
+
+    // Register EventRunner (MUST be before Build())
+    builder.Services.AddSingleton(runner);
+
+    // Build the app
+    var app = builder.Build();
+
+    // Serve static files from wwwroot
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
+
+    // Add authentication and authorization middleware
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    app.MapControllerRoute(
+        name: "default",
+        pattern: "{controller}/{action}",
+        defaults: new { controller = "Admin", action = "Index" });
+
+    return (app, runner);
 }
-else
-{
-    notifier = new NtfyNotifier(new NtfyCredentialsProvider());
-}
-
-var localIp = GetLocalIpAddress();
-
-_ = notifier.NotifyAsync($"""
-    ▶ Reminder started
-    Admin API: http://{localIp}:5000
-    Seq: http://{localIp}:5341
-    """, NtfyTopics.Reminders);
-
-var dailyDigestProcessor = new DailyDigestProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.DailyDigest);
-var reminderProcessor = new ReminderProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.Reminders);
-var weeklyDigestProcessor = new WeeklyDigestProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.WeeklyDigest);
-var twoWeekDigestProcessor = new TwoWeekDigestProcessor(dateTimeProvider, fileStorage, notifier, NtfyTopics.TwoWeekDigest);
-var printer = new EventOutputPrinter(dateTimeProvider);
-
-IEventReader eventReader;
-IGitHubClient? gitHubClient = null;
-
-// Configure GitHub options from appconfig.json with environment variable substitution
-var githubUrl = Environment.GetEnvironmentVariable("GITHUB_URL", EnvironmentVariableTarget.User) ?? throw new InvalidOperationException("GITHUB_URL environment variable is not set.");
-var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN", EnvironmentVariableTarget.User) ?? throw new InvalidOperationException("GITHUB_TOKEN environment variable is not set.");
-
-builder.Services.Configure<GitHubOptions>(options =>
-{
-    options.Url = githubUrl;
-    options.Token = githubToken;
-});
-
-// Validate GitHub configuration
-var gitHubOptions = new GitHubOptions
-{
-    Url = githubUrl,
-    Token = githubToken
-};
-gitHubOptions.Validate();
-
-gitHubClient = new GitHubClient(gitHubOptions);
-
-if (DebugHelper.IsDebug)
-{
-    //eventReader = new DebugEventReader();
-    eventReader = new GitHubEventReader(gitHubClient, new YamlDotNetParser());
-    log.Information("DEBUG MODE: используется DebugEventReader (GitHubClient доступен для тестирования)");
-}
-else
-{
-    eventReader = new GitHubEventReader(gitHubClient, new YamlDotNetParser());
-    log.Information("RELEASE MODE: используется GitHubEventReader с YamlDotNetParser");
-}
-
-// Register EventReader for DI
-builder.Services.AddSingleton(eventReader);
-
-var runner = new EventRunner(
-    dateTimeProvider,
-    fileStorage,
-    eventReader,
-    new EventOutputPrinter(dateTimeProvider),
-    dailyDigestProcessor,
-    reminderProcessor,
-    weeklyDigestProcessor,
-    twoWeekDigestProcessor,
-    printer);
-
-// Register EventRunner (MUST be before Build())
-builder.Services.AddSingleton(runner);
-
-// Build the app
-var app = builder.Build();
-
-// Serve static files from wwwroot
-app.UseDefaultFiles();
-app.UseStaticFiles();
-
-// Add authentication and authorization middleware
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller}/{action}",
-    defaults: new { controller = "Admin", action = "Index" });
-
-log.Information("Admin API available at http://{Ip}:5000", localIp);
-
-// Start the event runner in background
-_ = runner.StartAsync();
-
-app.Run();
 
 static string GetLocalIpAddress()
 {
