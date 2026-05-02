@@ -407,11 +407,73 @@ function renderEventsList() {
         html += '</div>';
         html += '</div>';
         html += '</div>';
-        html += '<div class="flex-grow-1" style="word-break: break-word; line-height: 1.4; white-space: pre-line;">' + textContent + '</div>';
+        html += '<div class="flex-grow-1 event-text" style="word-break: break-word; line-height: 1.4; white-space: pre-line;" oncontextmenu="showEditMenu(event, \'' + event.key + '\')">' + textContent + '</div>';
         html += '</div>';
     });
     
     eventsList.innerHTML = html;
+}
+
+// Context menu for editing
+var editMenu = null;
+
+function showEditMenu(e, key) {
+    e.preventDefault();
+    
+    var event = eventsData.find(function(ev) { return ev.key === key; });
+    if (!event) return;
+    
+    // Remove existing menu
+    var existing = document.getElementById('editMenu');
+    if (existing) existing.remove();
+    
+    // Create menu
+    var menu = document.createElement('div');
+    menu.id = 'editMenu';
+    menu.className = 'dropdown-menu show p-3';
+    menu.style.position = 'fixed';
+    menu.style.left = Math.min(e.clientX, window.innerWidth - 200) + 'px';
+    menu.style.top = Math.min(e.clientY, window.innerHeight - 150) + 'px';
+    menu.style.minWidth = '200px';
+    menu.style.zIndex = '9999';
+    
+    menu.innerHTML = '<div class="mb-2"><label class="form-label small text-muted">Название</label><input type="text" class="form-control form-control-sm" id="editSubject" value="' + (event.subject || '') + '"></div>' +
+                     '<div class="mb-2"><label class="form-label small text-muted">Описание</label><textarea class="form-control form-control-sm" rows="3" id="editDesc">' + (event.description || '') + '</textarea></div>' +
+                     '<button class="btn btn-sm btn-primary w-100" onclick="saveEventEdit(\'' + key + '\')">Сохранить</button>';
+    
+    document.body.appendChild(menu);
+    editMenu = menu;
+    
+    // Close on click outside (but not on menu itself)
+    setTimeout(function() {
+        document.addEventListener('click', function handler(e) {
+            if (!menu.contains(e.target)) {
+                closeEditMenu();
+                document.removeEventListener('click', handler);
+            }
+        });
+    }, 10);
+}
+
+function closeEditMenu() {
+    var menu = document.getElementById('editMenu');
+    if (menu) menu.remove();
+    editMenu = null;
+}
+
+function saveEventEdit(key) {
+    var subject = document.getElementById('editSubject').value;
+    var description = document.getElementById('editDesc').value;
+    
+    var event = eventsData.find(function(e) { return e.key === key; });
+    if (event) {
+        event.subject = subject;
+        event.description = description;
+    }
+    
+    closeEditMenu();
+    renderEventsList();
+    showToast('Сохранено', 'success');
 }
 
 function deleteEvent(key) {
