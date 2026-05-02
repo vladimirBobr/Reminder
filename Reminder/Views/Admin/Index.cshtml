@@ -391,36 +391,59 @@ function renderEventsList() {
         }
         
         html += '<div class="d-flex align-items-start gap-2 py-2 px-3 border-bottom event-item">';
-        html += '<div class="flex-shrink-0 text-center" style="min-width: 50px;">';
+        // Clickable date+day block with dropdown
+        html += '<div class="flex-shrink-0">';
+        html += '<div class="dropdown">';
+        html += '<div class="text-center date-block" data-bs-toggle="dropdown" data-bs-auto-close="outside" style="min-width: 45px; cursor: pointer;">';
         html += '<div class="small fw-bold">' + dateFormatted + '</div>';
         html += '<div class="small ' + (isWeekend ? (isSaturday ? 'text-warning' : 'text-danger') : 'text-muted') + '">' + dayName + '</div>';
         html += '</div>';
+        html += '<div class="dropdown-menu p-2" style="min-width: 160px;">';
+        html += '<div class="mb-2">';
+        html += '<label class="form-label small text-muted">Изменить дату</label>';
+        html += '<input type="date" class="form-control form-control-sm" value="' + event.date + '" id="date-' + event.key + '" onchange="saveEventDate(\'' + event.key + '\', this.value)" onclick="event.stopPropagation()">';
+        html += '</div>';
+        html += '<button class="btn btn-sm btn-outline-danger w-100" onclick="deleteEvent(\'' + event.key + '\')">Удалить</button>';
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
         html += '<div class="flex-grow-1" style="word-break: break-word; line-height: 1.4; white-space: pre-line;">' + textContent + '</div>';
-        html += '<input type="date" class="form-control form-control-sm date-input flex-shrink-0" value="' + event.date + '" data-key="' + event.key + '" style="width: 135px; font-size: 0.8rem;">';
         html += '</div>';
     });
     
     eventsList.innerHTML = html;
-    
-    // Add change handlers for date inputs
-    document.querySelectorAll('.date-input').forEach(function(input) {
-        input.addEventListener('change', function() {
-            var key = this.getAttribute('data-key');
-            var newDate = this.value;
-            var event = eventsData.find(function(e) { return e.key === key; });
-            if (event) {
-                event.date = newDate;
-                saveEventDate(key, newDate);
-            }
-        });
+}
+
+function deleteEvent(key) {
+    fetch('@Url.Action("DeleteEvent", "Api")', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: key })
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            showToast('Событие удалено', 'success');
+            eventsData = eventsData.filter(function(e) { return e.key !== key; });
+            renderEventsList();
+        } else {
+            showToast('Ошибка: ' + data.message, 'error');
+        }
+    })
+    .catch(function(err) {
+        showToast('Ошибка: ' + err, 'error');
     });
-    
-    // Delete handlers removed - no delete button in UI
-    
-    // Keep saveEventDate function for date changes
 }
 
 function saveEventDate(key, newDate) {
+    if (!newDate) return;
+    
+    // Update locally first for immediate feedback
+    var event = eventsData.find(function(e) { return e.key === key; });
+    if (event) {
+        event.date = newDate;
+    }
+    
     fetch('@Url.Action("UpdateEventDate", "Api")', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -430,7 +453,8 @@ function saveEventDate(key, newDate) {
     .then(function(data) {
         if (data.success) {
             showToast('Дата сохранена', 'success');
-            renderEventsList();
+            // Delay render slightly to let dropdown close
+            setTimeout(function() { renderEventsList(); }, 100);
         } else {
             showToast('Ошибка: ' + data.message, 'error');
         }
@@ -460,6 +484,7 @@ document.querySelectorAll('.digest-btn').forEach(function(btn) {
 </script>
 
 <style>
+.date-block:hover { opacity: 0.7; }
 .toast-message {
     position: fixed;
     bottom: 20px;
