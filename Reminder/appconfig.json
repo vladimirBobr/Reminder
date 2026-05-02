@@ -1,0 +1,6 @@
+{
+  "GitHub": {
+    "Url": "${GITHUB_URL}",
+    "Token": "${GITHUB_TOKEN}"
+  }
+}

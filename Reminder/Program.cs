@@ -11,6 +11,7 @@ using ReminderApp.EventReading;
 using ReminderApp.EventReading.Parsers;
 using ReminderApp.FileStorage;
 using ReminderApp.GitHubApi;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,14 +76,35 @@ var printer = new EventOutputPrinter(dateTimeProvider);
 
 IEventReader eventReader;
 IGitHubClient? gitHubClient = null;
+
+// Configure GitHub options from appconfig.json with environment variable substitution
+var githubUrl = Environment.GetEnvironmentVariable("GITHUB_URL", EnvironmentVariableTarget.User) ?? throw new InvalidOperationException("GITHUB_URL environment variable is not set.");
+var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN", EnvironmentVariableTarget.User) ?? throw new InvalidOperationException("GITHUB_TOKEN environment variable is not set.");
+
+builder.Services.Configure<GitHubOptions>(options =>
+{
+    options.Url = githubUrl;
+    options.Token = githubToken;
+});
+
+// Validate GitHub configuration
+var gitHubOptions = new GitHubOptions
+{
+    Url = githubUrl,
+    Token = githubToken
+};
+gitHubOptions.Validate();
+
+gitHubClient = new GitHubClient(gitHubOptions);
+
 if (DebugHelper.IsDebug)
 {
-    eventReader = new DebugEventReader();
-    log.Information("DEBUG MODE: используется DebugEventReader (без чтения из GitHub)");
+    //eventReader = new DebugEventReader();
+    eventReader = new GitHubEventReader(gitHubClient, new YamlDotNetParser());
+    log.Information("DEBUG MODE: используется DebugEventReader (GitHubClient доступен для тестирования)");
 }
 else
 {
-    gitHubClient = new GitHubClient(new GitHubCredentialsProvider());
     eventReader = new GitHubEventReader(gitHubClient, new YamlDotNetParser());
     log.Information("RELEASE MODE: используется GitHubEventReader с YamlDotNetParser");
 }

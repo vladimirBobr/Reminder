@@ -1,7 +1,8 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using OneOf;
+using ReminderApp.Common;
 
 namespace ReminderApp.GitHubApi;
 
@@ -16,22 +17,23 @@ public class GitHubClient : IGitHubClient
     private readonly string _filePath;
     private readonly string _branch;
 
-    public GitHubClient(IGitHubCredentialsProvider credentialsProvider)
+    public GitHubClient(GitHubOptions config)
     {
-        var settings = credentialsProvider.GetCredentials();
-        
         _httpClient = new HttpClient();
         _httpClient.BaseAddress = new Uri("https://api.github.com");
         _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("ReminderApp", "1.0"));
         _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
         
-        _owner = settings.Owner;
-        _repo = settings.Repo;
-        _filePath = settings.FilePath;
-        _branch = settings.Branch;
+        // Parse URL to get owner, repo, filePath, branch
+        var (owner, repo, filePath, branch) = ParseGitHubUrl(config.Url);
+        
+        _owner = owner;
+        _repo = repo;
+        _filePath = filePath;
+        _branch = branch;
         
         // Set authentication token
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", settings.Token);
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.Token);
     }
 
     /// <inheritdoc />
@@ -102,6 +104,39 @@ public class GitHubClient : IGitHubClient
         {
             Log.Information($"❌ Error updating GitHub: {ex.Message}");
             return new GitHubUpdateError($"Error updating GitHub: {ex.Message}");
+        }
+    }
+
+    private static (string owner, string repo, string filePath, string branch) ParseGitHubUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return (string.Empty, string.Empty, string.Empty, string.Empty);
+
+        try
+        {
+            var uri = new Uri(url);
+            var pathParts = uri.AbsolutePath.Trim('/').Split('/');
+            
+            if (pathParts.Length < 2)
+                return (string.Empty, string.Empty, string.Empty, string.Empty);
+
+            var owner = pathParts[0];
+            var repo = pathParts[1];
+            var filePath = string.Empty;
+            var branch = string.Empty;
+
+            var blobIndex = Array.IndexOf(pathParts, "blob");
+            if (blobIndex >= 0 && blobIndex + 2 < pathParts.Length)
+            {
+                branch = pathParts[blobIndex + 1];
+                filePath = string.Join("/", pathParts.Skip(blobIndex + 2));
+            }
+
+            return (owner, repo, filePath, branch);
+        }
+        catch
+        {
+            return (string.Empty, string.Empty, string.Empty, string.Empty);
         }
     }
 }

@@ -68,8 +68,10 @@ jobs:
           NTFY_SERVER_URL: ${{ vars.NTFY_SERVER_URL }}
           NTFY_TOPIC: ${{ vars.NTFY_TOPIC }}
           NTFY_USERNAME: ${{ vars.NTFY_USERNAME }}
-          NTFY_PASSWORD: ${{ secrets.NTFY_PASSWORD }}          
+          NTFY_PASSWORD: ${{ secrets.NTFY_PASSWORD }}
           ADMIN_API_TOKEN: ${{ secrets.ADMIN_API_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.Reminder_GITHUB_TOKEN }}
+          GITHUB_URL: ${{ vars.Reminder_GITHUB_URL }}
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/id_rsa
@@ -110,6 +112,8 @@ jobs:
           Environment=NTFY_USERNAME=$NTFY_USERNAME
           Environment=NTFY_PASSWORD=$NTFY_PASSWORD
           Environment=ADMIN_API_TOKEN=$ADMIN_API_TOKEN
+          Environment=GITHUB_TOKEN=$GITHUB_TOKEN
+          Environment=GITHUB_URL=$GITHUB_URL
           
           [Install]
           WantedBy=multi-user.target
