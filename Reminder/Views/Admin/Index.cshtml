@@ -173,26 +173,6 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Подтверждение</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>Удалить событие "<span id="deleteEventName"></span>"?</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Удалить</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
 @section Scripts {
 <script>
 // On page load, set today as selected
@@ -400,16 +380,23 @@ function renderEventsList() {
         var dateFormatted = day + '.' + month;
         
         var timeStr = event.time ? event.time : '';
-        var subject = event.subject || event.description || 'Без названия';
+        var subjectText = event.subject || event.description || 'Без названия';
         var isWeekend = date.getDay() === 6 || date.getDay() === 0;
+        var isSaturday = date.getDay() === 6;
         
-        html += '<div class="list-group-item d-flex gap-2 py-2 align-items-center event-item">';
-        html += '<input type="date" class="form-control form-control-sm date-input" value="' + event.date + '" data-key="' + event.key + '" style="width: 140px;">';
-        html += '<div class="flex-shrink-0 text-center" style="min-width: 40px;">';
-        html += '<div class="small ' + (isWeekend ? (date.getDay() === 6 ? 'text-warning' : 'text-danger') : 'text-muted') + '">' + dayName + '</div>';
+        // Build text content - show both Subject and Description if both exist
+        var textContent = subjectText;
+        if (event.subject && event.description) {
+            textContent = '<div>' + event.subject + '</div><div class="text-muted small" style="word-break: break-word;">' + event.description + '</div>';
+        }
+        
+        html += '<div class="d-flex align-items-start gap-2 py-2 px-3 border-bottom event-item">';
+        html += '<div class="flex-shrink-0 text-center" style="min-width: 50px;">';
+        html += '<div class="small fw-bold">' + dateFormatted + '</div>';
+        html += '<div class="small ' + (isWeekend ? (isSaturday ? 'text-warning' : 'text-danger') : 'text-muted') + '">' + dayName + '</div>';
         html += '</div>';
-        html += '<div class="flex-grow-1">' + subject + '</div>';
-        html += '<button type="button" class="btn btn-outline-danger btn-sm delete-event-btn" data-key="' + event.key + '" title="Удалить">×</button>';
+        html += '<div class="flex-grow-1" style="word-break: break-word; line-height: 1.4; white-space: pre-line;">' + textContent + '</div>';
+        html += '<input type="date" class="form-control form-control-sm date-input flex-shrink-0" value="' + event.date + '" data-key="' + event.key + '" style="width: 135px; font-size: 0.8rem;">';
         html += '</div>';
     });
     
@@ -428,42 +415,9 @@ function renderEventsList() {
         });
     });
     
-    // Add delete handlers
-    document.querySelectorAll('.delete-event-btn').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var key = this.getAttribute('data-key');
-            var event = eventsData.find(function(ev) { return ev.key === key; });
-            var eventName = event ? (event.subject || event.description || 'Без названия') : '';
-            document.getElementById('deleteEventName').textContent = eventName;
-            document.getElementById('confirmDeleteBtn').onclick = function() {
-                deleteEvent(key);
-                bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
-            };
-            new bootstrap.Modal(document.getElementById('deleteModal')).show();
-        });
-    });
-}
-
-function deleteEvent(key) {
-    fetch('@Url.Action("DeleteEvent", "Api")', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: key })
-    })
-    .then(function(response) { return response.json(); })
-    .then(function(data) {
-        if (data.success) {
-            showToast('Событие удалено', 'success');
-            eventsData = eventsData.filter(function(e) { return e.key !== key; });
-            renderEventsList();
-        } else {
-            showToast('Ошибка: ' + data.message, 'error');
-        }
-    })
-    .catch(function(err) {
-        showToast('Ошибка: ' + err, 'error');
-    });
+    // Delete handlers removed - no delete button in UI
+    
+    // Keep saveEventDate function for date changes
 }
 
 function saveEventDate(key, newDate) {

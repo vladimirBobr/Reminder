@@ -113,9 +113,9 @@ static (WebApplication app, EventRunner runner) InitializeApp(WebApplicationBuil
 
     if (DebugHelper.IsDebug)
     {
-        //eventReader = new DebugEventReader();
-        eventReader = new GitHubEventReader(gitHubClient, new YamlDotNetParser());
-        log.Information("DEBUG MODE: используется GitHubEventReader (GitHubClient доступен для тестирования)");
+        eventReader = new DebugEventReader();
+        //eventReader = new GitHubEventReader(gitHubClient, new YamlDotNetParser());
+        log.Information("DEBUG MODE: используется DebugEventReader (для тестирования UI)");
     }
     else
     {
