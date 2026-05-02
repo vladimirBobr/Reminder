@@ -92,8 +92,8 @@ static (WebApplication app, EventRunner runner) InitializeApp(WebApplicationBuil
     IGitHubClient? gitHubClient = null;
 
     // Configure GitHub options from appconfig.json with environment variable substitution
-    var githubUrl = Environment.GetEnvironmentVariable("GITHUB_URL", EnvironmentVariableTarget.User) ?? throw new InvalidOperationException("GITHUB_URL environment variable is not set.");
-    var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN", EnvironmentVariableTarget.User) ?? throw new InvalidOperationException("GITHUB_TOKEN environment variable is not set.");
+    var githubUrl = GetEnvVar("GITHUB_URL") ?? throw new InvalidOperationException("GITHUB_URL environment variable is not set.");
+    var githubToken = GetEnvVar("GITHUB_TOKEN") ?? throw new InvalidOperationException("GITHUB_TOKEN environment variable is not set.");
 
     builder.Services.Configure<GitHubOptions>(options =>
     {
@@ -193,3 +193,6 @@ static ILogger ConfigureLogger()
     Log.Logger = config.CreateLogger();
     return Log.ForContext(typeof(Program));
 }
+
+static string? GetEnvVar(string var) => Environment.GetEnvironmentVariable(var) ??
+    Environment.GetEnvironmentVariable(var, EnvironmentVariableTarget.User);
