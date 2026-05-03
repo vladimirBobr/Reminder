@@ -221,7 +221,7 @@ public class ApiController : Controller
                 return Json(new { success = false, message = "Key is required" });
             }
             
-            var result = await _eventWriter.UpdateEventAsync(request.Key, request.Subject, request.Description);
+            var result = await _eventWriter.UpdateEventAsync(request.Key, request.Subject, request.Description, request.Time);
             
             if (result.Success)
             {

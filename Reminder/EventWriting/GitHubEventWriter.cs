@@ -108,7 +108,7 @@ public class GitHubEventWriter : IEventWriter
         }
     }
 
-    public async Task<EventWriteResult> UpdateEventAsync(string key, string? subject, string? description)
+    public async Task<EventWriteResult> UpdateEventAsync(string key, string? subject, string? description, TimeOnly? time = null)
     {
         try
         {
@@ -147,9 +147,10 @@ public class GitHubEventWriter : IEventWriter
                 {
                     evt.Subject = subject;
                     evt.Description = description;
+                    if (time.HasValue) evt.Time = time;
                     eventFound = true;
                     newKey = evt.GetKey();
-                    _log.Information("✏️ Updated event {Key}: subject={Subject}, desc={Desc}, new key: {NewKey}", key, subject, description, newKey);
+                    _log.Information("✏️ Updated event {Key}: subject={Subject}, desc={Desc}, time={Time}, new key: {NewKey}", key, subject, description, time, newKey);
                     break;
                 }
             }

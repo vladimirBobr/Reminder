@@ -440,9 +440,15 @@ function renderEventsList() {
             html += '</svg>';
             html += '</button>';
             html += '<div class="dropdown-menu dropdown-menu-end p-2 mobile-edit-menu" style="min-width: 280px;">';
-            html += '<div class="mb-2">';
-            html += '<label class="form-label small text-muted">Изменить дату</label>';
-            html += '<input type="date" class="form-control form-control-sm" id="date-' + event.key + '" value="' + event.date + '" onchange="saveEventDate(\'' + event.key + '\', this.value)">';
+            html += '<div class="row g-2 mb-2">';
+            html += '<div class="col-6">';
+            html += '<label class="form-label small text-muted">Дата</label>';
+            html += '<input type="date" class="form-control form-control-sm" id="date-' + event.key + '" value="' + event.date + '">';
+            html += '</div>';
+            html += '<div class="col-6">';
+            html += '<label class="form-label small text-muted">Время</label>';
+            html += '<input type="time" class="form-control form-control-sm" id="time-' + event.key + '" value="' + (event.time || '') + '">';
+            html += '</div>';
             html += '</div>';
             html += '<hr class="my-2">';
             html += '<div class="mb-2">';
@@ -521,11 +527,16 @@ function closeEditMenu() {
 function saveEventEdit(key) {
     var subject = document.getElementById('editSubject-' + key).value;
     var description = document.getElementById('editDesc-' + key).value;
+    var timeInput = document.getElementById('time-' + key);
+    var time = timeInput && timeInput.value ? timeInput.value : null;
+    
+    var body = { key: key, subject: subject, description: description };
+    if (time) body.time = time;
     
     fetch('@Url.Action("UpdateEvent", "Api")', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: key, subject: subject, description: description })
+        body: JSON.stringify(body)
     })
     .then(function(response) { return response.json(); })
     .then(function(data) {
@@ -535,13 +546,15 @@ function saveEventEdit(key) {
                 var idx = eventsData.findIndex(function(e) { return e.key === key; });
                 if (idx !== -1) {
                     eventsData[idx].key = data.newKey;
+                    eventsData[idx].time = time;
                 }
             }
-            // Update subject and description in cache
+            // Update subject, description and time in cache
             var event = eventsData.find(function(e) { return e.key === (data.newKey || key); });
             if (event) {
                 event.subject = subject;
                 event.description = description;
+                event.time = time;
             }
             renderEventsList();
             showToast('Сохранено', 'success');
