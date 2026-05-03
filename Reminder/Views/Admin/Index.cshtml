@@ -420,8 +420,8 @@ function renderEventsList() {
             
             html += '<div class="d-flex align-items-start gap-2 py-2 px-3 border-bottom event-item">';
             
-            // Time (if exists)
-            if (event.time) {
+            // Time (only if has Subject, not for description-only events)
+            if (event.time && event.subject) {
                 html += '<div class="flex-shrink-0 text-muted" style="min-width: 45px; font-size: 0.9rem;">' + event.time + '</div>';
             } else {
                 html += '<div class="flex-shrink-0" style="min-width: 45px;"></div>';
