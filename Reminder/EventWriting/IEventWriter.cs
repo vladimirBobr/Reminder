@@ -1,6 +1,6 @@
 namespace ReminderApp.EventWriting;
 
-public record EventWriteResult(bool Success, string? ErrorMessage = null);
+public record EventWriteResult(bool Success, string? ErrorMessage = null, string? NewKey = null);
 
 public interface IEventWriter
 {

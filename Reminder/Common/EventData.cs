@@ -9,12 +9,19 @@ public class EventData
     
     public string GetKey()
     {
-        // Human-readable key: date_time_name_checksum
+        // Format: {date}_{time}_{4hash} or {date}_{4hash} if no time
         var datePart = Date.ToString("yyyy-MM-dd");
-        var timePart = Time?.ToString("HHmm") ?? "----";
-        var namePart = (Subject ?? Description ?? "").Replace(" ", "_").ToLowerInvariant();
-        var checkPart = (datePart + timePart + namePart).GetHashCode().ToString("x8");
         
-        return $"{datePart}_{timePart}_{namePart}_{checkPart}";
+        // Create hash from content
+        var content = (Subject ?? "") + "|" + (Description ?? "");
+        var hashBytes = System.Security.Cryptography.MD5.HashData(System.Text.Encoding.UTF8.GetBytes(content));
+        var hash4 = Convert.ToHexString(hashBytes)[..4].ToLowerInvariant();
+        
+        if (Time.HasValue)
+        {
+            var timePart = Time.Value.ToString("HHmm");
+            return $"{datePart}_{timePart}_{hash4}";
+        }
+        return $"{datePart}_{hash4}";
     }
 }

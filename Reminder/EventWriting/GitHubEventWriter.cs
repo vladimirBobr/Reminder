@@ -49,13 +49,15 @@ public class GitHubEventWriter : IEventWriter
 
             // 3. Find event by key and update date
             var eventFound = false;
+            string? newKey = null;
             foreach (var evt in parsedData.Events)
             {
                 if (evt.GetKey() == key)
                 {
                     evt.Date = newDate;
                     eventFound = true;
-                    _log.Information("📅 Updated event {Key} to date {Date}", key, newDate);
+                    newKey = evt.GetKey();
+                    _log.Information("📅 Updated event {Key} to date {Date}, new key: {NewKey}", key, newDate, newKey);
                     break;
                 }
             }
@@ -95,7 +97,7 @@ public class GitHubEventWriter : IEventWriter
                 _ =>
                 {
                     _log.Information("✅ Successfully updated file on GitHub");
-                    return new EventWriteResult(true);
+                    return new EventWriteResult(true, null, newKey);
                 }
             );
         }
@@ -138,6 +140,7 @@ public class GitHubEventWriter : IEventWriter
 
             // 3. Find event by key and update
             var eventFound = false;
+            string? newKey = null;
             foreach (var evt in parsedData.Events)
             {
                 if (evt.GetKey() == key)
@@ -145,7 +148,8 @@ public class GitHubEventWriter : IEventWriter
                     evt.Subject = subject;
                     evt.Description = description;
                     eventFound = true;
-                    _log.Information("✏️ Updated event {Key}: subject={Subject}, desc={Desc}", key, subject, description);
+                    newKey = evt.GetKey();
+                    _log.Information("✏️ Updated event {Key}: subject={Subject}, desc={Desc}, new key: {NewKey}", key, subject, description, newKey);
                     break;
                 }
             }
@@ -185,7 +189,7 @@ public class GitHubEventWriter : IEventWriter
                 _ =>
                 {
                     _log.Information("✅ Successfully updated event on GitHub");
-                    return new EventWriteResult(true);
+                    return new EventWriteResult(true, null, newKey);
                 }
             );
         }

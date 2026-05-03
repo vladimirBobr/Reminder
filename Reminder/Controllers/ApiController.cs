@@ -156,7 +156,11 @@ public class ApiController : Controller
             
             if (result.Success)
             {
-                return Json(new { success = true, message = $"Date updated to {request.NewDate}" });
+                return Json(new {
+                    success = true,
+                    message = $"Date updated to {request.NewDate}",
+                    newKey = result.NewKey
+                });
             }
             else
             {
@@ -221,7 +225,11 @@ public class ApiController : Controller
             
             if (result.Success)
             {
-                return Json(new { success = true, message = "Event updated" });
+                return Json(new {
+                    success = true,
+                    message = "Event updated",
+                    newKey = result.NewKey
+                });
             }
             else
             {

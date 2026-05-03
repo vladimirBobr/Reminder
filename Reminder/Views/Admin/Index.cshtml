@@ -366,49 +366,83 @@ function renderEventsList() {
         return;
     }
     
-    // Sort by date ascending
-    eventsData.sort(function(a, b) {
-        return new Date(a.date) - new Date(b.date);
+    // Group events by date
+    var groupedByDate = {};
+    eventsData.forEach(function(event) {
+        if (!groupedByDate[event.date]) groupedByDate[event.date] = [];
+        groupedByDate[event.date].push(event);
     });
     
+    // Sort dates
+    var sortedDates = Object.keys(groupedByDate).sort();
+    
     var html = '';
-    eventsData.forEach(function(event) {
-        var date = new Date(event.date);
+    
+    sortedDates.forEach(function(dateStr) {
+        var eventsOnDate = groupedByDate[dateStr];
+        var firstEvent = eventsOnDate[0];
+        var date = new Date(firstEvent.date);
         var dayName = daysRu[date.getDay()];
         var day = String(date.getDate()).padStart(2, '0');
         var month = String(date.getMonth() + 1).padStart(2, '0');
         var dateFormatted = day + '.' + month;
-        
-        var timeStr = event.time ? event.time : '';
-        var subjectText = event.subject || event.description || 'Без названия';
         var isWeekend = date.getDay() === 6 || date.getDay() === 0;
         var isSaturday = date.getDay() === 6;
         
-        // Build text content - show both Subject and Description if both exist
-        var textContent = subjectText;
-        if (event.subject && event.description) {
-            textContent = '<div>' + event.subject + '</div><div class="text-muted small" style="word-break: break-word;">' + event.description + '</div>';
+        // Date header
+        html += '<div class="date-group-header px-3 py-2" style="background-color: rgba(0, 57, 166, 0.1); border-bottom: 1px solid rgba(0, 57, 166, 0.2);">';
+        html += '<span class="fw-bold">' + dateFormatted + '</span>';
+        html += ' <span class="text-muted">' + dayName + '</span>';
+        if (eventsOnDate.length > 1) {
+            html += ' <span class="badge bg-secondary ms-1">' + eventsOnDate.length + '</span>';
         }
+        html += '</div>';
         
-        html += '<div class="d-flex align-items-start gap-2 py-2 px-3 border-bottom event-item">';
-        // Clickable date+day block with dropdown
-        html += '<div class="flex-shrink-0">';
-        html += '<div class="dropdown">';
-        html += '<div class="text-center date-block" data-bs-toggle="dropdown" data-bs-auto-close="outside" style="min-width: 45px; cursor: pointer;">';
-        html += '<div class="small fw-bold">' + dateFormatted + '</div>';
-        html += '<div class="small ' + (isWeekend ? (isSaturday ? 'text-warning' : 'text-danger') : 'text-muted') + '">' + dayName + '</div>';
-        html += '</div>';
-        html += '<div class="dropdown-menu p-2" style="min-width: 160px;">';
-        html += '<div class="mb-2">';
-        html += '<label class="form-label small text-muted">Изменить дату</label>';
-        html += '<input type="date" class="form-control form-control-sm" value="' + event.date + '" id="date-' + event.key + '" onchange="saveEventDate(\'' + event.key + '\', this.value)" onclick="event.stopPropagation()">';
-        html += '</div>';
-        html += '<button class="btn btn-sm btn-outline-danger w-100" onclick="deleteEvent(\'' + event.key + '\')">Удалить</button>';
-        html += '</div>';
-        html += '</div>';
-        html += '</div>';
-        html += '<div class="flex-grow-1 event-text" style="word-break: break-word; line-height: 1.4; white-space: pre-line;" oncontextmenu="showEditMenu(event, \'' + event.key + '\')">' + textContent + '</div>';
-        html += '</div>';
+        // Events under this date
+        eventsOnDate.forEach(function(event) {
+            var subjectText = event.subject || event.description || 'Без названия';
+            var textContent = subjectText;
+            if (event.subject && event.description) {
+                textContent = '<div>' + event.subject + '</div><div class="text-muted small" style="word-break: break-word;">' + event.description + '</div>';
+            }
+            
+            html += '<div class="d-flex align-items-start gap-2 py-2 px-3 border-bottom event-item">';
+            
+            // Event text
+            html += '<div class="flex-grow-1 event-text" style="word-break: break-word; line-height: 1.4; white-space: pre-line;">' + textContent + '</div>';
+            
+            // Three-dot menu button
+            html += '<div class="flex-shrink-0">';
+            html += '<div class="dropdown">';
+            html += '<button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" onclick="event.stopPropagation()">';
+            html += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">';
+            html += '<circle cx="8" cy="3" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="13" r="1.5"/>';
+            html += '</svg>';
+            html += '</button>';
+            html += '<div class="dropdown-menu dropdown-menu-end p-2 mobile-edit-menu" style="min-width: 280px;">';
+            html += '<div class="mb-2">';
+            html += '<label class="form-label small text-muted">Изменить дату</label>';
+            html += '<input type="date" class="form-control form-control-sm" id="date-' + event.key + '" value="' + event.date + '" onchange="saveEventDate(\'' + event.key + '\', this.value)">';
+            html += '</div>';
+            html += '<hr class="my-2">';
+            html += '<div class="mb-2">';
+            html += '<label class="form-label small text-muted">Название</label>';
+            html += '<input type="text" class="form-control form-control-sm" id="editSubject-' + event.key + '" value="' + (event.subject || '') + '">';
+            html += '</div>';
+            html += '<div class="mb-2">';
+            html += '<label class="form-label small text-muted">Описание</label>';
+            html += '<textarea class="form-control" rows="4" id="editDesc-' + event.key + '">' + (event.description || '') + '</textarea>';
+            html += '</div>';
+            html += '<div class="d-flex gap-2">';
+            html += '<button class="btn btn-sm btn-primary flex-grow-1" onclick="saveEventEdit(\'' + event.key + '\')">Сохранить</button>';
+            html += '<button class="btn btn-sm btn-outline-danger" onclick="deleteEvent(\'' + event.key + '\')">🗑️</button>';
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+            
+            html += '</div>';
+        });
     });
     
     eventsList.innerHTML = html;
@@ -465,8 +499,8 @@ function closeEditMenu() {
 }
 
 function saveEventEdit(key) {
-    var subject = document.getElementById('editSubject').value;
-    var description = document.getElementById('editDesc').value;
+    var subject = document.getElementById('editSubject-' + key).value;
+    var description = document.getElementById('editDesc-' + key).value;
     
     fetch('@Url.Action("UpdateEvent", "Api")', {
         method: 'POST',
@@ -476,13 +510,19 @@ function saveEventEdit(key) {
     .then(function(response) { return response.json(); })
     .then(function(data) {
         if (data.success) {
-            // Update local data
-            var event = eventsData.find(function(e) { return e.key === key; });
+            // Update local cache with new key if changed
+            if (data.newKey) {
+                var idx = eventsData.findIndex(function(e) { return e.key === key; });
+                if (idx !== -1) {
+                    eventsData[idx].key = data.newKey;
+                }
+            }
+            // Update subject and description in cache
+            var event = eventsData.find(function(e) { return e.key === (data.newKey || key); });
             if (event) {
                 event.subject = subject;
                 event.description = description;
             }
-            closeEditMenu();
             renderEventsList();
             showToast('Сохранено', 'success');
         } else {
@@ -518,12 +558,6 @@ function deleteEvent(key) {
 function saveEventDate(key, newDate) {
     if (!newDate) return;
     
-    // Update locally first for immediate feedback
-    var event = eventsData.find(function(e) { return e.key === key; });
-    if (event) {
-        event.date = newDate;
-    }
-    
     fetch('@Url.Action("UpdateEventDate", "Api")', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -533,8 +567,15 @@ function saveEventDate(key, newDate) {
     .then(function(data) {
         if (data.success) {
             showToast('Дата сохранена', 'success');
-            // Delay render slightly to let dropdown close
-            setTimeout(function() { renderEventsList(); }, 100);
+            // Update local cache with new key
+            if (data.newKey) {
+                var idx = eventsData.findIndex(function(e) { return e.key === key; });
+                if (idx !== -1) {
+                    eventsData[idx].key = data.newKey;
+                    eventsData[idx].date = newDate;
+                }
+            }
+            renderEventsList();
         } else {
             showToast('Ошибка: ' + data.message, 'error');
         }
@@ -580,5 +621,41 @@ document.querySelectorAll('.digest-btn').forEach(function(btn) {
 .toast-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
 .toast-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
+/* Mobile-friendly edit dropdown */
+@@media (max-width: 576px) {
+    .mobile-edit-menu.show {
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        top: auto !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        border-radius: 1rem 1rem 0 0 !important;
+        padding: 1rem !important;
+        margin: 0 !important;
+        transform: none !important;
+        max-height: 85vh !important;
+        overflow-y: auto !important;
+        animation: slideUp 0.3s ease-out;
+    }
+    @@keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+    .mobile-edit-menu .form-control,
+    .mobile-edit-menu .form-control-sm {
+        font-size: 16px !important;
+        padding: 0.75rem !important;
+        min-height: 48px !important;
+    }
+    .mobile-edit-menu textarea {
+        min-height: 100px !important;
+    }
+    .mobile-edit-menu .btn {
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
+}
 </style>
 }
