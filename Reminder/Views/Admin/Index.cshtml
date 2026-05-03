@@ -415,16 +415,20 @@ function renderEventsList() {
             var subjectText = event.subject || event.description || 'Без названия';
             var textContent = subjectText;
             if (event.subject && event.description) {
-                textContent = '<div>' + event.subject + '</div><div class="text-muted small" style="word-break: break-word;">' + event.description + '</div>';
+                // Time inside subject, description separate
+                var subjectWithTime = event.time ? '<span class="text-muted me-2">' + event.time + '</span>' + event.subject : event.subject;
+                textContent = '<div>' + subjectWithTime + '</div><div class="text-muted small" style="word-break: break-word; padding-left: 1.5rem;">' + event.description + '</div>';
+            } else {
+                // Only subject or only description
+                if (event.time) {
+                    textContent = '<span class="text-muted me-2">' + event.time + '</span>' + subjectText;
+                }
             }
             
             html += '<div class="d-flex align-items-start gap-2 py-2 px-3 border-bottom event-item">';
             
-            // Event text (time inline with subject if exists)
+            // Event text
             html += '<div class="flex-grow-1 event-text" style="word-break: break-word; line-height: 1.4; white-space: pre-line;">';
-            if (event.time) {
-                html += '<span class="text-muted me-2">' + event.time + '</span>';
-            }
             html += textContent + '</div>';
             
             // Three-dot menu button
