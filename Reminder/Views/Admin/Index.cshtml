@@ -380,6 +380,15 @@ function renderEventsList() {
     
     sortedDates.forEach(function(dateStr) {
         var eventsOnDate = groupedByDate[dateStr];
+        
+        // Sort events by time (events without time go last)
+        eventsOnDate.sort(function(a, b) {
+            if (!a.time && !b.time) return 0;
+            if (!a.time) return 1;
+            if (!b.time) return -1;
+            return a.time.localeCompare(b.time);
+        });
+        
         var firstEvent = eventsOnDate[0];
         var date = new Date(firstEvent.date);
         var dayName = daysRu[date.getDay()];
@@ -410,6 +419,13 @@ function renderEventsList() {
             }
             
             html += '<div class="d-flex align-items-start gap-2 py-2 px-3 border-bottom event-item">';
+            
+            // Time (if exists)
+            if (event.time) {
+                html += '<div class="flex-shrink-0 text-muted" style="min-width: 45px; font-size: 0.9rem;">' + event.time + '</div>';
+            } else {
+                html += '<div class="flex-shrink-0" style="min-width: 45px;"></div>';
+            }
             
             // Event text
             html += '<div class="flex-grow-1 event-text" style="word-break: break-word; line-height: 1.4; white-space: pre-line;">' + textContent + '</div>';
