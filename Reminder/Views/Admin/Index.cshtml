@@ -392,7 +392,10 @@ function renderEventsList() {
         // Date header
         html += '<div class="date-group-header px-3 py-2" style="background-color: rgba(0, 57, 166, 0.1); border-bottom: 1px solid rgba(0, 57, 166, 0.2);">';
         html += '<span class="fw-bold">' + dateFormatted + '</span>';
-        html += ' <span class="text-muted">' + dayName + '</span>';
+        var dayColorClass = '';
+        if (isSaturday) dayColorClass = 'text-warning';
+        else if (isWeekend) dayColorClass = 'text-danger';
+        html += ' <span class="' + dayColorClass + '">' + dayName + '</span>';
         if (eventsOnDate.length > 1) {
             html += ' <span class="badge bg-secondary ms-1">' + eventsOnDate.length + '</span>';
         }
