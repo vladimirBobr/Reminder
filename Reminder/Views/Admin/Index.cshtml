@@ -389,15 +389,15 @@ function renderEventsList() {
         var isWeekend = date.getDay() === 6 || date.getDay() === 0;
         var isSaturday = date.getDay() === 6;
         
-        // Date header
-        html += '<div class="date-group-header px-3 py-2" style="background-color: rgba(0, 57, 166, 0.1); border-bottom: 1px solid rgba(0, 57, 166, 0.2);">';
+        // Date header - smaller and colored by weekend
+        var headerBgStyle = 'background-color: rgba(0, 57, 166, 0.08);';
+        if (isSaturday) headerBgStyle = 'background-color: rgba(255, 193, 7, 0.15);'; // Warning yellow tint
+        else if (isWeekend) headerBgStyle = 'background-color: rgba(220, 53, 69, 0.12);'; // Danger red tint
+        html += '<div class="date-group-header px-3 py-1" style="' + headerBgStyle + ' border-bottom: 1px solid rgba(0, 57, 166, 0.1); font-size: 0.9rem;">';
         html += '<span class="fw-bold">' + dateFormatted + '</span>';
-        var dayColorClass = '';
-        if (isSaturday) dayColorClass = 'text-warning';
-        else if (isWeekend) dayColorClass = 'text-danger';
-        html += ' <span class="' + dayColorClass + '">' + dayName + '</span>';
+        html += ' <span class="text-muted">' + dayName + '</span>';
         if (eventsOnDate.length > 1) {
-            html += ' <span class="badge bg-secondary ms-1">' + eventsOnDate.length + '</span>';
+            html += ' <span class="badge bg-secondary ms-1" style="font-size: 0.75rem;">' + eventsOnDate.length + '</span>';
         }
         html += '</div>';
         
