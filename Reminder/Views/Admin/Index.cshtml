@@ -420,15 +420,12 @@ function renderEventsList() {
             
             html += '<div class="d-flex align-items-start gap-2 py-2 px-3 border-bottom event-item">';
             
-            // Time (only if has Subject, not for description-only events)
-            if (event.time && event.subject) {
-                html += '<div class="flex-shrink-0 text-muted" style="min-width: 45px; font-size: 0.9rem;">' + event.time + '</div>';
-            } else {
-                html += '<div class="flex-shrink-0" style="min-width: 45px;"></div>';
+            // Event text (time inline with subject if exists)
+            html += '<div class="flex-grow-1 event-text" style="word-break: break-word; line-height: 1.4; white-space: pre-line;">';
+            if (event.time) {
+                html += '<span class="text-muted me-2">' + event.time + '</span>';
             }
-            
-            // Event text
-            html += '<div class="flex-grow-1 event-text" style="word-break: break-word; line-height: 1.4; white-space: pre-line;">' + textContent + '</div>';
+            html += textContent + '</div>';
             
             // Three-dot menu button
             html += '<div class="flex-shrink-0">';
