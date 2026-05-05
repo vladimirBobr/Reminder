@@ -437,7 +437,7 @@ function renderEventsList(forceRefresh) {
         // Show current + past events (today and earlier, no pagination)
         filteredDates = sortedDates.filter(function(dateStr) {
             var eventDate = new Date(dateStr);
-            return eventDate <= today;
+            return eventDate.getTime() < today.getTime() + 86400000; // today + 1 day to include all of today
         });
     } else {
         // Show current + future events
