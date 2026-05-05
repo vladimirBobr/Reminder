@@ -4,13 +4,13 @@
 
 <ul class="nav nav-tabs mb-3" id="adminTabs" role="tablist">
     <li class="nav-item" role="presentation">
-        <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes-tab-pane" type="button" role="tab" data-tab="notes">
-            📝 Заметки
+        <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes-tab-pane" type="button" role="tab" data-tab="notes" style="font-weight: 600;">
+            ...
         </button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="events-tab" data-bs-toggle="tab" data-bs-target="#events-tab-pane" type="button" role="tab" data-tab="events">
-            📋 События
+            📅 События
         </button>
     </li>
 </ul>
@@ -23,9 +23,6 @@
         <!-- Add Note -->
         <div class="col-12">
             <div class="card">
-                <div class="card-header text-white" style="background-color: rgba(0, 57, 166, 0.4);">
-                    <h5 class="mb-0">📝 События</h5>
-                </div>
                 <div class="card-body">
                     <form id="noteForm">
                         <div class="row g-2 mb-3">
@@ -158,9 +155,6 @@
     <!-- Tab 2: События -->
     <div class="tab-pane fade" id="events-tab-pane" role="tabpanel" aria-labelledby="events-tab">
         <div class="card">
-            <div class="card-header text-white" style="background-color: rgba(0, 57, 166, 0.4);">
-                <h5 class="mb-0">📋 События</h5>
-            </div>
             <div class="card-body p-0">
                 <div id="eventsList" class="list-group list-group-flush">
                     <div class="text-center text-muted py-4">
@@ -439,29 +433,24 @@ function renderEventsList() {
             html += '<circle cx="8" cy="3" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="13" r="1.5"/>';
             html += '</svg>';
             html += '</button>';
-            html += '<div class="dropdown-menu dropdown-menu-end p-2 mobile-edit-menu" style="min-width: 280px;">';
-            html += '<div class="row g-2 mb-2">';
+            html += '<div class="dropdown-menu dropdown-menu-end p-3 mobile-edit-menu" style="min-width: 320px; background-color: #e9ecef; font-size: 1.1rem;">';
+            html += '<div class="row g-2 mb-3">';
             html += '<div class="col-6">';
-            html += '<label class="form-label small text-muted">Дата</label>';
-            html += '<input type="date" class="form-control form-control-sm" id="date-' + event.key + '" value="' + event.date + '">';
+            html += '<input type="date" class="form-control" id="date-' + event.key + '" value="' + event.date + '">';
             html += '</div>';
             html += '<div class="col-6">';
-            html += '<label class="form-label small text-muted">Время</label>';
-            html += '<input type="time" class="form-control form-control-sm" id="time-' + event.key + '" value="' + (event.time || '') + '">';
+            html += '<input type="time" class="form-control" id="time-' + event.key + '" value="' + (event.time || '') + '">';
             html += '</div>';
-            html += '</div>';
-            html += '<hr class="my-2">';
-            html += '<div class="mb-2">';
-            html += '<label class="form-label small text-muted">Название</label>';
-            html += '<input type="text" class="form-control form-control-sm" id="editSubject-' + event.key + '" value="' + (event.subject || '') + '">';
             html += '</div>';
             html += '<div class="mb-2">';
-            html += '<label class="form-label small text-muted">Описание</label>';
-            html += '<textarea class="form-control" rows="4" id="editDesc-' + event.key + '">' + (event.description || '') + '</textarea>';
+            html += '<input type="text" class="form-control" id="editSubject-' + event.key + '" value="' + (event.subject || '') + '" placeholder="Название">';
             html += '</div>';
-            html += '<div class="d-flex gap-2">';
-            html += '<button class="btn btn-sm btn-primary flex-grow-1" onclick="saveEventEdit(\'' + event.key + '\')">Сохранить</button>';
-            html += '<button class="btn btn-sm btn-outline-danger" onclick="deleteEvent(\'' + event.key + '\')">🗑️</button>';
+            html += '<div class="mb-2">';
+            html += '<textarea class="form-control" rows="5" id="editDesc-' + event.key + '" placeholder="Описание">' + (event.description || '') + '</textarea>';
+            html += '</div>';
+            html += '<div class="d-flex gap-2 mt-3">';
+            html += '<button class="btn btn-lg btn-primary flex-grow-1" onclick="saveEventEdit(\'' + event.key + '\')">Сохранить</button>';
+            html += '<button class="btn btn-lg btn-outline-danger" onclick="deleteEvent(\'' + event.key + '\')">✕</button>';
             html += '</div>';
             html += '</div>';
             html += '</div>';
