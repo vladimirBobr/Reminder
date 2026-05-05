@@ -137,42 +137,6 @@ public class ApiController : Controller
         }
     }
 
-    [HttpPost("events/update-date")]
-    public async Task<IActionResult> UpdateEventDate([FromBody] UpdateEventDateRequest request)
-    {
-        try
-        {
-            if (string.IsNullOrEmpty(request.Key) || string.IsNullOrEmpty(request.NewDate))
-            {
-                return Json(new { success = false, message = "Key and NewDate are required" });
-            }
-            
-            if (!DateOnly.TryParse(request.NewDate, out var newDate))
-            {
-                return Json(new { success = false, message = "Invalid date format" });
-            }
-            
-            var result = await _eventWriter.UpdateEventDateAsync(request.Key, newDate);
-            
-            if (result.Success)
-            {
-                return Json(new {
-                    success = true,
-                    message = $"Date updated to {request.NewDate}",
-                    newKey = result.NewKey
-                });
-            }
-            else
-            {
-                return Json(new { success = false, message = result.ErrorMessage ?? "Failed to update date" });
-            }
-        }
-        catch (Exception ex)
-        {
-            return Json(new { success = false, message = ex.Message });
-        }
-    }
-
     [HttpPost("events/delete")]
     public async Task<IActionResult> DeleteEvent([FromBody] DeleteEventRequest request)
     {
@@ -221,7 +185,9 @@ public class ApiController : Controller
                 return Json(new { success = false, message = "Key is required" });
             }
             
-            var result = await _eventWriter.UpdateEventAsync(request.Key, request.Subject, request.Description, request.Time);
+            var date = request.GetDateAsDateOnly();
+            var time = request.GetTimeAsTimeOnly();
+            var result = await _eventWriter.UpdateEventAsync(request.Key, date, request.Subject, request.Description, time);
             
             if (result.Success)
             {

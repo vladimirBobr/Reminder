@@ -527,10 +527,13 @@ function closeEditMenu() {
 function saveEventEdit(key) {
     var subject = document.getElementById('editSubject-' + key).value;
     var description = document.getElementById('editDesc-' + key).value;
+    var dateInput = document.getElementById('date-' + key);
     var timeInput = document.getElementById('time-' + key);
+    var date = dateInput && dateInput.value ? dateInput.value : null;
     var time = timeInput && timeInput.value ? timeInput.value : null;
     
     var body = { key: key, subject: subject, description: description };
+    if (date) body.date = date;
     if (time) body.time = time;
     
     fetch('@Url.Action("UpdateEvent", "Api")', {
@@ -546,14 +549,16 @@ function saveEventEdit(key) {
                 var idx = eventsData.findIndex(function(e) { return e.key === key; });
                 if (idx !== -1) {
                     eventsData[idx].key = data.newKey;
+                    eventsData[idx].date = date;
                     eventsData[idx].time = time;
                 }
             }
-            // Update subject, description and time in cache
+            // Update all fields in cache
             var event = eventsData.find(function(e) { return e.key === (data.newKey || key); });
             if (event) {
                 event.subject = subject;
                 event.description = description;
+                event.date = date;
                 event.time = time;
             }
             renderEventsList();
@@ -588,35 +593,6 @@ function deleteEvent(key) {
     });
 }
 
-function saveEventDate(key, newDate) {
-    if (!newDate) return;
-    
-    fetch('@Url.Action("UpdateEventDate", "Api")', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: key, newDate: newDate })
-    })
-    .then(function(response) { return response.json(); })
-    .then(function(data) {
-        if (data.success) {
-            showToast('Дата сохранена', 'success');
-            // Update local cache with new key
-            if (data.newKey) {
-                var idx = eventsData.findIndex(function(e) { return e.key === key; });
-                if (idx !== -1) {
-                    eventsData[idx].key = data.newKey;
-                    eventsData[idx].date = newDate;
-                }
-            }
-            renderEventsList();
-        } else {
-            showToast('Ошибка: ' + data.message, 'error');
-        }
-    })
-    .catch(function(err) {
-        showToast('Ошибка: ' + err, 'error');
-    });
-}
 
 // ==================== Digest Buttons ====================
 

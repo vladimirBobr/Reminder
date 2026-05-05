@@ -18,97 +18,7 @@ public class GitHubEventWriter : IEventWriter
         _yamlParser = yamlParser;
     }
 
-    public async Task<EventWriteResult> UpdateEventDateAsync(string key, DateOnly newDate)
-    {
-        try
-        {
-            // 1. Get current file content and SHA
-            var result = await _gitHubClient.GetFileContentAsync();
-            
-            string? content = null;
-            string? sha = null;
-            
-            if (result.IsT0)
-            {
-                _log.Error("❌ Failed to fetch events: {Error}", result.AsT0.Message);
-            }
-            else
-            {
-                content = result.AsT1.Content;
-                sha = result.AsT1.Sha;
-            }
-            
-            if (content == null)
-                return new EventWriteResult(false, "Failed to fetch events from GitHub");
-            
-            if (sha == null)
-                return new EventWriteResult(false, "Could not get file SHA from GitHub");
-
-            // 2. Parse YAML
-            var parsedData = _yamlParser.Parse(content);
-
-            // 3. Find event by key and update date
-            var eventFound = false;
-            string? newKey = null;
-            foreach (var evt in parsedData.Events)
-            {
-                if (evt.GetKey() == key)
-                {
-                    evt.Date = newDate;
-                    eventFound = true;
-                    newKey = evt.GetKey();
-                    _log.Information("📅 Updated event {Key} to date {Date}, new key: {NewKey}", key, newDate, newKey);
-                    break;
-                }
-            }
-
-            if (!eventFound)
-            {
-                _log.Warning("❌ Event with key {Key} not found", key);
-                return new EventWriteResult(false, $"Event with key '{key}' not found");
-            }
-
-            // 4. Serialize back to YAML
-            var serializer = new SerializerBuilder()
-                .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                .Build();
-            
-            var yamlOutput = serializer.Serialize(new
-            {
-                events = parsedData.Events.Select(e => new
-                {
-                    date = e.Date.ToString("yyyy-MM-dd"),
-                    time = e.Time?.ToString("HH:mm"),
-                    subject = e.Subject,
-                    description = e.Description
-                }),
-                shopping = parsedData.ShoppingItems.Select(s => s.Subject)
-            });
-
-            // 5. Update file on GitHub
-            var updateResult = await _gitHubClient.UpdateFileContentAsync(yamlOutput, sha);
-            
-            return updateResult.Match(
-                error =>
-                {
-                    _log.Error("❌ Failed to update GitHub: {Error}", error.Message);
-                    return new EventWriteResult(false, error.Message);
-                },
-                _ =>
-                {
-                    _log.Information("✅ Successfully updated file on GitHub");
-                    return new EventWriteResult(true, null, newKey);
-                }
-            );
-        }
-        catch (Exception ex)
-        {
-            _log.Error(ex, "❌ Error updating event date");
-            return new EventWriteResult(false, ex.Message);
-        }
-    }
-
-    public async Task<EventWriteResult> UpdateEventAsync(string key, string? subject, string? description, TimeOnly? time = null)
+    public async Task<EventWriteResult> UpdateEventAsync(string key, DateOnly? date, string? subject, string? description, TimeOnly? time = null)
     {
         try
         {
@@ -145,12 +55,13 @@ public class GitHubEventWriter : IEventWriter
             {
                 if (evt.GetKey() == key)
                 {
+                    if (date.HasValue) evt.Date = date.Value;
                     evt.Subject = subject;
                     evt.Description = description;
                     if (time.HasValue) evt.Time = time;
                     eventFound = true;
                     newKey = evt.GetKey();
-                    _log.Information("✏️ Updated event {Key}: subject={Subject}, desc={Desc}, time={Time}, new key: {NewKey}", key, subject, description, time, newKey);
+                    _log.Information("✏️ Updated event {Key}: date={Date}, subject={Subject}, desc={Desc}, time={Time}, new key: {NewKey}", key, date, subject, description, time, newKey);
                     break;
                 }
             }
