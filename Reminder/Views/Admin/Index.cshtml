@@ -431,32 +431,50 @@ function renderEventsList(forceRefresh) {
     endDate.setDate(endDate.getDate() + displayedWeeks * 7); // End of displayed weeks
     
     var filteredDates = sortedDates;
-    var showAllFuture = false; // Slider state for showing all future events
+    
+    // Calculate date ranges
+    var thirtyDaysFromNow = new Date(today);
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    
+    // Default: show only current (today to today+30)
+    var currentDates = sortedDates.filter(function(dateStr) {
+        var eventDate = new Date(dateStr);
+        return eventDate >= today && eventDate <= thirtyDaysFromNow;
+    });
+    
+    var futureDates = sortedDates.filter(function(dateStr) {
+        var eventDate = new Date(dateStr);
+        return eventDate > thirtyDaysFromNow;
+    });
+    
+    var pastDates = sortedDates.filter(function(dateStr) {
+        var eventDate = new Date(dateStr);
+        return eventDate < today;
+    });
+    
+    // Build filtered list based on toggles
+    filteredDates = currentDates; // Start with current
     
     if (showPastEvents) {
-        // Show current + past events (today and earlier, no pagination)
-        filteredDates = sortedDates.filter(function(dateStr) {
-            var eventDate = new Date(dateStr);
-            return eventDate.getTime() < today.getTime() + 86400000; // today + 1 day to include all of today
+        // Add past to current
+        pastDates.forEach(function(dateStr) {
+            if (filteredDates.indexOf(dateStr) === -1) {
+                filteredDates.push(dateStr);
+            }
         });
-    } else {
-        // Show current + future events
-        var currentAndFutureDates = sortedDates.filter(function(dateStr) {
-            var eventDate = new Date(dateStr);
-            return eventDate >= today;
-        });
-        
-        if (showAllFuture) {
-            // Show all current + future events (no pagination)
-            filteredDates = currentAndFutureDates;
-        } else {
-            // Show only first 4 weeks of future events
-            filteredDates = currentAndFutureDates.filter(function(dateStr) {
-                var eventDate = new Date(dateStr);
-                return eventDate >= startDate && eventDate < endDate;
-            });
-        }
     }
+    
+    if (showAllFuture) {
+        // Add future to current (or current + past if both toggles)
+        futureDates.forEach(function(dateStr) {
+            if (filteredDates.indexOf(dateStr) === -1) {
+                filteredDates.push(dateStr);
+            }
+        });
+    }
+    
+    // Sort the filtered dates
+    filteredDates.sort();
     
     // Build HTML for new events
     var html = '';
