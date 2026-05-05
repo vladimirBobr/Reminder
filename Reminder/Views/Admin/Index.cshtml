@@ -162,7 +162,7 @@
                         <!-- Past events toggle -->
                         <div class="form-check form-switch mb-0">
                             <input class="form-check-input" type="checkbox" id="pastEventsToggle" onchange="togglePastEvents()">
-                            <label class="form-check-label text-muted small" for="pastEventsToggle">Past <span id="pastCount" class="badge bg-secondary" style="display: none;"></span></label>
+                            <label class="form-check-label text-muted small" for="pastEventsToggle">Past <span id="pastCount" class="text-muted" style="display: none; font-size: 0.75rem;"></span></label>
                         </div>
                         <!-- Future events toggle -->
                         <div class="form-check form-switch mb-0">
@@ -647,7 +647,7 @@ function updatePastEventsBadge() {
     var countSpan = document.getElementById('pastCount');
     if (countSpan) {
         if (pastCount > 0) {
-            countSpan.textContent = pastCount;
+            countSpan.textContent = '(' + pastCount + ')';
             countSpan.style.display = 'inline-block';
         } else {
             countSpan.style.display = 'none';
