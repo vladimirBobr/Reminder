@@ -337,7 +337,8 @@ function showToast(message, type, anchorElement) {
 
 var eventsData = [];
 var eventsLoaded = false;
-var showPastEvents = false; // Toggle state
+var showPastEvents = false; // Toggle: show today + past
+var showAllFuture = false; // Toggle: show all future events (no pagination)
 var displayedWeeks = 4; // Show first 4 weeks by default
 var WEEKS_PER_PAGE = 4;
 
@@ -430,32 +431,31 @@ function renderEventsList(forceRefresh) {
     endDate.setDate(endDate.getDate() + displayedWeeks * 7); // End of displayed weeks
     
     var filteredDates = sortedDates;
-    var hasMoreFutureDates = false;
+    var showAllFuture = false; // Slider state for showing all future events
     
     if (showPastEvents) {
-        // Show ONLY past events
+        // Show current + past events (today and earlier, no pagination)
         filteredDates = sortedDates.filter(function(dateStr) {
             var eventDate = new Date(dateStr);
-            return eventDate < today;
+            return eventDate <= today;
         });
     } else {
-        // Show future events only
-        var futureDatesOnly = sortedDates.filter(function(dateStr) {
+        // Show current + future events
+        var currentAndFutureDates = sortedDates.filter(function(dateStr) {
             var eventDate = new Date(dateStr);
             return eventDate >= today;
         });
         
-        // Apply pagination (show only first 4 weeks)
-        filteredDates = futureDatesOnly.filter(function(dateStr) {
-            var eventDate = new Date(dateStr);
-            return eventDate >= startDate && eventDate < endDate;
-        });
-        
-        // Check if there are more future events beyond displayed weeks
-        hasMoreFutureDates = futureDatesOnly.some(function(dateStr) {
-            var eventDate = new Date(dateStr);
-            return eventDate >= endDate;
-        });
+        if (showAllFuture) {
+            // Show all current + future events (no pagination)
+            filteredDates = currentAndFutureDates;
+        } else {
+            // Show only first 4 weeks of future events
+            filteredDates = currentAndFutureDates.filter(function(dateStr) {
+                var eventDate = new Date(dateStr);
+                return eventDate >= startDate && eventDate < endDate;
+            });
+        }
     }
     
     // Build HTML for new events
@@ -575,22 +575,25 @@ function renderEventsList(forceRefresh) {
     }
     
     
-    // Add "Show All" button if there are more future events
-    if (hasMoreFutureDates) {
-        var nextBtnHtml = '<div class="text-center py-3 load-more-btn">';
-        nextBtnHtml += '<button class="btn btn-outline-primary btn-lg" onclick="showAllFutureEvents()">Все</button>';
-        nextBtnHtml += '</div>';
-        eventsList.insertAdjacentHTML('beforeend', nextBtnHtml);
+    // Add toggle switches
+    var togglesHtml = '<div class="d-flex justify-content-center gap-4 py-3 toggle-controls">';
+    
+    // Past events toggle (shows today + past)
+    togglesHtml += '<div class="form-check form-switch">';
+    togglesHtml += '<input class="form-check-input" type="checkbox" id="pastEventsToggle" ' + (showPastEvents ? 'checked' : '') + ' onchange="togglePastEvents()">';
+    togglesHtml += '<label class="form-check-label" for="pastEventsToggle">Показать прошедшие</label>';
+    togglesHtml += '</div>';
+    
+    // Future events toggle (shows current + all future) - only show when not showing past
+    if (!showPastEvents) {
+        togglesHtml += '<div class="form-check form-switch">';
+        togglesHtml += '<input class="form-check-input" type="checkbox" id="futureEventsToggle" ' + (showAllFuture ? 'checked' : '') + ' onchange="toggleFutureEvents()">';
+        togglesHtml += '<label class="form-check-label" for="futureEventsToggle">Показать будущие</label>';
+        togglesHtml += '</div>';
     }
     
-    // Add toggle switch for past events
-    var toggleHtml = '<div class="text-center py-3 toggle-past-events">';
-    toggleHtml += '<div class="form-check form-switch d-inline-block">';
-    toggleHtml += '<input class="form-check-input" type="checkbox" id="pastEventsToggle" ' + (showPastEvents ? 'checked' : '') + ' onchange="togglePastEvents()">';
-    toggleHtml += '<label class="form-check-label ms-2" for="pastEventsToggle">Показать прошедшие</label>';
-    toggleHtml += '</div>';
-    toggleHtml += '</div>';
-    eventsList.insertAdjacentHTML('beforeend', toggleHtml);
+    togglesHtml += '</div>';
+    eventsList.insertAdjacentHTML('beforeend', togglesHtml);
     
     // Add "Add Event" button at the bottom
     var addBtnHtml = '<div class="text-center py-3 add-event-btn">';
@@ -602,6 +605,12 @@ function renderEventsList(forceRefresh) {
 function togglePastEvents() {
     showPastEvents = !showPastEvents;
     displayedWeeks = 4; // Reset pagination when toggling
+    showAllFuture = false; // Reset future toggle
+    renderEventsList(true); // Force refresh
+}
+
+function toggleFutureEvents() {
+    showAllFuture = !showAllFuture;
     renderEventsList(true); // Force refresh
 }
 
@@ -620,11 +629,6 @@ function updatePastEventsBadge() {
     }
 }
 
-function showAllFutureEvents() {
-    // Show all future events at once
-    displayedWeeks = 999;
-    renderEventsList(true);
-}
 
 // Context menu for editing
 var editMenu = null;
