@@ -175,6 +175,39 @@ public class ApiController : Controller
         return RedirectToAction("Index", "Admin");
     }
 
+    [HttpPost("events/add")]
+    public async Task<IActionResult> AddEvent([FromBody] AddEventRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(request.Subject))
+            {
+                return Json(new { success = false, message = "Subject is required" });
+            }
+            
+            var date = request.GetDateAsDateOnly() ?? DateOnly.FromDateTime(DateTime.Today);
+            var time = request.GetTimeAsTimeOnly();
+            var result = await _eventWriter.AddEventAsync(date, request.Subject, request.Description, time);
+            
+            if (result.Success)
+            {
+                return Json(new {
+                    success = true,
+                    message = "Event added",
+                    newKey = result.NewKey
+                });
+            }
+            else
+            {
+                return Json(new { success = false, message = result.ErrorMessage ?? "Failed to add event" });
+            }
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
     [HttpPost("events/update")]
     public async Task<IActionResult> UpdateEvent([FromBody] UpdateEventRequest request)
     {

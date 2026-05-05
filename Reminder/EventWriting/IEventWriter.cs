@@ -4,6 +4,7 @@ public record EventWriteResult(bool Success, string? ErrorMessage = null, string
 
 public interface IEventWriter
 {
+    Task<EventWriteResult> AddEventAsync(DateOnly date, string subject, string? description, TimeOnly? time = null);
     Task<EventWriteResult> UpdateEventAsync(string key, DateOnly? date, string? subject, string? description, TimeOnly? time = null);
     Task<EventWriteResult> DeleteEventAsync(string key);
 }

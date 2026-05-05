@@ -18,6 +18,91 @@ public class GitHubEventWriter : IEventWriter
         _yamlParser = yamlParser;
     }
 
+    public async Task<EventWriteResult> AddEventAsync(DateOnly date, string subject, string? description, TimeOnly? time = null)
+    {
+        try
+        {
+            // 1. Get current file content and SHA
+            var result = await _gitHubClient.GetFileContentAsync();
+            
+            string? content = null;
+            string? sha = null;
+            
+            if (result.IsT0)
+            {
+                _log.Error("❌ Failed to fetch events: {Error}", result.AsT0.Message);
+                return new EventWriteResult(false, "Failed to fetch events from GitHub");
+            }
+            else
+            {
+                content = result.AsT1.Content;
+                sha = result.AsT1.Sha;
+            }
+            
+            if (content == null)
+                return new EventWriteResult(false, "Failed to fetch events from GitHub");
+            
+            if (sha == null)
+                return new EventWriteResult(false, "Could not get file SHA from GitHub");
+
+            // 2. Parse YAML
+            var parsedData = _yamlParser.Parse(content);
+
+            // 3. Create new event
+            var newEvent = new EventData
+            {
+                Date = date,
+                Time = time,
+                Subject = subject,
+                Description = description
+            };
+            
+            parsedData.Events.Add(newEvent);
+            var newKey = newEvent.GetKey();
+            
+            _log.Information("➕ Added new event {Key}: date={Date}, subject={Subject}, desc={Desc}, time={Time}",
+                newKey, date, subject, description, time);
+
+            // 4. Serialize back to YAML
+            var serializer = new SerializerBuilder()
+                .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .Build();
+            
+            var yamlOutput = serializer.Serialize(new
+            {
+                events = parsedData.Events.Select(e => new
+                {
+                    date = e.Date.ToString("yyyy-MM-dd"),
+                    time = e.Time?.ToString("HH:mm"),
+                    subject = e.Subject,
+                    description = e.Description
+                }),
+                shopping = parsedData.ShoppingItems.Select(s => s.Subject)
+            });
+
+            // 5. Update file on GitHub
+            var updateResult = await _gitHubClient.UpdateFileContentAsync(yamlOutput, sha);
+            
+            return updateResult.Match(
+                error =>
+                {
+                    _log.Error("❌ Failed to update GitHub: {Error}", error.Message);
+                    return new EventWriteResult(false, error.Message);
+                },
+                _ =>
+                {
+                    _log.Information("✅ Successfully added event on GitHub");
+                    return new EventWriteResult(true, null, newKey);
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            _log.Error(ex, "❌ Error adding event");
+            return new EventWriteResult(false, ex.Message);
+        }
+    }
+
     public async Task<EventWriteResult> UpdateEventAsync(string key, DateOnly? date, string? subject, string? description, TimeOnly? time = null)
     {
         try
