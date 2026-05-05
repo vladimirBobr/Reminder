@@ -10,7 +10,7 @@
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="events-tab" data-bs-toggle="tab" data-bs-target="#events-tab-pane" type="button" role="tab" data-tab="events">
-            📅 События <span id="pastEventsBadge" class="badge bg-warning text-dark" style="display: none;">●</span>
+            📅 События
         </button>
     </li>
 </ul>
@@ -162,7 +162,7 @@
                         <!-- Past events toggle -->
                         <div class="form-check form-switch mb-0">
                             <input class="form-check-input" type="checkbox" id="pastEventsToggle" onchange="togglePastEvents()">
-                            <label class="form-check-label text-muted small" for="pastEventsToggle">Past</label>
+                            <label class="form-check-label text-muted small" for="pastEventsToggle">Past <span id="pastCount" class="badge bg-secondary" style="display: none;"></span></label>
                         </div>
                         <!-- Future events toggle -->
                         <div class="form-check form-switch mb-0">
@@ -631,14 +631,27 @@ function updatePastEventsBadge() {
     var today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    var hasPastEvents = eventsData.some(function(event) {
+    // Count past events (date < today)
+    var pastCount = eventsData.filter(function(event) {
         var eventDate = new Date(event.date);
         return eventDate < today;
-    });
+    }).length;
     
-    var badge = document.getElementById('pastEventsBadge');
-    if (badge) {
-        badge.style.display = hasPastEvents ? 'inline-block' : 'none';
+    // Also count events from today (current)
+    var currentCount = eventsData.filter(function(event) {
+        var eventDate = new Date(event.date);
+        return eventDate.getTime() >= today.getTime() && eventDate.getTime() < today.getTime() + 86400000;
+    }).length;
+    
+    // If there are past events, show count next to Past label
+    var countSpan = document.getElementById('pastCount');
+    if (countSpan) {
+        if (pastCount > 0) {
+            countSpan.textContent = pastCount;
+            countSpan.style.display = 'inline-block';
+        } else {
+            countSpan.style.display = 'none';
+        }
     }
 }
 
