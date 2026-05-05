@@ -247,4 +247,21 @@ public class ApiController : Controller
             return Json(new { success = false, message = ex.Message });
         }
     }
+
+    // ==================== Runnings API ====================
+
+    [HttpPost("runnings")]
+    public async Task<IActionResult> AddRunning([FromBody] string workoutData)
+    {
+        try
+        {
+            // TODO: Implement workout processing logic
+            // For now, just acknowledge receipt
+            return Json(new { success = true, message = "Workout received", data = workoutData });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
 }
