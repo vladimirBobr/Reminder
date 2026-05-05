@@ -430,28 +430,28 @@ function renderEventsList(forceRefresh) {
     endDate.setDate(endDate.getDate() + displayedWeeks * 7); // End of displayed weeks
     
     var filteredDates = sortedDates;
+    var hasMoreFutureDates = false;
     
-    // First filter by past events toggle
-    if (!showPastEvents) {
+    if (showPastEvents) {
+        // Show ONLY past events
         filteredDates = sortedDates.filter(function(dateStr) {
             var eventDate = new Date(dateStr);
-            return eventDate >= today;
+            return eventDate < today;
         });
-    }
-    
-    // Then filter by displayed weeks (for future events)
-    var hasMoreFutureDates = false;
-    if (!showPastEvents) {
+    } else {
+        // Show future events only
         var futureDatesOnly = sortedDates.filter(function(dateStr) {
             var eventDate = new Date(dateStr);
             return eventDate >= today;
         });
         
+        // Apply pagination (show only first 4 weeks)
         filteredDates = futureDatesOnly.filter(function(dateStr) {
             var eventDate = new Date(dateStr);
             return eventDate >= startDate && eventDate < endDate;
         });
         
+        // Check if there are more future events beyond displayed weeks
         hasMoreFutureDates = futureDatesOnly.some(function(dateStr) {
             var eventDate = new Date(dateStr);
             return eventDate >= endDate;
