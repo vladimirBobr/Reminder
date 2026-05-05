@@ -155,12 +155,54 @@
     <!-- Tab 2: События -->
     <div class="tab-pane fade" id="events-tab-pane" role="tabpanel" aria-labelledby="events-tab">
         <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>События</span>
+                <button class="btn btn-primary btn-sm" onclick="showAddEventDialog()">
+                    + Добавить
+                </button>
+            </div>
             <div class="card-body p-0">
                 <div id="eventsList" class="list-group list-group-flush">
                     <div class="text-center text-muted py-4">
                         <div class="spinner-border spinner-border-sm" role="status"></div>
                         Загрузка событий...
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Event Modal -->
+    <div class="modal fade" id="addEventModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Новое событие</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Дата</label>
+                            <input type="date" class="form-control" id="newEventDate">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Время</label>
+                            <input type="time" class="form-control" id="newEventTime">
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Название</label>
+                        <input type="text" class="form-control" id="newEventSubject" placeholder="Название">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Описание</label>
+                        <textarea class="form-control" rows="5" id="newEventDescription" placeholder="Описание"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="saveNewEvent()">Сохранить</button>
                 </div>
             </div>
         </div>
@@ -634,6 +676,60 @@ function deleteEvent(key) {
             showToast('Событие удалено', 'success');
             eventsData = eventsData.filter(function(e) { return e.key !== key; });
             renderEventsList(true); // Force refresh after delete
+        } else {
+            showToast('Ошибка: ' + data.message, 'error');
+        }
+    })
+    .catch(function(err) {
+        showToast('Ошибка: ' + err, 'error');
+    });
+}
+
+
+// ==================== Add Event Modal ====================
+
+function showAddEventDialog() {
+    // Set today's date as default
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementById('newEventDate').value = today;
+    document.getElementById('newEventTime').value = '';
+    document.getElementById('newEventSubject').value = '';
+    document.getElementById('newEventDescription').value = '';
+    
+    var modal = new bootstrap.Modal(document.getElementById('addEventModal'));
+    modal.show();
+}
+
+function saveNewEvent() {
+    var subject = document.getElementById('newEventSubject').value;
+    var description = document.getElementById('newEventDescription').value;
+    var dateInput = document.getElementById('newEventDate');
+    var timeInput = document.getElementById('newEventTime');
+    var date = dateInput && dateInput.value ? dateInput.value : null;
+    var time = timeInput && timeInput.value ? timeInput.value : null;
+    
+    if (!subject || subject.trim() === '') {
+        showToast('Введите название события', 'error');
+        return;
+    }
+    
+    var body = { subject: subject, description: description };
+    if (date) body.date = date;
+    if (time) body.time = time;
+    
+    fetch('@Url.Action("AddEvent", "Api")', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            showToast('Событие добавлено', 'success');
+            var modal = bootstrap.Modal.getInstance(document.getElementById('addEventModal'));
+            modal.hide();
+            // Reload events
+            loadEvents();
         } else {
             showToast('Ошибка: ' + data.message, 'error');
         }
