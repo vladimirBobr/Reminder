@@ -117,17 +117,24 @@ public class ApiController : Controller
         try
         {
             var data = await _eventReader.ReadEventsAsync();
-            return Json(new
-            {
-                success = true,
-                events = data.Events.Select(e => new
+            
+            // Sort events by date (oldest first), then by time
+            var sortedEvents = data.Events
+                .OrderBy(e => e.Date)
+                .ThenBy(e => e.Time ?? TimeOnly.MinValue)
+                .Select(e => new
                 {
                     key = e.GetKey(),
                     date = e.Date.ToString("yyyy-MM-dd"),
                     time = e.Time?.ToString("HH:mm"),
                     subject = e.Subject,
                     description = e.Description
-                }),
+                });
+            
+            return Json(new
+            {
+                success = true,
+                events = sortedEvents,
                 shoppingItems = data.ShoppingItems.Select(s => s.Subject)
             });
         }

@@ -535,10 +535,17 @@ function renderEventsList(forceRefresh) {
         });
     });
     
+    
     // Remove existing "Next" button if present
     var existingNextBtn = eventsList.querySelector('.load-more-btn');
     if (existingNextBtn) {
         existingNextBtn.remove();
+    }
+    
+    // Remove existing "Add Event" button if present
+    var existingAddBtn = eventsList.querySelector('.add-event-btn');
+    if (existingAddBtn) {
+        existingAddBtn.remove();
     }
     
     // Append new events to the list (before "Next" button position)
@@ -546,10 +553,10 @@ function renderEventsList(forceRefresh) {
         eventsList.insertAdjacentHTML('beforeend', html);
     }
     
-    // Add "Next" button if there are more events
+    // Add "Show All" button if there are more events
     if (hasMoreDates) {
         var nextBtnHtml = '<div class="text-center py-3 load-more-btn">';
-        nextBtnHtml += '<button class="btn btn-outline-primary btn-lg" onclick="loadMoreWeeks()">Далее</button>';
+        nextBtnHtml += '<button class="btn btn-outline-primary btn-lg" onclick="showAllEvents()">Все</button>';
         nextBtnHtml += '</div>';
         eventsList.insertAdjacentHTML('beforeend', nextBtnHtml);
     }
@@ -564,6 +571,12 @@ function renderEventsList(forceRefresh) {
 function loadMoreWeeks() {
     displayedWeeks += WEEKS_PER_PAGE;
     renderEventsList(false); // Don't force refresh, just add new events
+}
+
+function showAllEvents() {
+    // Show all events at once by setting displayedWeeks to a very large number
+    displayedWeeks = 999;
+    renderEventsList(false); // Don't force refresh, just add all events
 }
 
 // Context menu for editing
