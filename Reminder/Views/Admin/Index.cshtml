@@ -20,6 +20,22 @@
     <div class="tab-pane fade show active" id="notes-tab-pane" role="tabpanel" aria-labelledby="notes-tab">
         
     <div class="row g-2 px-1">
+        <!-- Coach Running Workouts -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-10">
+                            <textarea id="runningWorkoutInput" class="form-control" rows="8" placeholder="Задание от тренера (бег)"></textarea>
+                        </div>
+                        <div class="col-2">
+                            <button type="button" class="btn btn-outline-primary btn-sm rounded-circle" style="width: 32px; height: 32px; padding: 0; line-height: 1;" onclick="addRunningWorkout()">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Add Note -->
         <div class="col-12">
             <div class="card">
@@ -141,22 +157,6 @@
                     <button type="button" class="btn btn-lg btn-outline-secondary digest-btn" data-action="@Url.Action("TwoWeek", "Api")">
                         Отправить на две недели
                     </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Coach Running Workouts -->
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <div class="row g-2">
-                        <div class="col-10">
-                            <textarea id="runningWorkoutInput" class="form-control" rows="8" placeholder="Задание от тренера (бег)"></textarea>
-                        </div>
-                        <div class="col-2">
-                            <button type="button" class="btn btn-outline-primary btn-sm rounded-circle" style="width: 32px; height: 32px; padding: 0; line-height: 1;" onclick="addRunningWorkout()">+</button>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
