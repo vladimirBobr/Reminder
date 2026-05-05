@@ -10,7 +10,7 @@
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="events-tab" data-bs-toggle="tab" data-bs-target="#events-tab-pane" type="button" role="tab" data-tab="events">
-            📅 События
+            📅 События <span id="pastEventsBadge" class="badge bg-warning text-dark" style="display: none;">●</span>
         </button>
     </li>
 </ul>
@@ -382,6 +382,10 @@ function loadEvents() {
         .then(function(data) {
             if (data.success) {
                 eventsData = data.events;
+                
+                // Update badge if there are past events
+                updatePastEventsBadge();
+                
                 // Clear list before rendering
                 var eventsList = document.getElementById('eventsList');
                 eventsList.innerHTML = '';
@@ -599,6 +603,21 @@ function togglePastEvents() {
     showPastEvents = !showPastEvents;
     displayedWeeks = 4; // Reset pagination when toggling
     renderEventsList(true); // Force refresh
+}
+
+function updatePastEventsBadge() {
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    var hasPastEvents = eventsData.some(function(event) {
+        var eventDate = new Date(event.date);
+        return eventDate < today;
+    });
+    
+    var badge = document.getElementById('pastEventsBadge');
+    if (badge) {
+        badge.style.display = hasPastEvents ? 'inline-block' : 'none';
+    }
 }
 
 function showAllFutureEvents() {
