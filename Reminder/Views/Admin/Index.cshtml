@@ -596,19 +596,17 @@ function renderEventsList(forceRefresh) {
     // Add toggle switches
     var togglesHtml = '<div class="d-flex justify-content-center gap-4 py-3 toggle-controls">';
     
-    // Past events toggle (shows today + past)
+    // Past events toggle
     togglesHtml += '<div class="form-check form-switch">';
     togglesHtml += '<input class="form-check-input" type="checkbox" id="pastEventsToggle" ' + (showPastEvents ? 'checked' : '') + ' onchange="togglePastEvents()">';
     togglesHtml += '<label class="form-check-label" for="pastEventsToggle">Показать прошедшие</label>';
     togglesHtml += '</div>';
     
-    // Future events toggle (shows current + all future) - only show when not showing past
-    if (!showPastEvents) {
-        togglesHtml += '<div class="form-check form-switch">';
-        togglesHtml += '<input class="form-check-input" type="checkbox" id="futureEventsToggle" ' + (showAllFuture ? 'checked' : '') + ' onchange="toggleFutureEvents()">';
-        togglesHtml += '<label class="form-check-label" for="futureEventsToggle">Показать будущие</label>';
-        togglesHtml += '</div>';
-    }
+    // Future events toggle (always visible)
+    togglesHtml += '<div class="form-check form-switch">';
+    togglesHtml += '<input class="form-check-input" type="checkbox" id="futureEventsToggle" ' + (showAllFuture ? 'checked' : '') + ' onchange="toggleFutureEvents()">';
+    togglesHtml += '<label class="form-check-label" for="futureEventsToggle">Показать будущие</label>';
+    togglesHtml += '</div>';
     
     togglesHtml += '</div>';
     eventsList.insertAdjacentHTML('beforeend', togglesHtml);
@@ -622,8 +620,6 @@ function renderEventsList(forceRefresh) {
 
 function togglePastEvents() {
     showPastEvents = !showPastEvents;
-    displayedWeeks = 4; // Reset pagination when toggling
-    showAllFuture = false; // Reset future toggle
     renderEventsList(true); // Force refresh
 }
 
