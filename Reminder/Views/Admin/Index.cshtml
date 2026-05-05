@@ -155,12 +155,6 @@
     <!-- Tab 2: События -->
     <div class="tab-pane fade" id="events-tab-pane" role="tabpanel" aria-labelledby="events-tab">
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span>События</span>
-                <button class="btn btn-primary btn-sm" onclick="showAddEventDialog()">
-                    + Добавить
-                </button>
-            </div>
             <div class="card-body p-0">
                 <div id="eventsList" class="list-group list-group-flush">
                     <div class="text-center text-muted py-4">
@@ -559,6 +553,12 @@ function renderEventsList(forceRefresh) {
         nextBtnHtml += '</div>';
         eventsList.insertAdjacentHTML('beforeend', nextBtnHtml);
     }
+    
+    // Add "Add Event" button at the bottom
+    var addBtnHtml = '<div class="text-center py-3 add-event-btn">';
+    addBtnHtml += '<button class="btn btn-primary btn-lg" onclick="showAddEventDialog()">+ Добавить</button>';
+    addBtnHtml += '</div>';
+    eventsList.insertAdjacentHTML('beforeend', addBtnHtml);
 }
 
 function loadMoreWeeks() {
