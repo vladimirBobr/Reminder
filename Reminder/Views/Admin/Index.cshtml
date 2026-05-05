@@ -145,6 +145,22 @@
             </div>
         </div>
 
+        <!-- Coach Running Workouts -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-10">
+                            <textarea id="runningWorkoutInput" class="form-control" rows="2" placeholder="Задание от тренера (бег)"></textarea>
+                        </div>
+                        <div class="col-2">
+                            <button type="button" class="btn btn-outline-primary w-100 h-100" style="min-height: 52px;" onclick="addRunningWorkout()">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="col-12 text-end">
             <a href="@Url.Action("Logout", "Admin")" class="btn btn-outline-secondary">Выйти</a>
         </div>
@@ -847,6 +863,36 @@ document.querySelectorAll('.digest-btn').forEach(function(btn) {
             .catch(function(err) { showToast('Error: ' + err, 'error', btn); });
     });
 });
+
+// ==================== Running Workouts ====================
+
+function addRunningWorkout() {
+    var input = document.getElementById('runningWorkoutInput');
+    var workoutText = input.value.trim();
+    
+    if (!workoutText) {
+        showToast('Введите задание', 'error', input);
+        return;
+    }
+    
+    fetch('/runnings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: workoutText
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            showToast('Добавлено', 'success', input);
+            input.value = '';
+        } else {
+            showToast('Ошибка: ' + data.message, 'error', input);
+        }
+    })
+    .catch(function(err) {
+        showToast('Ошибка: ' + err, 'error', input);
+    });
+}
 </script>
 
 <style>
