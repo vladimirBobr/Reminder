@@ -1,4 +1,4 @@
-using ReminderApp.Common;
+﻿using ReminderApp.Common;
 using ReminderApp.EventReading.Parsers;
 using ReminderApp.GitHubApi;
 using YamlDotNet.Serialization;
@@ -16,6 +16,89 @@ public class GitHubEventWriter : IEventWriter
     {
         _gitHubClient = gitHubClient;
         _yamlParser = yamlParser;
+    }
+
+    public async Task<EventWriteResult> AddEventsAsync(List<EventData> newEvents)
+    {
+        if (newEvents == null || newEvents.Count == 0)
+        {
+            return new EventWriteResult(true); // Nothing to add
+        }
+
+        try
+        {
+            // 1. Get current file content and SHA
+            var result = await _gitHubClient.GetFileContentAsync();
+            
+            string? content = null;
+            string? sha = null;
+            
+            if (result.IsT0)
+            {
+                _log.Error("❌ Failed to fetch events: {Error}", result.AsT0.Message);
+                return new EventWriteResult(false, "Failed to fetch events from GitHub");
+            }
+            else
+            {
+                content = result.AsT1.Content;
+                sha = result.AsT1.Sha;
+            }
+            
+            if (content == null)
+                return new EventWriteResult(false, "Failed to fetch events from GitHub");
+            
+            if (sha == null)
+                return new EventWriteResult(false, "Could not get file SHA from GitHub");
+
+            // 2. Parse YAML
+            var parsedData = _yamlParser.Parse(content);
+
+            // 3. Add all new events
+            foreach (var newEvent in newEvents)
+            {
+                parsedData.Events.Add(newEvent);
+                _log.Information("➕ Added event: date={Date}, subject={Subject}, desc={Desc}",
+                    newEvent.Date, newEvent.Subject, newEvent.Description);
+            }
+
+            // 4. Serialize back to YAML
+            var serializer = new SerializerBuilder()
+                .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .Build();
+            
+            var yamlOutput = serializer.Serialize(new
+            {
+                events = parsedData.Events.Select(e => new
+                {
+                    date = e.Date.ToString("yyyy-MM-dd"),
+                    time = e.Time?.ToString("HH:mm"),
+                    subject = e.Subject,
+                    description = e.Description
+                }),
+                shopping = parsedData.ShoppingItems.Select(s => s.Subject)
+            });
+
+            // 5. Update file on GitHub
+            var updateResult = await _gitHubClient.UpdateFileContentAsync(yamlOutput, sha);
+            
+            return updateResult.Match(
+                error =>
+                {
+                    _log.Error("❌ Failed to update GitHub: {Error}", error.Message);
+                    return new EventWriteResult(false, error.Message);
+                },
+                _ =>
+                {
+                    _log.Information("✅ Successfully added {Count} events on GitHub", newEvents.Count);
+                    return new EventWriteResult(true);
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            _log.Error(ex, "❌ Error adding events");
+            return new EventWriteResult(false, ex.Message);
+        }
     }
 
     public async Task<EventWriteResult> AddEventAsync(DateOnly date, string subject, string? description, TimeOnly? time = null)

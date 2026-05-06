@@ -284,6 +284,48 @@ public class ApiController : Controller
         }
     }
 
+    [HttpPost("workouts/add")]
+    public async Task<IActionResult> AddWorkouts([FromBody] AddWorkoutsRequest request)
+    {
+        try
+        {
+            if (request.Workouts == null || request.Workouts.Count == 0)
+            {
+                return Json(new { success = false, message = "No workouts provided" });
+            }
+
+            var events = request.Workouts
+                .Where(w => !string.IsNullOrEmpty(w.Date) && !string.IsNullOrEmpty(w.Subject))
+                .Select(w => new EventData
+                {
+                    Date = DateOnly.Parse(w.Date),
+                    Subject = "🏃‍♂️ " + w.Subject,
+                    Description = w.Description
+                })
+                .ToList();
+
+            if (events.Count == 0)
+            {
+                return Json(new { success = false, message = "No valid events to add" });
+            }
+
+            var result = await _eventWriter.AddEventsAsync(events);
+
+            if (result.Success)
+            {
+                return Json(new { success = true, count = events.Count });
+            }
+            else
+            {
+                return Json(new { success = false, message = result.ErrorMessage ?? "Failed to add events" });
+            }
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
     [HttpPost("runnings")]
     public async Task<IActionResult> AddRunning([FromBody] string workoutData)
     {

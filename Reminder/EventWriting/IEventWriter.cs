@@ -1,3 +1,5 @@
+using ReminderApp.Common;
+
 namespace ReminderApp.EventWriting;
 
 public record EventWriteResult(bool Success, string? ErrorMessage = null, string? NewKey = null);
@@ -5,6 +7,7 @@ public record EventWriteResult(bool Success, string? ErrorMessage = null, string
 public interface IEventWriter
 {
     Task<EventWriteResult> AddEventAsync(DateOnly date, string subject, string? description, TimeOnly? time = null);
+    Task<EventWriteResult> AddEventsAsync(List<EventData> events);
     Task<EventWriteResult> UpdateEventAsync(string key, DateOnly? date, string? subject, string? description, TimeOnly? time = null);
     Task<EventWriteResult> DeleteEventAsync(string key);
 }
