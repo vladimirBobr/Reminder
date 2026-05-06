@@ -226,6 +226,25 @@
             </div>
         </div>
     </div>
+    
+    <!-- Workout Preview Modal -->
+    <div class="modal fade" id="workoutPreviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title">Предпросмотр тренировок</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="workoutPreviewContent">
+                    <!-- Dynamic content will be inserted here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="saveWorkoutPreview()">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
@@ -866,6 +885,22 @@ document.querySelectorAll('.digest-btn').forEach(function(btn) {
 
 // ==================== Running Workouts ====================
 
+// Day name mapping
+var dayNamesShort = {
+    'Пн': 1, 'Понедельник': 1,
+    'Вт': 2, 'Вторник': 2,
+    'Ср': 3, 'Среда': 3,
+    'Чт': 4, 'Четверг': 4,
+    'Пт': 5, 'Пятница': 5,
+    'Сб': 6, 'Суббота': 6,
+    'Вс': 0, 'Воскресенье': 0
+};
+
+var dayNamesRu = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+
+// Store parsed workouts for saving
+var parsedWorkouts = [];
+
 function addRunningWorkout() {
     var input = document.getElementById('runningWorkoutInput');
     var workoutText = input.value.trim();
@@ -875,23 +910,160 @@ function addRunningWorkout() {
         return;
     }
     
-    fetch('/runnings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: workoutText
-    })
-    .then(function(response) { return response.json(); })
-    .then(function(data) {
-        if (data.success) {
-            showToast('Добавлено', 'success', input);
-            input.value = '';
-        } else {
-            showToast('Ошибка: ' + data.message, 'error', input);
+    // Parse the workout text
+    var workouts = parseWorkoutText(workoutText);
+    
+    if (workouts.length === 0) {
+        showToast('Не найдены дни недели в тексте', 'error', input);
+        return;
+    }
+    
+    // Show preview modal
+    showWorkoutPreview(workouts);
+}
+
+function parseWorkoutText(text) {
+    var workouts = [];
+    
+    // Get current week's Monday
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var currentDayOfWeek = today.getDay();
+    var monday = new Date(today);
+    monday.setDate(monday.getDate() - (currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1));
+    
+    // Split text into lines for easier parsing
+    var lines = text.split('\n');
+    
+    // Find all day occurrences with their descriptions
+    var dayPattern = /(?:^|\s)(Пн[а]?|Вт[о]?|Ср[е]?|Чт[е]?|Пт[я]?|Сб[о]?|Вс[к]?|Понедельник[а]?|Вторник[а]?|Среда[у]?|Четверг[а]?|Пятница[у]?|Суббот[ау]|Воскресень[ея])/gi;
+    
+    // Sort day names by their position in text
+    var dayMatches = [];
+    var match;
+    while ((match = dayPattern.exec(text)) !== null) {
+        var dayName = match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase();
+        // Fix case variations
+        if (match[1].toLowerCase().startsWith('пн')) dayName = 'Пн';
+        else if (match[1].toLowerCase().startsWith('вт')) dayName = 'Вт';
+        else if (match[1].toLowerCase().startsWith('ср')) dayName = 'Ср';
+        else if (match[1].toLowerCase().startsWith('чт')) dayName = 'Чт';
+        else if (match[1].toLowerCase().startsWith('пт')) dayName = 'Пт';
+        else if (match[1].toLowerCase().startsWith('сб')) dayName = 'Сб';
+        else if (match[1].toLowerCase().startsWith('вс')) dayName = 'Вс';
+        
+        var dayNum = dayNamesShort[dayName];
+        if (dayNum !== undefined) {
+            dayMatches.push({
+                dayName: dayName,
+                dayNum: dayNum,
+                position: match.index,
+                line: text.substring(0, match.index).split('\n').length - 1
+            });
         }
-    })
-    .catch(function(err) {
-        showToast('Ошибка: ' + err, 'error', input);
+    }
+    
+    // Sort by position in text
+    dayMatches.sort(function(a, b) { return a.position - b.position; });
+    
+    // For each found day, extract the description
+    for (var i = 0; i < dayMatches.length; i++) {
+        var dm = dayMatches[i];
+        
+        // Find the text after this day until next day or end
+        var startPos = dm.position + dm.dayName.length;
+        var endPos = (i < dayMatches.length - 1) ? dayMatches[i + 1].position : text.length;
+        
+        var description = text.substring(startPos, endPos).trim();
+        // Clean up - remove emojis and extra chars
+        description = description.replace(/^[\s✅✓🟢●➤→\-\.]+/, '').trim();
+        description = description.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+        
+        // Calculate the date for this day in current week
+        var dayDate = new Date(monday);
+        dayDate.setDate(monday.getDate() + dm.dayNum);
+        
+        if (description.length > 3) { // Only add if there's meaningful description
+            workouts.push({
+                dayName: dm.dayName,
+                dayNum: dm.dayNum,
+                date: dayDate.toISOString().split('T')[0],
+                dateFormatted: formatDate(dayDate),
+                description: description
+            });
+        }
+    }
+    
+    // Sort by date
+    workouts.sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+    
+    return workouts;
+}
+
+function formatDate(date) {
+    var day = String(date.getDate()).padStart(2, '0');
+    var month = String(date.getMonth() + 1).padStart(2, '0');
+    return day + '.' + month + '.' + date.getFullYear();
+}
+
+function showWorkoutPreview(workouts) {
+    parsedWorkouts = workouts;
+    
+    var content = document.getElementById('workoutPreviewContent');
+    var html = '<div class="mb-3"><small class="text-muted">Найдено тренировок: ' + workouts.length + '</small></div>';
+    
+    workouts.forEach(function(w, index) {
+        html += '<div class="card mb-2">';
+        html += '<div class="card-body p-2">';
+        html += '<div class="form-check mb-2">';
+        html += '<input class="form-check-input" type="checkbox" checked data-index="' + index + '" id="workout_' + index + '">';
+        html += '<label class="form-check-label fw-bold" for="workout_' + index + '">' + w.dayName + ' - ' + w.dateFormatted + '</label>';
+        html += '</div>';
+        html += '<textarea class="form-control form-control-sm" rows="2" data-index="' + index + '" id="workoutDesc_' + index + '">' + w.description + '</textarea>';
+        html += '</div>';
+        html += '</div>';
     });
+    
+    content.innerHTML = html;
+    
+    var modal = new bootstrap.Modal(document.getElementById('workoutPreviewModal'));
+    modal.show();
+}
+
+function saveWorkoutPreview() {
+    // Collect selected workouts
+    var selectedWorkouts = [];
+    
+    parsedWorkouts.forEach(function(w, index) {
+        var checkbox = document.getElementById('workout_' + index);
+        var descInput = document.getElementById('workoutDesc_' + index);
+        
+        if (checkbox && checkbox.checked) {
+            selectedWorkouts.push({
+                date: w.date,
+                subject: w.dayName,
+                description: descInput ? descInput.value : w.description
+            });
+        }
+    });
+    
+    if (selectedWorkouts.length === 0) {
+        showToast('Выберите хотя бы один день', 'error');
+        return;
+    }
+    
+    // Show toast - next step will be saving to API
+    showToast('Найдено ' + selectedWorkouts.length + ' тренировок. Сохранение...', 'success');
+    
+    // Close modal
+    var modal = bootstrap.Modal.getInstance(document.getElementById('workoutPreviewModal'));
+    modal.hide();
+    
+    // TODO: Save to API - for now just show the parsed data
+    console.log('Workouts to save:', selectedWorkouts);
+    
+    // Clear input
+    document.getElementById('runningWorkoutInput').value = '';
 }
 </script>
 
