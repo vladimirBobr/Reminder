@@ -12,22 +12,22 @@ public static class WorkoutParser
     /// </summary>
     public class ParsedWorkout
     {
-        public string DayName { get; set; } = "";
-        public int DayNum { get; set; }
+        public string DayName { get; set; } = "";  // Full day name: "Вторник", "Четверг", etc.
+        public int DayNum { get; set; }           // Offset from Monday (0 = Monday, 2 = Wednesday, etc.)
         public DateTime Date { get; set; }
         public string Description { get; set; } = "";
     }
 
-    // Day of week mapping relative to Monday (0 = Monday, 1 = Tuesday, etc.)
-    private static readonly Dictionary<string, int> DayOffset = new()
+    // Full day names mapping (short key -> full name, dayNum)
+    private static readonly Dictionary<string, (string FullName, int DayNum)> DayMapping = new()
     {
-        { "Пн", 0 }, { "Понедельник", 0 },
-        { "Вт", 1 }, { "Вторник", 1 },
-        { "Ср", 2 }, { "Среда", 2 },
-        { "Чт", 3 }, { "Четверг", 3 },
-        { "Пт", 4 }, { "Пятница", 4 },
-        { "Сб", 5 }, { "Суббота", 5 },
-        { "Вс", 6 }, { "Воскресенье", 6 }
+        { "Пн", ("Понедельник", 0) },
+        { "Вт", ("Вторник", 1) },
+        { "Ср", ("Среда", 2) },
+        { "Чт", ("Четверг", 3) },
+        { "Пт", ("Пятница", 4) },
+        { "Сб", ("Суббота", 5) },
+        { "Вс", ("Воскресенье", 6) }
     };
 
     private static readonly string[] DayKeywords = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс" };
@@ -41,21 +41,50 @@ public static class WorkoutParser
         if (string.IsNullOrWhiteSpace(text))
             return workouts;
 
+        // Step 1: Remove all ✅️ markers
+        text = Regex.Replace(text, @"✅️|✅", "");
+
         // Get Monday of current week
         var today = referenceDate ?? DateTime.Today;
         var dayOfWeek = (int)today.DayOfWeek;
         var monday = today.AddDays(-(dayOfWeek == 0 ? 6 : dayOfWeek - 1));
 
-        // Find all day positions in text
-        var dayPositions = new List<(string DayName, int Position)>();
+        // Step 2: Find all day positions - day keyword at start of line, followed by space
+        var dayPositions = new List<(string DayKeyword, int Position)>();
 
         foreach (var dayKeyword in DayKeywords)
         {
-            var regex = new Regex(dayKeyword, RegexOptions.IgnoreCase);
+            var pattern = $@"{dayKeyword}\s+";
+            var regex = new Regex(pattern, RegexOptions.IgnoreCase);
             var matches = regex.Matches(text);
             foreach (Match match in matches)
             {
-                dayPositions.Add((dayKeyword, match.Index));
+                var pos = match.Index;
+                // Valid if: start of text OR after newline OR (after whitespace AND not preceded by letter)
+                // This prevents matching "чт" in "можем что" but allows "Чт" after emoji removal
+                bool valid = false;
+                if (pos == 0)
+                {
+                    valid = true;
+                }
+                else if (text[pos - 1] == '\n' || text[pos - 1] == '\r')
+                {
+                    valid = true;
+                }
+                else if (char.IsWhiteSpace(text[pos - 1]))
+                {
+                    // After whitespace - valid only if NOT preceded by a letter
+                    // This prevents "можем что" but allows "Эмодзи Чт"
+                    if (pos < 2 || !char.IsLetter(text[pos - 2]))
+                    {
+                        valid = true;
+                    }
+                }
+                
+                if (valid)
+                {
+                    dayPositions.Add((dayKeyword, pos));
+                }
             }
         }
 
@@ -69,15 +98,17 @@ public static class WorkoutParser
             var startPos = current.Position;
             var endPos = i < dayPositions.Count - 1 ? dayPositions[i + 1].Position : text.Length;
 
+            // Get text from start of day to start of next day (exclusive)
             var fullText = text.Substring(startPos, endPos - startPos);
             
-            // Remove day name from description
-            var description = fullText.Replace(current.DayName, "").Trim();
+            // Remove day keyword from beginning
+            var description = fullText.TrimStart();
+            if (description.StartsWith(current.DayKeyword, StringComparison.OrdinalIgnoreCase))
+            {
+                description = description.Substring(current.DayKeyword.Length).TrimStart();
+            }
 
-            // Step 1: Remove all emoji markers (✅, ✅️, ✓, etc.)
-            description = Regex.Replace(description, @"✅️|✅|✓|🟢|●|➤|→", "");
-
-            // Step 2: Split into lines, filter empty/whitespace-only, join back
+            // Clean up: split into lines, filter empty/whitespace-only, join back
             var lines = description.Split('\n');
             var cleanedLines = lines
                 .Select(line => line.Trim())
@@ -89,13 +120,13 @@ public static class WorkoutParser
             if (description.Length > 2)
             {
                 // Calculate date
-                var dayOffset = DayOffset[current.DayName];
-                var dayDate = monday.AddDays(dayOffset);
+                var (fullName, dayNum) = DayMapping[current.DayKeyword];
+                var dayDate = monday.AddDays(dayNum);
 
                 workouts.Add(new ParsedWorkout
                 {
-                    DayName = current.DayName,
-                    DayNum = dayOffset,
+                    DayName = fullName,
+                    DayNum = dayNum,
                     Date = dayDate,
                     Description = description
                 });
