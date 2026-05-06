@@ -229,18 +229,18 @@
     
     <!-- Workout Preview Modal -->
     <div class="modal fade" id="workoutPreviewModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-md">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h6 class="modal-title">Предпросмотр тренировок</h6>
+                <div class="modal-header py-1">
+                    <h6 class="modal-title">Тренировки</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body" id="workoutPreviewContent">
+                <div class="modal-body p-2" id="workoutPreviewContent">
                     <!-- Dynamic content will be inserted here -->
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn btn-primary" onclick="saveWorkoutPreview()">Сохранить</button>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="saveWorkoutPreview()">Сохранить</button>
                 </div>
             </div>
         </div>
@@ -922,7 +922,16 @@ function addRunningWorkout() {
     showWorkoutPreview(workouts);
 }
 
+// Helper for testing - type directly in console without \n
+// Usage: w`line1
+// line2
+// line3`
+function w(strings) {
+    return strings[0];
+}
+
 function parseWorkoutText(text) {
+    console.log('Parsing text:', text);
     var workouts = [];
     
     // Get current week's Monday
@@ -932,61 +941,59 @@ function parseWorkoutText(text) {
     var monday = new Date(today);
     monday.setDate(monday.getDate() - (currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1));
     
-    // Split text into lines for easier parsing
-    var lines = text.split('\n');
+    // Day keywords to find
+    var dayKeywords = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
     
-    // Find all day occurrences with their descriptions
-    var dayPattern = /(?:^|\s)(Пн[а]?|Вт[о]?|Ср[е]?|Чт[е]?|Пт[я]?|Сб[о]?|Вс[к]?|Понедельник[а]?|Вторник[а]?|Среда[у]?|Четверг[а]?|Пятница[у]?|Суббот[ау]|Воскресень[ея])/gi;
-    
-    // Sort day names by their position in text
-    var dayMatches = [];
-    var match;
-    while ((match = dayPattern.exec(text)) !== null) {
-        var dayName = match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase();
-        // Fix case variations
-        if (match[1].toLowerCase().startsWith('пн')) dayName = 'Пн';
-        else if (match[1].toLowerCase().startsWith('вт')) dayName = 'Вт';
-        else if (match[1].toLowerCase().startsWith('ср')) dayName = 'Ср';
-        else if (match[1].toLowerCase().startsWith('чт')) dayName = 'Чт';
-        else if (match[1].toLowerCase().startsWith('пт')) dayName = 'Пт';
-        else if (match[1].toLowerCase().startsWith('сб')) dayName = 'Сб';
-        else if (match[1].toLowerCase().startsWith('вс')) dayName = 'Вс';
-        
-        var dayNum = dayNamesShort[dayName];
-        if (dayNum !== undefined) {
-            dayMatches.push({
-                dayName: dayName,
-                dayNum: dayNum,
-                position: match.index,
-                line: text.substring(0, match.index).split('\n').length - 1
+    // Find all day positions in text
+    var dayPositions = [];
+    dayKeywords.forEach(function(dayKeyword) {
+        var regex = new RegExp(dayKeyword, 'gi');
+        var match;
+        while ((match = regex.exec(text)) !== null) {
+            dayPositions.push({
+                dayName: dayKeyword,
+                position: match.index
             });
         }
-    }
+    });
     
     // Sort by position in text
-    dayMatches.sort(function(a, b) { return a.position - b.position; });
+    dayPositions.sort(function(a, b) { return a.position - b.position; });
+    console.log('Day positions found:', dayPositions);
     
-    // For each found day, extract the description
-    for (var i = 0; i < dayMatches.length; i++) {
-        var dm = dayMatches[i];
+    // Extract description for each day (from this day to next day)
+    for (var i = 0; i < dayPositions.length; i++) {
+        var current = dayPositions[i];
+        var startPos = current.position;
+        var endPos = (i < dayPositions.length - 1) ? dayPositions[i + 1].position : text.length;
         
-        // Find the text after this day until next day or end
-        var startPos = dm.position + dm.dayName.length;
-        var endPos = (i < dayMatches.length - 1) ? dayMatches[i + 1].position : text.length;
+        var fullText = text.substring(startPos, endPos);
+        // Remove the day name itself from description
+        var description = fullText.replace(current.dayName, '').trim();
         
-        var description = text.substring(startPos, endPos).trim();
-        // Clean up - remove emojis and extra chars
-        description = description.replace(/^[\s✅✓🟢●➤→\-\.]+/, '').trim();
-        description = description.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+        // Step 1: Remove all ✅️ (and similar) emojis from entire text
+        description = description.replace(/✅️|✅|✓|🟢|●|➤|→/g, '');
         
-        // Calculate the date for this day in current week
-        var dayDate = new Date(monday);
-        dayDate.setDate(monday.getDate() + dm.dayNum);
+        // Step 2: Split into lines, filter empty/whitespace-only, join back
+        var lines = description.split('\n');
+        var cleanedLines = [];
+        lines.forEach(function(line) {
+            var trimmed = line.trim();
+            if (trimmed.length > 0) {
+                cleanedLines.push(trimmed);
+            }
+        });
+        description = cleanedLines.join('\n').trim();
         
-        if (description.length > 3) { // Only add if there's meaningful description
+        if (description.length > 2) {
+            // Calculate date
+            var dayNum = dayNamesShort[current.dayName];
+            var dayDate = new Date(monday);
+            dayDate.setDate(monday.getDate() + dayNum);
+            
             workouts.push({
-                dayName: dm.dayName,
-                dayNum: dm.dayNum,
+                dayName: current.dayName,
+                dayNum: dayNum,
                 date: dayDate.toISOString().split('T')[0],
                 dateFormatted: formatDate(dayDate),
                 description: description
@@ -997,6 +1004,7 @@ function parseWorkoutText(text) {
     // Sort by date
     workouts.sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
     
+    console.log('Parsed workouts:', workouts);
     return workouts;
 }
 
@@ -1010,17 +1018,17 @@ function showWorkoutPreview(workouts) {
     parsedWorkouts = workouts;
     
     var content = document.getElementById('workoutPreviewContent');
-    var html = '<div class="mb-3"><small class="text-muted">Найдено тренировок: ' + workouts.length + '</small></div>';
     
+    var html = '';
+    
+    // Add textareas with checkbox inline in label
     workouts.forEach(function(w, index) {
-        html += '<div class="card mb-2">';
-        html += '<div class="card-body p-2">';
-        html += '<div class="form-check mb-2">';
-        html += '<input class="form-check-input" type="checkbox" checked data-index="' + index + '" id="workout_' + index + '">';
-        html += '<label class="form-check-label fw-bold" for="workout_' + index + '">' + w.dayName + ' - ' + w.dateFormatted + '</label>';
-        html += '</div>';
-        html += '<textarea class="form-control form-control-sm" rows="2" data-index="' + index + '" id="workoutDesc_' + index + '">' + w.description + '</textarea>';
-        html += '</div>';
+        html += '<div class="mb-2">';
+        html += '<label class="small text-muted mb-1 d-block">';
+        html += '<input class="form-check-input me-1" type="checkbox" checked data-index="' + index + '" id="workout_' + index + '">';
+        html += '<span class="fw-bold">' + w.dayName + ' ' + w.dateFormatted + '</span>';
+        html += '</label>';
+        html += '<textarea class="form-control py-1" rows="4" style="font-size: 0.85rem;" data-index="' + index + '" id="workoutDesc_' + index + '">' + w.description + '</textarea>';
         html += '</div>';
     });
     
