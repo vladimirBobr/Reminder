@@ -885,19 +885,6 @@ document.querySelectorAll('.digest-btn').forEach(function(btn) {
 
 // ==================== Running Workouts ====================
 
-// Day name mapping
-var dayNamesShort = {
-    'Пн': 1, 'Понедельник': 1,
-    'Вт': 2, 'Вторник': 2,
-    'Ср': 3, 'Среда': 3,
-    'Чт': 4, 'Четверг': 4,
-    'Пт': 5, 'Пятница': 5,
-    'Сб': 6, 'Суббота': 6,
-    'Вс': 0, 'Воскресенье': 0
-};
-
-var dayNamesRu = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-
 // Store parsed workouts for saving
 var parsedWorkouts = [];
 
@@ -910,108 +897,33 @@ function addRunningWorkout() {
         return;
     }
     
-    // Parse the workout text
-    var workouts = parseWorkoutText(workoutText);
-    
-    if (workouts.length === 0) {
-        showToast('Не найдены дни недели в тексте', 'error', input);
-        return;
-    }
-    
-    // Show preview modal
-    showWorkoutPreview(workouts);
-}
-
-// Helper for testing - type directly in console without \n
-// Usage: w`line1
-// line2
-// line3`
-function w(strings) {
-    return strings[0];
-}
-
-function parseWorkoutText(text) {
-    console.log('Parsing text:', text);
-    var workouts = [];
-    
-    // Get current week's Monday
-    var today = new Date();
-    today.setHours(0, 0, 0, 0);
-    var currentDayOfWeek = today.getDay();
-    var monday = new Date(today);
-    monday.setDate(monday.getDate() - (currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1));
-    
-    // Day keywords to find
-    var dayKeywords = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-    
-    // Find all day positions in text
-    var dayPositions = [];
-    dayKeywords.forEach(function(dayKeyword) {
-        var regex = new RegExp(dayKeyword, 'gi');
-        var match;
-        while ((match = regex.exec(text)) !== null) {
-            dayPositions.push({
-                dayName: dayKeyword,
-                position: match.index
+    // Call backend API to parse workouts
+    fetch('@Url.Action("ParseWorkouts", "Api")', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: workoutText })
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            // Convert API response to format expected by showWorkoutPreview
+            var workouts = data.workouts.map(function(w) {
+                return {
+                    dayName: w.dayName,
+                    dayNum: w.dayNum,
+                    date: w.date,
+                    dateFormatted: w.dateFormatted,
+                    description: w.description
+                };
             });
+            showWorkoutPreview(workouts);
+        } else {
+            showToast(data.message || 'Не найдены дни недели в тексте', 'error', input);
         }
+    })
+    .catch(function(err) {
+        showToast('Ошибка: ' + err, 'error', input);
     });
-    
-    // Sort by position in text
-    dayPositions.sort(function(a, b) { return a.position - b.position; });
-    console.log('Day positions found:', dayPositions);
-    
-    // Extract description for each day (from this day to next day)
-    for (var i = 0; i < dayPositions.length; i++) {
-        var current = dayPositions[i];
-        var startPos = current.position;
-        var endPos = (i < dayPositions.length - 1) ? dayPositions[i + 1].position : text.length;
-        
-        var fullText = text.substring(startPos, endPos);
-        // Remove the day name itself from description
-        var description = fullText.replace(current.dayName, '').trim();
-        
-        // Step 1: Remove all ✅️ (and similar) emojis from entire text
-        description = description.replace(/✅️|✅|✓|🟢|●|➤|→/g, '');
-        
-        // Step 2: Split into lines, filter empty/whitespace-only, join back
-        var lines = description.split('\n');
-        var cleanedLines = [];
-        lines.forEach(function(line) {
-            var trimmed = line.trim();
-            if (trimmed.length > 0) {
-                cleanedLines.push(trimmed);
-            }
-        });
-        description = cleanedLines.join('\n').trim();
-        
-        if (description.length > 2) {
-            // Calculate date
-            var dayNum = dayNamesShort[current.dayName];
-            var dayDate = new Date(monday);
-            dayDate.setDate(monday.getDate() + dayNum);
-            
-            workouts.push({
-                dayName: current.dayName,
-                dayNum: dayNum,
-                date: dayDate.toISOString().split('T')[0],
-                dateFormatted: formatDate(dayDate),
-                description: description
-            });
-        }
-    }
-    
-    // Sort by date
-    workouts.sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
-    
-    console.log('Parsed workouts:', workouts);
-    return workouts;
-}
-
-function formatDate(date) {
-    var day = String(date.getDate()).padStart(2, '0');
-    var month = String(date.getMonth() + 1).padStart(2, '0');
-    return day + '.' + month + '.' + date.getFullYear();
 }
 
 function showWorkoutPreview(workouts) {

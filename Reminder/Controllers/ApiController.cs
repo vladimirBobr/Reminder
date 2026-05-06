@@ -248,7 +248,41 @@ public class ApiController : Controller
         }
     }
 
-    // ==================== Runnings API ====================
+    // ==================== Workouts API ====================
+
+    [HttpPost("workouts/parse")]
+    public IActionResult ParseWorkouts([FromBody] ParseWorkoutsRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(request.Text))
+            {
+                return Json(new { success = false, message = "Text is required" });
+            }
+
+            var workouts = WorkoutParser.Parse(request.Text, DateTime.Today);
+            
+            if (workouts.Count == 0)
+            {
+                return Json(new { success = false, message = "No workouts found in text" });
+            }
+
+            var result = workouts.Select(w => new
+            {
+                dayName = w.DayName,
+                dayNum = w.DayNum,
+                date = w.Date.ToString("yyyy-MM-dd"),
+                dateFormatted = w.Date.ToString("dd.MM.yyyy"),
+                description = w.Description
+            });
+
+            return Json(new { success = true, workouts = result });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
 
     [HttpPost("runnings")]
     public async Task<IActionResult> AddRunning([FromBody] string workoutData)
