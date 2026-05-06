@@ -260,14 +260,14 @@ public class ApiController : Controller
                 return Json(new { success = false, message = "Text is required" });
             }
 
-            var workouts = WorkoutParser.Parse(request.Text, DateTime.Today);
+            var parseResult = WorkoutParser.Parse(request.Text, DateTime.Today);
             
-            if (workouts.Count == 0)
+            if (parseResult.Workouts.Count == 0)
             {
                 return Json(new { success = false, message = "No workouts found in text" });
             }
 
-            var result = workouts.Select(w => new
+            var workouts = parseResult.Workouts.Select(w => new
             {
                 dayName = w.DayName,
                 dayNum = w.DayNum,
@@ -276,7 +276,7 @@ public class ApiController : Controller
                 description = w.Description
             });
 
-            return Json(new { success = true, workouts = result });
+            return Json(new { success = true, workouts = workouts, intro = parseResult.Intro });
         }
         catch (Exception ex)
         {

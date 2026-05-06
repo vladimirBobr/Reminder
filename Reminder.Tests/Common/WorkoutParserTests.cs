@@ -1,22 +1,27 @@
-﻿using ReminderApp.Common;
+using ReminderApp.Common;
 using Xunit;
 
 namespace Reminder.Tests.Common;
 
 public class WorkoutParserTests
 {
-    private void AssertWorkoutsEquals(List<WorkoutParser.ParsedWorkout> expected, List<WorkoutParser.ParsedWorkout> actual)
+    private void AssertWorkoutsEquals(List<WorkoutParser.ParsedWorkout> expected, WorkoutParser.ParseResult actual, string? expectedIntroContains = null)
     {
-        Assert.Equal(expected.Count, actual.Count);
+        Assert.Equal(expected.Count, actual.Workouts.Count);
         for (int i = 0; i < expected.Count; i++)
         {
-            Assert.Equal(expected[i].Date, actual[i].Date);
-            Assert.Equal(expected[i].DayName, actual[i].DayName);
-            Assert.Equal(expected[i].DayNum, actual[i].DayNum);
+            Assert.Equal(expected[i].Date, actual.Workouts[i].Date);
+            Assert.Equal(expected[i].DayName, actual.Workouts[i].DayName);
+            Assert.Equal(expected[i].DayNum, actual.Workouts[i].DayNum);
             // Normalize line endings: replace \r\n with \n for comparison
             var expectedDesc = expected[i].Description.Trim().Replace("\r\n", "\n");
-            var actualDesc = actual[i].Description.Trim().Replace("\r\n", "\n");
+            var actualDesc = actual.Workouts[i].Description.Trim().Replace("\r\n", "\n");
             Assert.Equal(expectedDesc, actualDesc);
+        }
+        
+        if (expectedIntroContains != null)
+        {
+            Assert.Contains(expectedIntroContains, actual.Intro);
         }
     }
 
@@ -31,7 +36,8 @@ public class WorkoutParserTests
         var result = WorkoutParser.Parse(text, referenceDate);
 
         // Assert
-        Assert.Empty(result);
+        Assert.Empty(result.Workouts);
+        Assert.Equal("", result.Intro);
     }
 
     [Fact]
@@ -45,7 +51,7 @@ public class WorkoutParserTests
         var result = WorkoutParser.Parse(text!, referenceDate);
 
         // Assert
-        Assert.Empty(result);
+        Assert.Empty(result.Workouts);
     }
 
     [Fact]
@@ -147,6 +153,56 @@ public class WorkoutParserTests
         };
 
         AssertWorkoutsEquals(expected, result);
+    }
+
+    [Fact]
+    public void Parse_WithIntro_ParsesCorrectly()
+    {
+        // Arrange - message with intro before first day
+        var text = """
+            Владимир, добрый день!
+            Хорошая неделя. Все тренировки хорошие качественные!
+
+            ✅️ Вт 2км разминка, гибкость.
+
+            6 - 7км ~4.15
+
+            2км заминка .
+
+            ✅️ Чт 2км разминка, гибкость.
+            2×4× 500 м ( темп из 3.25 ) / 3мин между отрезками/ 5мин между сериями.
+            """;
+
+        var referenceDate = new DateTime(2026, 5, 4); // Monday
+
+        // Act
+        var result = WorkoutParser.Parse(text, referenceDate);
+
+        var expected = new List<WorkoutParser.ParsedWorkout> {
+            new WorkoutParser.ParsedWorkout
+            {
+                Date = new DateTime(2026, 5, 5),
+                DayName = "Вторник",
+                DayNum = 1,
+                Description = """
+                2км разминка, гибкость.
+                6 - 7км ~4.15
+                2км заминка .
+                """
+            },
+            new WorkoutParser.ParsedWorkout
+            {
+                Date = new DateTime(2026, 5, 7),
+                DayName = "Четверг",
+                DayNum = 3,
+                Description = """
+                2км разминка, гибкость.
+                2×4× 500 м ( темп из 3.25 ) / 3мин между отрезками/ 5мин между сериями.
+                """
+            },
+        };
+
+        AssertWorkoutsEquals(expected, result, "Владимир, добрый день!\nХорошая неделя.");
     }
 
     [Fact]
@@ -408,8 +464,6 @@ public class WorkoutParserTests
             Взять изотоник
 
             Сб 2км разминка
-
-
 
 
 

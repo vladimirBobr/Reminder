@@ -18,6 +18,15 @@ public static class WorkoutParser
         public string Description { get; set; } = "";
     }
 
+    /// <summary>
+    /// Result of parsing workouts - contains workouts and optional intro text
+    /// </summary>
+    public class ParseResult
+    {
+        public List<ParsedWorkout> Workouts { get; set; } = new();
+        public string Intro { get; set; } = "";  // General info before first day block
+    }
+
     // Full day names mapping (short key -> full name, dayNum)
     private static readonly Dictionary<string, (string FullName, int DayNum)> DayMapping = new()
     {
@@ -33,13 +42,13 @@ public static class WorkoutParser
     private static readonly string[] DayKeywords = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс" };
 
     /// <summary>
-    /// Parse workout text and return list of workouts
+    /// Parse workout text and return workouts with optional intro
     /// </summary>
-    public static List<ParsedWorkout> Parse(string text, DateTime? referenceDate = null)
+    public static ParseResult Parse(string text, DateTime? referenceDate = null)
     {
-        var workouts = new List<ParsedWorkout>();
+        var result = new ParseResult();
         if (string.IsNullOrWhiteSpace(text))
-            return workouts;
+            return result;
 
         // Step 1: Remove all ✅️ markers
         text = Regex.Replace(text, @"✅️|✅", "");
@@ -61,7 +70,6 @@ public static class WorkoutParser
             {
                 var pos = match.Index;
                 // Valid if: start of text OR after newline OR (after whitespace AND not preceded by letter)
-                // This prevents matching "чт" in "можем что" but allows "Чт" after emoji removal
                 bool valid = false;
                 if (pos == 0)
                 {
@@ -74,7 +82,6 @@ public static class WorkoutParser
                 else if (char.IsWhiteSpace(text[pos - 1]))
                 {
                     // After whitespace - valid only if NOT preceded by a letter
-                    // This prevents "можем что" but allows "Эмодзи Чт"
                     if (pos < 2 || !char.IsLetter(text[pos - 2]))
                     {
                         valid = true;
@@ -91,7 +98,26 @@ public static class WorkoutParser
         // Sort by position in text
         dayPositions.Sort((a, b) => a.Position.CompareTo(b.Position));
 
-        // Extract description for each day
+        // Step 3: Extract intro (text before first day)
+        if (dayPositions.Count > 0)
+        {
+            var firstDayPos = dayPositions[0].Position;
+            var introText = text.Substring(0, firstDayPos).Trim();
+            
+            // Clean up intro: split into lines, filter empty/whitespace-only, join back
+            if (!string.IsNullOrWhiteSpace(introText))
+            {
+                var lines = introText.Split('\n');
+                var cleanedLines = lines
+                    .Select(line => line.Trim())
+                    .Where(line => !string.IsNullOrWhiteSpace(line))
+                    .ToList();
+                
+                result.Intro = string.Join("\n", cleanedLines);
+            }
+        }
+
+        // Step 4: Extract workouts
         for (int i = 0; i < dayPositions.Count; i++)
         {
             var current = dayPositions[i];
@@ -123,7 +149,7 @@ public static class WorkoutParser
                 var (fullName, dayNum) = DayMapping[current.DayKeyword];
                 var dayDate = monday.AddDays(dayNum);
 
-                workouts.Add(new ParsedWorkout
+                result.Workouts.Add(new ParsedWorkout
                 {
                     DayName = fullName,
                     DayNum = dayNum,
@@ -134,6 +160,7 @@ public static class WorkoutParser
         }
 
         // Sort by date
-        return workouts.OrderBy(w => w.Date).ToList();
+        result.Workouts = result.Workouts.OrderBy(w => w.Date).ToList();
+        return result;
     }
 }
