@@ -1,4 +1,4 @@
-using ReminderApp.Common;
+﻿using ReminderApp.Common;
 using Xunit;
 
 namespace Reminder.Tests.Common;
@@ -13,7 +13,10 @@ public class WorkoutParserTests
             Assert.Equal(expected[i].Date, actual[i].Date);
             Assert.Equal(expected[i].DayName, actual[i].DayName);
             Assert.Equal(expected[i].DayNum, actual[i].DayNum);
-            Assert.Equal(expected[i].Description.Trim(), actual[i].Description.Trim());
+            // Normalize line endings: replace \r\n with \n for comparison
+            var expectedDesc = expected[i].Description.Trim().Replace("\r\n", "\n");
+            var actualDesc = actual[i].Description.Trim().Replace("\r\n", "\n");
+            Assert.Equal(expectedDesc, actualDesc);
         }
     }
 
@@ -49,17 +52,18 @@ public class WorkoutParserTests
     public void Parse_WithSimpleMessage_ParsesCorrectly()
     {
         // Arrange
-        var text = @"Задание 
+        var text = """
+            Задание 
 
-✅️Вт 2км разминка
-5×1500 ~3.40 темп
+            ✅️Вт 2км разминка
+            5×1500 ~3.40 темп
 
-✅️Чт 8км ~5.00+
+            ✅️Чт 8км ~5.00+
 
-✅️Сб 2км разминка
-С собой взять гель
+            ✅️Сб 2км разминка
+            С собой взять гель
 
-";
+            """;
 
         var referenceDate = new DateTime(2026, 5, 4); // Monday
 
@@ -105,11 +109,13 @@ public class WorkoutParserTests
     public void Parse_SortsByDate()
     {
         // Arrange - text has days in random order: Сб, Вт, Чт
-        var text = @"Задание
+        var text = """
+            Задание
 
-✅️Сб 10км
-✅️Вт 5км
-✅️Чт 8км";
+            ✅️Сб 10км
+            ✅️Вт 5км
+            ✅️Чт 8км
+            """;
 
         var referenceDate = new DateTime(2026, 5, 4); // Monday
 
@@ -147,13 +153,15 @@ public class WorkoutParserTests
     public void Parse_RemovesEmojis_CleansDescription()
     {
         // Arrange
-        var text = @"Задание
+        var text = """
+            Задание
 
-✅️Вт 2км разминка
+            ✅️Вт 2км разминка
 
-✅️
+            ✅️
 
-1км заминка";
+            1км заминка
+            """;
 
         var referenceDate = new DateTime(2026, 5, 4); // Monday
 
@@ -180,10 +188,12 @@ public class WorkoutParserTests
     public void Parse_HandlesLongDescription_MultiLine()
     {
         // Arrange
-        var text = @"✅️Вт 2км разминка, гибкость. 
-5×1500 ~3.40-3.45 темп на км/ 3мин трусца
+        var text = """
+            ✅️Вт 2км разминка, гибкость. 
+            5×1500 ~3.40-3.45 темп на км/ 3мин трусца
 
-1км заминка";
+            1км заминка
+            """;
 
         var referenceDate = new DateTime(2026, 5, 4); // Monday
 
@@ -211,21 +221,23 @@ public class WorkoutParserTests
     public void Parse_WithRealCoachMessage_ParsesCorrectly()
     {
         // Arrange - real message from coach
-        var text = @"Задание 
+        var text = """
+            Задание 
 
-✅️Вт 2км разминка, гибкость. 
-5×1500 ~3.40-3.45 темп на км/ 3мин трусца
+            ✅️Вт 2км разминка, гибкость. 
+            5×1500 ~3.40-3.45 темп на км/ 3мин трусца
 
-1км заминка 
+            1км заминка 
 
-✅️Чт 8км ~5.00+
+            ✅️Чт 8км ~5.00+
 
-✅️Сб 2км разминка, гибкость. 
-5×600м ~3.10 / 2,5-3 мин трусца
+            ✅️Сб 2км разминка, гибкость. 
+            5×600м ~3.10 / 2,5-3 мин трусца
 
-1км заминка 
+            1км заминка 
 
-✅️Вс 10км ~5.00 +";
+            ✅️Вс 10км ~5.00 +
+            """;
 
         var referenceDate = new DateTime(2026, 5, 4); // Monday
 
@@ -278,19 +290,21 @@ public class WorkoutParserTests
     public void Parse_WithZavtraPrefix_ParsesCorrectly()
     {
         // Arrange - message with "Завтра" before first day (should be ignored after emoji removal)
-        var text = @"✅️ Завтра после сегодняшнего прогрессивного надо сбегать 10км 5.00+ темп
+        var text = """
+            ✅️ Завтра после сегодняшнего прогрессивного надо сбегать 10км 5.00+ темп
 
-✅️ Чт 12км за тренировку
-1км разминочный легко + 11км ~4.40 + заминка 200м.
+            ✅️ Чт 12км за тренировку
+            1км разминочный легко + 11км ~4.40 + заминка 200м.
 
-✅️ Сб 2км разминка, гибкость
+            ✅️ Сб 2км разминка, гибкость
 
-6×1км 3.45 и быстрее
-Отдых 3минуты шаг/трусца
+            6×1км 3.45 и быстрее
+            Отдых 3минуты шаг/трусца
 
-Заминка 1км
+            Заминка 1км
 
-✅️ Вс кросс 2я 14-16 км";
+            ✅️ Вс кросс 2я 14-16 км
+            """;
 
         var referenceDate = new DateTime(2026, 5, 4); // Monday
 
@@ -338,11 +352,13 @@ public class WorkoutParserTests
     public void Parse_WithMonday_ParsesCorrectly()
     {
         // Arrange - message with Monday
-        var text = @"✅️ Пн силовая
+        var text = """
+            ✅️ Пн силовая
 
-✅️ Вт 2км разминка
+            ✅️ Вт 2км разминка
 
-✅️ Чт 8-10 км лёгкий бег";
+            ✅️ Чт 8-10 км лёгкий бег
+            """;
 
         var referenceDate = new DateTime(2026, 5, 4); // Monday
 
@@ -380,14 +396,25 @@ public class WorkoutParserTests
     public void Parse_WithMultipleDays_ParsesAll()
     {
         // Arrange
-        var text = @"Задание 
+        var text = """
+            Задание 
 
-✅️Вт 2км разминка
-5×1500 ~3.40 темп
+            Вт 2км разминка
+            5×1500 ~3.40 темп
 
-✅️Чт 8км ~5.00+
+            Чт 8км ~5.00+
+            Взять гель
 
-✅️Сб 2км разминка";
+            Взять изотоник
+
+            Сб 2км разминка
+
+
+
+
+
+            потом отчитайся как всё прошло плиз
+            """;
 
         var referenceDate = new DateTime(2026, 5, 4); // Monday
 
@@ -410,14 +437,21 @@ public class WorkoutParserTests
                 Date = new DateTime(2026, 5, 7),
                 DayName = "Четверг",
                 DayNum = 3,
-                Description = "8км ~5.00+"
+                Description = """
+                8км ~5.00+
+                Взять гель
+                Взять изотоник
+                """
             },
             new WorkoutParser.ParsedWorkout
             {
                 Date = new DateTime(2026, 5, 9),
                 DayName = "Суббота",
                 DayNum = 5,
-                Description = "2км разминка"
+                Description = """
+                2км разминка
+                потом отчитайся как всё прошло плиз
+                """
             },
         };
 
