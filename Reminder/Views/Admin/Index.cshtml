@@ -21,28 +21,7 @@
         
     <div class="row g-2 px-1">
         @await Html.PartialAsync("Features/Workouts/Workouts")
-        <!-- Add Shopping Item -->
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header text-white" style="background-color: rgba(0, 100, 0, 0.4);">
-                    <h5 class="mb-0">Что купить-то??</h5>
-                </div>
-                <div class="card-body">
-                    <form id="shoppingForm">
-                        <div class="row g-2">
-                            <div class="col-8 col-md-10">
-                                <input type="text" name="item" class="form-control form-control-lg"
-                                       placeholder="Название товара" required />
-                            </div>
-                            <div class="col-4 col-md-2">
-                                <button type="submit" form="shoppingForm" class="btn btn-lg btn-secondary w-100">+</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
+        @await Html.PartialAsync("Features/Shopping/Shopping")
         <!-- Send Digests -->
         <div class="col-12">
             <div class="card">
@@ -89,9 +68,15 @@
         parseWorkouts: '@Url.Action("ParseWorkouts", "Api")',
         addWorkouts: '@Url.Action("AddWorkouts", "Api")'
     };
+
+    // API URLs for shopping feature
+    window.shoppingApiUrls = {
+        addShoppingItem: '@Url.Action("AddShoppingItem", "Api")'
+    };
 </script>
 <script src="~/js/admin/features/events/events.js"></script>
 <script src="~/js/admin/features/workouts/workouts.js"></script>
+<script src="~/js/admin/features/shopping/shopping.js"></script>
 <script>
 var eventsLoaded = false;
 
@@ -125,25 +110,6 @@ document.getElementById('events-tab').addEventListener('shown.bs.tab', function(
 
 document.getElementById('notes-tab').addEventListener('shown.bs.tab', function() {
     window.location.hash = 'notes';
-});
-
-document.getElementById('shoppingForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    var formData = new FormData(e.target);
-    fetch('@Url.Action("AddShoppingItem", "Api")', {
-        method: 'POST',
-        body: formData
-    })
-    .then(function(response) { return response.json(); })
-    .then(function(data) {
-        if (data.success) {
-            showToast(data.message, 'success', e.target.querySelector('button[type="submit"]'));
-            e.target.reset();
-        } else {
-            showToast(data.message, 'error', e.target.querySelector('button[type="submit"]'));
-        }
-    })
-    .catch(function(err) { showToast('Error: ' + err, 'error', e.target.querySelector('button[type="submit"]')); });
 });
 
 function showToast(message, type, anchorElement) {

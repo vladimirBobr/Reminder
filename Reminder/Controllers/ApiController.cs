@@ -109,6 +109,21 @@ public class ApiController : Controller
     //    }
     //}
 
+    // ==================== Shopping API ====================
+
+    [HttpPost]
+    public IActionResult AddShoppingItem([FromForm] string item)
+    {
+        if (string.IsNullOrEmpty(item))
+        {
+            return Json(new { success = false, message = "Item is required" });
+        }
+
+        // TODO: Implement shopping list functionality
+        // For now, just acknowledge receipt
+        return Json(new { success = true, message = "Item added: " + item });
+    }
+
     // ==================== Events API ====================
 
     [HttpGet("events")]
