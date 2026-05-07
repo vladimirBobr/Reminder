@@ -62,7 +62,7 @@
 
 @section Scripts {
 <script>
-    // Consolidated API URLs
+    // API URLs
     window.apiUrls = {
         events: {
             getEvents: '@Url.Action("GetEvents", "Api")',
@@ -93,6 +93,10 @@ function restoreTabFromUrl() {
     var hash = window.location.hash.replace('#', '');
     if (hash === 'events') {
         switchToTab('events');
+        if (!eventsLoaded) {
+            loadEvents();
+            eventsLoaded = true;
+        }
     } else if (hash === 'tools' || hash === 'workouts' || hash === 'shopping' || hash === 'digests') {
         switchToTab('tools');
         

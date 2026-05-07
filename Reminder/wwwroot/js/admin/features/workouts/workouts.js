@@ -4,7 +4,7 @@
 var parsedWorkouts = [];
 var parsedIntro = '';
 
-// API URLs - consolidated in Index.cshtml
+// API URLs - from window.apiUrls
 var workoutsApiUrls = window.apiUrls.workouts;
 
 function addRunningWorkout() {

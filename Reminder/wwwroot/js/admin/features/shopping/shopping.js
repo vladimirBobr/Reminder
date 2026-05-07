@@ -1,12 +1,13 @@
 // ==================== Shopping ====================
 
-// API URLs - consolidated in Index.cshtml
+// API URLs - from window.apiUrls
 var shoppingApiUrls = window.apiUrls.shopping;
+var eventsApiUrls = window.apiUrls.events;
 var shoppingLoaded = false;
 
 // Load shopping list
 function loadShoppingList() {
-    fetch(window.apiUrls.events.getEvents)
+    fetch(eventsApiUrls.getEvents)
     .then(function(response) { return response.json(); })
     .then(function(data) {
         if (data.success && data.shoppingItems) {
@@ -72,6 +73,7 @@ function escapeHtml(text) {
 // Form submit handler
 document.getElementById('shoppingForm').addEventListener('submit', function(e) {
     e.preventDefault();
+    
     var formData = new FormData(e.target);
     var item = formData.get('item');
     

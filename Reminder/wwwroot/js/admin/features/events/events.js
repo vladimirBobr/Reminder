@@ -6,7 +6,7 @@ var showAllFuture = false; // Toggle: show all future events (no pagination)
 var displayedWeeks = 4; // Show first 4 weeks by default
 var WEEKS_PER_PAGE = 4;
 
-// API URLs - consolidated in Index.cshtml
+// API URLs - from window.apiUrls
 var apiUrls = window.apiUrls.events;
 
 // ==================== Events Tab Logic ====================
