@@ -1,0 +1,35 @@
+<!-- Coach Running Workouts -->
+<div class="col-12">
+    <div class="card">
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-10">
+                    <textarea id="runningWorkoutInput" class="form-control" rows="8" placeholder="Задание от тренера (бег)"></textarea>
+                </div>
+                <div class="col-2 d-flex flex-column gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm rounded-circle" style="width: 32px; height: 32px; padding: 0; line-height: 1;" onclick="addRunningWorkout()">+</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle" style="width: 32px; height: 32px; padding: 0; line-height: 1;" onclick="clearRunningWorkout()" title="Очистить">✕</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Workout Preview Modal -->
+<div class="modal fade" id="workoutPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header py-1">
+                <h6 class="modal-title">Тренировки</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-2" id="workoutPreviewContent">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-sm btn-primary" onclick="saveWorkoutPreview()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
