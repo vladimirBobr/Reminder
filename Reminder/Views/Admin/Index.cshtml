@@ -61,25 +61,6 @@
 </div>
 
 @section Scripts {
-<script>
-    // API URLs
-    window.apiUrls = {
-        events: {
-            getEvents: '@Url.Action("GetEvents", "Api")',
-            addEvent: '@Url.Action("AddEvent", "Api")',
-            updateEvent: '@Url.Action("UpdateEvent", "Api")',
-            deleteEvent: '@Url.Action("DeleteEvent", "Api")'
-        },
-        workouts: {
-            parseWorkouts: '@Url.Action("ParseWorkouts", "Api")',
-            addWorkouts: '@Url.Action("AddWorkouts", "Api")'
-        },
-        shopping: {
-            addShoppingItem: '@Url.Action("AddShoppingItem", "Api")',
-            deleteShoppingItem: '@Url.Action("DeleteShoppingItem", "Api")'
-        }
-    };
-</script>
 <script src="~/js/admin/shared/shared.js"></script>
 <script src="~/js/admin/features/events/events.js"></script>
 <script src="~/js/admin/features/workouts/workouts.js"></script>

@@ -1,8 +1,13 @@
 // ==================== Shopping ====================
 
-// API URLs - from window.apiUrls
-var shoppingApiUrls = window.apiUrls.shopping;
-var eventsApiUrls = window.apiUrls.events;
+// API URLs
+var shoppingApiUrls = {
+    addShoppingItem: '/Api/AddShoppingItem',
+    deleteShoppingItem: '/Api/DeleteShoppingItem'
+};
+var eventsApiUrls = {
+    getEvents: '/events'
+};
 var shoppingLoaded = false;
 
 // Load shopping list

@@ -6,8 +6,13 @@ var showAllFuture = false; // Toggle: show all future events (no pagination)
 var displayedWeeks = 4; // Show first 4 weeks by default
 var WEEKS_PER_PAGE = 4;
 
-// API URLs - from window.apiUrls
-var apiUrls = window.apiUrls.events;
+// API URLs
+var apiUrls = {
+    getEvents: '/events',
+    addEvent: '/events/add',
+    updateEvent: '/events/update',
+    deleteEvent: '/events/delete'
+};
 
 // ==================== Events Tab Logic ====================
 

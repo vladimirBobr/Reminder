@@ -4,8 +4,11 @@
 var parsedWorkouts = [];
 var parsedIntro = '';
 
-// API URLs - from window.apiUrls
-var workoutsApiUrls = window.apiUrls.workouts;
+// API URLs
+var workoutsApiUrls = {
+    parseWorkouts: '/workouts/parse',
+    addWorkouts: '/workouts/add'
+};
 
 function addRunningWorkout() {
     var input = document.getElementById('runningWorkoutInput');
