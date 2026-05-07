@@ -10,7 +10,7 @@
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="events-tab" data-bs-toggle="tab" data-bs-target="#events-tab-pane" type="button" role="tab" data-tab="events">
-            📅 События
+            📅 Events
         </button>
     </li>
 </ul>
@@ -22,25 +22,7 @@
     <div class="row g-2 px-1">
         @await Html.PartialAsync("Features/Workouts/Workouts")
         @await Html.PartialAsync("Features/Shopping/Shopping")
-        <!-- Send Digests -->
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header text-white" style="background-color: rgba(213, 43, 30, 0.5);">
-                    <h5 class="mb-0">📬 Рассылка</h5>
-                </div>
-                <div class="card-body d-grid gap-3">
-                    <button type="button" class="btn btn-lg btn-outline-secondary digest-btn" data-action="@Url.Action("Today", "Api")">
-                        Отправить на сегодня
-                    </button>
-                    <button type="button" class="btn btn-lg btn-outline-secondary digest-btn" data-action="@Url.Action("Week", "Api")">
-                        Отправить на неделю
-                    </button>
-                    <button type="button" class="btn btn-lg btn-outline-secondary digest-btn" data-action="@Url.Action("TwoWeek", "Api")">
-                        Отправить на две недели
-                    </button>
-                </div>
-            </div>
-        </div>
+        @await Html.PartialAsync("Features/Digests/Digests")
 
         <div class="col-12 text-end">
             <a href="@Url.Action("Logout", "Admin")" class="btn btn-outline-secondary">Выйти</a>
