@@ -1,9 +1,7 @@
 // ==================== Shopping ====================
 
-// API URLs - defined in Index.cshtml via Razor
-var shoppingApiUrls = window.shoppingApiUrls || {
-    addShoppingItem: '/Api/AddShoppingItem'
-};
+// API URLs - consolidated in Index.cshtml
+var shoppingApiUrls = window.apiUrls.shopping;
 
 document.getElementById('shoppingForm').addEventListener('submit', function(e) {
     e.preventDefault();

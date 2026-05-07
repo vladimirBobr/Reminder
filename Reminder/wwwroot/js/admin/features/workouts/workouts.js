@@ -4,11 +4,8 @@
 var parsedWorkouts = [];
 var parsedIntro = '';
 
-// API URLs - defined in Index.cshtml via Razor
-var workoutsApiUrls = window.workoutsApiUrls || {
-    parseWorkouts: '/Api/ParseWorkouts',
-    addWorkouts: '/Api/Workouts/Add'
-};
+// API URLs - consolidated in Index.cshtml
+var workoutsApiUrls = window.apiUrls.workouts;
 
 function addRunningWorkout() {
     var input = document.getElementById('runningWorkoutInput');
