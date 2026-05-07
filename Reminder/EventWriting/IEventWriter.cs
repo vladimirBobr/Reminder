@@ -10,4 +10,6 @@ public interface IEventWriter
     Task<EventWriteResult> AddEventsAsync(List<EventData> events);
     Task<EventWriteResult> UpdateEventAsync(string key, DateOnly? date, string? subject, string? description, TimeOnly? time = null);
     Task<EventWriteResult> DeleteEventAsync(string key);
+    Task<EventWriteResult> AddShoppingItemAsync(string item);
+    Task<EventWriteResult> DeleteShoppingItemAsync(string item);
 }

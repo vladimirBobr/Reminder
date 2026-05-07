@@ -366,4 +366,166 @@ public class GitHubEventWriter : IEventWriter
             return new EventWriteResult(false, ex.Message);
         }
     }
+
+    public async Task<EventWriteResult> AddShoppingItemAsync(string item)
+    {
+        try
+        {
+            // 1. Get current file content and SHA
+            var result = await _gitHubClient.GetFileContentAsync();
+            
+            string? content = null;
+            string? sha = null;
+            
+            if (result.IsT0)
+            {
+                _log.Error("❌ Failed to fetch events: {Error}", result.AsT0.Message);
+                return new EventWriteResult(false, "Failed to fetch events from GitHub");
+            }
+            else
+            {
+                content = result.AsT1.Content;
+                sha = result.AsT1.Sha;
+            }
+            
+            if (content == null)
+                return new EventWriteResult(false, "Failed to fetch events from GitHub");
+            
+            if (sha == null)
+                return new EventWriteResult(false, "Could not get file SHA from GitHub");
+
+            // 2. Parse YAML
+            var parsedData = _yamlParser.Parse(content);
+
+            // 3. Add new shopping item
+            parsedData.ShoppingItems.Add(new ShoppingItem { Subject = item });
+            
+            _log.Information("➕ Added shopping item: {Item}", item);
+
+            // 4. Serialize back to YAML
+            var serializer = new SerializerBuilder()
+                .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .Build();
+            
+            var yamlOutput = serializer.Serialize(new
+            {
+                events = parsedData.Events.Select(e => new
+                {
+                    date = e.Date.ToString("yyyy-MM-dd"),
+                    time = e.Time?.ToString("HH:mm"),
+                    subject = e.Subject,
+                    description = e.Description
+                }),
+                shopping = parsedData.ShoppingItems.Select(s => s.Subject)
+            });
+
+            // 5. Update file on GitHub
+            var updateResult = await _gitHubClient.UpdateFileContentAsync(yamlOutput, sha);
+            
+            return updateResult.Match(
+                error =>
+                {
+                    _log.Error("❌ Failed to update GitHub: {Error}", error.Message);
+                    return new EventWriteResult(false, error.Message);
+                },
+                _ =>
+                {
+                    _log.Information("✅ Successfully added shopping item on GitHub");
+                    return new EventWriteResult(true);
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            _log.Error(ex, "❌ Error adding shopping item");
+            return new EventWriteResult(false, ex.Message);
+        }
+    }
+
+    public async Task<EventWriteResult> DeleteShoppingItemAsync(string item)
+    {
+        try
+        {
+            // 1. Get current file content and SHA
+            var result = await _gitHubClient.GetFileContentAsync();
+            
+            string? content = null;
+            string? sha = null;
+            
+            if (result.IsT0)
+            {
+                _log.Error("❌ Failed to fetch events: {Error}", result.AsT0.Message);
+                return new EventWriteResult(false, "Failed to fetch events from GitHub");
+            }
+            else
+            {
+                content = result.AsT1.Content;
+                sha = result.AsT1.Sha;
+            }
+            
+            if (content == null)
+                return new EventWriteResult(false, "Failed to fetch events from GitHub");
+            
+            if (sha == null)
+                return new EventWriteResult(false, "Could not get file SHA from GitHub");
+
+            // 2. Parse YAML
+            var parsedData = _yamlParser.Parse(content);
+
+            // 3. Find and remove shopping item
+            var itemFound = false;
+            var itemsToRemove = parsedData.ShoppingItems.Where(s => s.Subject == item).ToList();
+            
+            foreach (var shoppingItem in itemsToRemove)
+            {
+                parsedData.ShoppingItems.Remove(shoppingItem);
+                itemFound = true;
+                _log.Information("🗑️ Deleted shopping item: {Item}", item);
+            }
+
+            if (!itemFound)
+            {
+                _log.Warning("❌ Shopping item not found: {Item}", item);
+                return new EventWriteResult(false, $"Shopping item not found");
+            }
+
+            // 4. Serialize back to YAML
+            var serializer = new SerializerBuilder()
+                .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .Build();
+            
+            var yamlOutput = serializer.Serialize(new
+            {
+                events = parsedData.Events.Select(e => new
+                {
+                    date = e.Date.ToString("yyyy-MM-dd"),
+                    time = e.Time?.ToString("HH:mm"),
+                    subject = e.Subject,
+                    description = e.Description
+                }),
+                shopping = parsedData.ShoppingItems.Select(s => s.Subject)
+            });
+
+            // 5. Update file on GitHub
+            var updateResult = await _gitHubClient.UpdateFileContentAsync(yamlOutput, sha);
+            
+            return updateResult.Match(
+                error =>
+                {
+                    _log.Error("❌ Failed to update GitHub: {Error}", error.Message);
+                    return new EventWriteResult(false, error.Message);
+                },
+                _ =>
+                {
+                    _log.Information("✅ Successfully deleted shopping item from GitHub");
+                    return new EventWriteResult(true);
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            _log.Error(ex, "❌ Error deleting shopping item");
+            return new EventWriteResult(false, ex.Message);
+        }
+    }
 }

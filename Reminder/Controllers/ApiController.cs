@@ -112,16 +112,39 @@ public class ApiController : Controller
     // ==================== Shopping API ====================
 
     [HttpPost]
-    public IActionResult AddShoppingItem([FromForm] string item)
+    public async Task<IActionResult> AddShoppingItem([FromForm] string item)
     {
         if (string.IsNullOrEmpty(item))
         {
             return Json(new { success = false, message = "Item is required" });
         }
 
-        // TODO: Implement shopping list functionality
-        // For now, just acknowledge receipt
-        return Json(new { success = true, message = "Item added: " + item });
+        var result = await _eventWriter.AddShoppingItemAsync(item);
+        
+        if (result.Success)
+        {
+            return Json(new { success = true, message = "Item added: " + item });
+        }
+        
+        return Json(new { success = false, message = result.ErrorMessage ?? "Failed to add item" });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteShoppingItem([FromForm] string item)
+    {
+        if (string.IsNullOrEmpty(item))
+        {
+            return Json(new { success = false, message = "Item is required" });
+        }
+
+        var result = await _eventWriter.DeleteShoppingItemAsync(item);
+        
+        if (result.Success)
+        {
+            return Json(new { success = true, message = "Item deleted: " + item });
+        }
+        
+        return Json(new { success = false, message = result.ErrorMessage ?? "Failed to delete item" });
     }
 
     // ==================== Events API ====================
