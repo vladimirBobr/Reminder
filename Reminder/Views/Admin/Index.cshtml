@@ -72,6 +72,13 @@ var eventsLoaded = false;
 // Restore tab from URL hash
 function restoreTabFromUrl() {
     var hash = window.location.hash.replace('#', '');
+    
+    // Default to events tab if no hash
+    if (!hash) {
+        hash = 'events';
+        window.location.hash = 'events';
+    }
+    
     if (hash === 'events') {
         switchToTab('events');
         if (!eventsLoaded) {
@@ -81,13 +88,17 @@ function restoreTabFromUrl() {
     } else if (hash === 'tools' || hash === 'workouts' || hash === 'shopping' || hash === 'digests') {
         switchToTab('tools');
         
-        // Handle nested tabs
-        if (hash === 'workouts') {
-            switchToNestedTab('workouts');
-        } else if (hash === 'shopping') {
-            switchToNestedTab('shopping');
-        } else if (hash === 'digests') {
-            switchToNestedTab('digests');
+        // Handle nested tabs - need to wait for tools tab to be shown first
+        if (hash === 'workouts' || hash === 'shopping' || hash === 'digests') {
+            setTimeout(function() {
+                if (hash === 'workouts') {
+                    switchToNestedTab('workouts');
+                } else if (hash === 'shopping') {
+                    switchToNestedTab('shopping');
+                } else if (hash === 'digests') {
+                    switchToNestedTab('digests');
+                }
+            }, 200);
         }
     }
 }
@@ -106,6 +117,11 @@ function switchToTab(tabName) {
     var pane = document.getElementById(tabName + '-tab-pane');
     if (tab) tab.classList.add('active');
     if (pane) pane.classList.add('show', 'active');
+    
+    // Dispatch shown.bs.tab event for Bootstrap compatibility
+    if (tab) {
+        tab.dispatchEvent(new Event('shown.bs.tab'));
+    }
 }
 
 function switchToNestedTab(tabName) {
@@ -122,10 +138,21 @@ function switchToNestedTab(tabName) {
     var pane = document.getElementById(tabName + '-tab-pane');
     if (tab) tab.classList.add('active', 'show');
     if (pane) pane.classList.add('show', 'active');
+    
+    // Dispatch shown.bs.tab event for Bootstrap compatibility
+    if (tab) {
+        tab.dispatchEvent(new Event('shown.bs.tab'));
+    }
 }
 
-// Restore tab on page load
-restoreTabFromUrl();
+// Restore tab on page load - wait for DOM to be ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        restoreTabFromUrl();
+    });
+} else {
+    restoreTabFromUrl();
+}
 
 // Events tab
 document.getElementById('events-tab').addEventListener('shown.bs.tab', function() {
@@ -141,13 +168,28 @@ document.getElementById('tools-tab').addEventListener('shown.bs.tab', function()
     window.location.hash = 'tools';
 });
 
-// Nested tabs
+// Nested tabs - also handle click events for manual switching
+document.getElementById('workouts-tab').addEventListener('click', function() {
+    switchToNestedTab('workouts');
+    window.location.hash = 'workouts';
+});
+
 document.getElementById('workouts-tab').addEventListener('shown.bs.tab', function() {
     window.location.hash = 'workouts';
 });
 
+document.getElementById('shopping-tab').addEventListener('click', function() {
+    switchToNestedTab('shopping');
+    window.location.hash = 'shopping';
+});
+
 document.getElementById('shopping-tab').addEventListener('shown.bs.tab', function() {
     window.location.hash = 'shopping';
+});
+
+document.getElementById('digests-tab').addEventListener('click', function() {
+    switchToNestedTab('digests');
+    window.location.hash = 'digests';
 });
 
 document.getElementById('digests-tab').addEventListener('shown.bs.tab', function() {
