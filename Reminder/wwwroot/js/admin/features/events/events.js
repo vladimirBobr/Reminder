@@ -176,41 +176,19 @@ function renderEventsList(forceRefresh) {
                 }
             }
             
-            html += '<div class="d-flex align-items-start gap-2 py-2 px-3 border-bottom event-item">';
+            html += '<div class="d-flex align-items-start gap-2 py-2 px-3 border-bottom event-item" onclick="showEditEventDialog(\'' + event.key + '\')" style="cursor: pointer;">';
             
             // Event text
             html += '<div class="flex-grow-1 event-text" style="word-break: break-word; line-height: 1.4; white-space: pre-line;">';
             html += textContent + '</div>';
             
-            // Three-dot menu button
+            // Edit button
             html += '<div class="flex-shrink-0">';
-            html += '<div class="dropdown">';
-            html += '<button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" onclick="event.stopPropagation()">';
+            html += '<button class="btn btn-sm btn-link text-muted p-0" onclick="showEditEventDialog(\'' + event.key + '\')">';
             html += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">';
-            html += '<circle cx="8" cy="3" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="13" r="1.5"/>';
+            html += '<path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>';
             html += '</svg>';
             html += '</button>';
-            html += '<div class="dropdown-menu dropdown-menu-end p-3 mobile-edit-menu" style="min-width: 320px; background-color: #e9ecef; font-size: 1.1rem;">';
-            html += '<div class="row g-2 mb-3">';
-            html += '<div class="col-6">';
-            html += '<input type="date" class="form-control" id="date-' + event.key + '" value="' + event.date + '">';
-            html += '</div>';
-            html += '<div class="col-6">';
-            html += '<input type="time" class="form-control" id="time-' + event.key + '" value="' + (event.time || '') + '">';
-            html += '</div>';
-            html += '</div>';
-            html += '<div class="mb-2">';
-            html += '<input type="text" class="form-control" id="editSubject-' + event.key + '" value="' + (event.subject || '') + '" placeholder="Название">';
-            html += '</div>';
-            html += '<div class="mb-2">';
-            html += '<textarea class="form-control" rows="5" id="editDesc-' + event.key + '" placeholder="Описание">' + (event.description || '') + '</textarea>';
-            html += '</div>';
-            html += '<div class="d-flex gap-2 mt-3">';
-            html += '<button class="btn btn-lg btn-primary flex-grow-1" onclick="saveEventEdit(\'' + event.key + '\')">Сохранить</button>';
-            html += '<button class="btn btn-lg btn-outline-danger" onclick="deleteEvent(\'' + event.key + '\')">✕</button>';
-            html += '</div>';
-            html += '</div>';
-            html += '</div>';
             html += '</div>';
             
             html += '</div>';
@@ -413,7 +391,6 @@ function deleteEvent(key) {
 // ==================== Add Event Modal ====================
 
 function showAddEventDialog() {
-    // Set today's date as default
     var today = new Date().toISOString().split('T')[0];
     document.getElementById('newEventDate').value = today;
     document.getElementById('newEventTime').value = '';
@@ -451,8 +428,111 @@ function saveNewEvent() {
         if (data.success) {
             showToast('Событие добавлено', 'success');
             var modal = bootstrap.Modal.getInstance(document.getElementById('addEventModal'));
-            modal.hide();
-            // Reload events
+            if (modal) modal.hide();
+            loadEvents();
+        } else {
+            showToast('Ошибка: ' + data.message, 'error');
+        }
+    })
+    .catch(function(err) {
+        showToast('Ошибка: ' + err, 'error');
+    });
+}
+
+// ==================== Edit Event Modal ====================
+
+function showEditEventDialog(key) {
+    var event = eventsData.find(function(e) { return e.key === key; });
+    if (!event) return;
+    
+    // Clean up any existing backdrops first
+    var existingBackdrop = document.querySelector('.modal-backdrop');
+    if (existingBackdrop) {
+        existingBackdrop.remove();
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+    }
+    
+    document.getElementById('editEventKey').value = key;
+    document.getElementById('editEventDate').value = event.date || '';
+    document.getElementById('editEventTime').value = event.time || '';
+    document.getElementById('editEventSubject').value = event.subject || '';
+    document.getElementById('editEventDescription').value = event.description || '';
+    
+    var modal = new bootstrap.Modal(document.getElementById('editEventModal'));
+    modal.show();
+}
+
+function saveEditedEvent() {
+    var key = document.getElementById('editEventKey').value;
+    var subject = document.getElementById('editEventSubject').value;
+    var description = document.getElementById('editEventDescription').value;
+    var dateInput = document.getElementById('editEventDate');
+    var timeInput = document.getElementById('editEventTime');
+    var date = dateInput && dateInput.value ? dateInput.value : null;
+    var time = timeInput && timeInput.value ? timeInput.value : null;
+    
+    if (!subject || subject.trim() === '') {
+        showToast('Введите название события', 'error');
+        return;
+    }
+    
+    var body = { key: key, subject: subject, description: description };
+    if (date) body.date = date;
+    if (time) body.time = time;
+    
+    fetch(apiUrls.updateEvent, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            showToast('Сохранено', 'success');
+            var modal = bootstrap.Modal.getInstance(document.getElementById('editEventModal'));
+            if (modal) modal.hide();
+            // Clean up backdrop
+            setTimeout(function() {
+                var backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) backdrop.remove();
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+            }, 100);
+            loadEvents();
+        } else {
+            showToast('Ошибка: ' + data.message, 'error');
+        }
+    })
+    .catch(function(err) {
+        showToast('Ошибка: ' + err, 'error');
+    });
+}
+
+function deleteEventFromEditModal() {
+    var key = document.getElementById('editEventKey').value;
+    if (!key) return;
+    
+    if (!confirm('Удалить событие?')) return;
+    
+    fetch(apiUrls.deleteEvent, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: key })
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            showToast('Событие удалено', 'success');
+            var modal = bootstrap.Modal.getInstance(document.getElementById('editEventModal'));
+            if (modal) modal.hide();
+            // Clean up backdrop
+            setTimeout(function() {
+                var backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) backdrop.remove();
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+            }, 100);
             loadEvents();
         } else {
             showToast('Ошибка: ' + data.message, 'error');
