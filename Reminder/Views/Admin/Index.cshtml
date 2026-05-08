@@ -154,46 +154,43 @@ if (document.readyState === 'loading') {
     restoreTabFromUrl();
 }
 
-// Events tab
-document.getElementById('events-tab').addEventListener('shown.bs.tab', function() {
-    if (!eventsLoaded) {
-        loadEvents();
-        eventsLoaded = true;
+// Helper function to register tab events
+function registerTab(tabId, hash, onShow) {
+    var tab = document.getElementById(tabId);
+    if (!tab) return;
+    if (onShow) {
+        tab.addEventListener('shown.bs.tab', function() {
+            onShow();
+            window.location.hash = hash;
+        });
+    } else {
+        tab.addEventListener('shown.bs.tab', function() {
+            window.location.hash = hash;
+        });
     }
-    window.location.hash = 'events';
-});
+}
 
-// Tools tab
-document.getElementById('tools-tab').addEventListener('shown.bs.tab', function() {
-    window.location.hash = 'tools';
-});
+function registerNestedTab(tabId, hash) {
+    var tab = document.getElementById(tabId);
+    if (!tab) return;
+    tab.addEventListener('click', function() {
+        switchToNestedTab(tabId.replace('-tab', ''));
+        window.location.hash = hash;
+    });
+    tab.addEventListener('shown.bs.tab', function() {
+        window.location.hash = hash;
+    });
+}
 
-// Nested tabs - also handle click events for manual switching
-document.getElementById('workouts-tab').addEventListener('click', function() {
-    switchToNestedTab('workouts');
-    window.location.hash = 'workouts';
+// Register main tabs
+registerTab('events-tab', 'events', function() {
+    if (!eventsLoaded) { loadEvents(); eventsLoaded = true; }
 });
+registerTab('tools-tab', 'tools');
 
-document.getElementById('workouts-tab').addEventListener('shown.bs.tab', function() {
-    window.location.hash = 'workouts';
-});
-
-document.getElementById('shopping-tab').addEventListener('click', function() {
-    switchToNestedTab('shopping');
-    window.location.hash = 'shopping';
-});
-
-document.getElementById('shopping-tab').addEventListener('shown.bs.tab', function() {
-    window.location.hash = 'shopping';
-});
-
-document.getElementById('digests-tab').addEventListener('click', function() {
-    switchToNestedTab('digests');
-    window.location.hash = 'digests';
-});
-
-document.getElementById('digests-tab').addEventListener('shown.bs.tab', function() {
-    window.location.hash = 'digests';
-});
+// Register nested tabs
+registerNestedTab('workouts-tab', 'workouts');
+registerNestedTab('shopping-tab', 'shopping');
+registerNestedTab('digests-tab', 'digests');
 </script>
 }

@@ -203,5 +203,6 @@ function saveWorkoutsToApi(workouts, introText) {
 }
 
 function clearRunningWorkout() {
-    document.getElementById('runningWorkoutInput').value = '';
+    var input = document.getElementById('runningWorkoutInput');
+    input.value = '';
 }

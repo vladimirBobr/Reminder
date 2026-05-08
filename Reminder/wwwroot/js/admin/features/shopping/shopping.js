@@ -25,7 +25,6 @@ function loadShoppingList() {
 // Render shopping list
 function renderShoppingList(items) {
     var container = document.getElementById('shoppingList');
-    if (!container) return;
     
     if (!items || items.length === 0) {
         container.innerHTML = '<div class="text-muted text-center py-3">Список покупок пуст</div>';
@@ -76,33 +75,39 @@ function escapeHtml(text) {
 }
 
 // Form submit handler
-document.getElementById('shoppingForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    var formData = new FormData(e.target);
-    var item = formData.get('item');
-    
-    fetch(shoppingApiUrls.addShoppingItem, {
-        method: 'POST',
-        body: formData
-    })
-    .then(function(response) { return response.json(); })
-    .then(function(data) {
-        if (data.success) {
-            showToast(data.message, 'success', e.target.querySelector('button[type="submit"]'));
-            e.target.reset();
-            loadShoppingList();
-        } else {
-            showToast(data.message, 'error', e.target.querySelector('button[type="submit"]'));
-        }
-    })
-    .catch(function(err) { showToast('Error: ' + err, 'error', e.target.querySelector('button[type="submit"]')); });
-});
+var shoppingForm = document.getElementById('shoppingForm');
+if (shoppingForm) {
+    shoppingForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        var formData = new FormData(e.target);
+        var item = formData.get('item');
+        
+        fetch(shoppingApiUrls.addShoppingItem, {
+            method: 'POST',
+            body: formData
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                showToast(data.message, 'success', e.target.querySelector('button[type="submit"]'));
+                e.target.reset();
+                loadShoppingList();
+            } else {
+                showToast(data.message, 'error', e.target.querySelector('button[type="submit"]'));
+            }
+        })
+        .catch(function(err) { showToast('Error: ' + err, 'error', e.target.querySelector('button[type="submit"]')); });
+    });
+}
 
 // Load shopping list when tab is shown
-document.getElementById('shopping-tab').addEventListener('shown.bs.tab', function() {
-    if (!shoppingLoaded) {
-        loadShoppingList();
-        shoppingLoaded = true;
-    }
-});
+var shoppingTab = document.getElementById('shopping-tab');
+if (shoppingTab) {
+    shoppingTab.addEventListener('shown.bs.tab', function() {
+        if (!shoppingLoaded) {
+            loadShoppingList();
+            shoppingLoaded = true;
+        }
+    });
+}
