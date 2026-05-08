@@ -1,8 +1,10 @@
-const CACHE_NAME = 'reminder-v1';
+const CACHE_NAME = 'reminder-v2';
 const urlsToCache = [
   '/',
-  '/css/site.css',
-  '/js/site.js'
+  '/manifest.json',
+  '/icon-192.svg',
+  '/icon-512.svg',
+  '/css/admin.css'
 ];
 
 // Install event - cache resources
@@ -10,7 +12,10 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        return cache.addAll(urlsToCache);
+        // Filter out URLs that might fail
+        return Promise.allSettled(
+          urlsToCache.map(url => cache.add(url).catch(() => null))
+        );
       })
   );
   self.skipWaiting();
@@ -34,6 +39,16 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
+  // Skip cross-origin requests (like CDN)
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
+  // Skip API requests - let them go directly to network
+  if (event.request.url.includes('/api/') || event.request.url.includes('/events') || event.request.url.includes('/workouts') || event.request.url.includes('/shopping') || event.request.url.includes('/digests')) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -41,8 +56,8 @@ self.addEventListener('fetch', (event) => {
           return response;
         }
         return fetch(event.request).then((response) => {
-          // Don't cache non-successful responses
-          if (!response || response.status !== 200 || response.type !== 'basic') {
+          // Don't cache non-successful responses or opaque responses
+          if (!response || response.status !== 200) {
             return response;
           }
           const responseToCache = response.clone();
@@ -51,6 +66,9 @@ self.addEventListener('fetch', (event) => {
               cache.put(event.request, responseToCache);
             });
           return response;
+        }).catch(() => {
+          // Return nothing on network error - prevents console errors
+          return new Response('', { status: 503, statusText: 'Service Unavailable' });
         });
       })
   );
