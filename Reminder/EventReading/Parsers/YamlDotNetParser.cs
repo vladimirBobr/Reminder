@@ -23,6 +23,7 @@ internal class YamlEventData
     public string? Subject { get; set; }
     public string? Description { get; set; }
     public string? PhoneNumber { get; set; }
+    public bool Important { get; set; }
 }
 
 /// <summary>
@@ -49,7 +50,8 @@ public class YamlDotNetParser : IYamlParser
             Date = DateOnly.Parse(e.Date),
             Time = string.IsNullOrEmpty(e.Time) ? null : TimeOnly.Parse(e.Time),
             Subject = e.Subject ?? string.Empty,
-            Description = e.Description
+            Description = e.Description,
+            IsImportant = e.Important
         }).ToList();
 
         var shoppingItems = yamlData.Shopping.Select(s => new ShoppingItem

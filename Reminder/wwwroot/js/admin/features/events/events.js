@@ -163,16 +163,19 @@ function renderEventsList(forceRefresh) {
         
         // Events under this date
         eventsOnDate.forEach(function(event) {
+            var importantBadge = event.important ? '<span class="me-1">⭐</span>' : '';
             var subjectText = event.subject || event.description || 'Без названия';
             var textContent = subjectText;
             if (event.subject && event.description) {
                 // Time inside subject, description separate
-                var subjectWithTime = event.time ? '<span class="text-muted me-2">' + event.time + '</span>' + event.subject : event.subject;
+                var subjectWithTime = event.time ? '<span class="text-muted me-2">' + event.time + '</span>' + importantBadge + event.subject : importantBadge + event.subject;
                 textContent = '<div>' + subjectWithTime + '</div><div class="text-muted small" style="word-break: break-word; padding-left: 1.5rem;">' + event.description + '</div>';
             } else {
                 // Only subject or only description
                 if (event.time) {
-                    textContent = '<span class="text-muted me-2">' + event.time + '</span>' + subjectText;
+                    textContent = '<span class="text-muted me-2">' + event.time + '</span>' + importantBadge + subjectText;
+                } else if (event.important) {
+                    textContent = importantBadge + subjectText;
                 }
             }
             
@@ -396,6 +399,7 @@ function showAddEventDialog() {
     document.getElementById('newEventTime').value = '';
     document.getElementById('newEventSubject').value = '';
     document.getElementById('newEventDescription').value = '';
+    document.getElementById('newEventImportant').checked = false;
     
     var modal = new bootstrap.Modal(document.getElementById('addEventModal'));
     modal.show();
@@ -414,7 +418,8 @@ function saveNewEvent() {
         return;
     }
     
-    var body = { subject: subject, description: description };
+    var important = document.getElementById('newEventImportant').checked;
+    var body = { subject: subject, description: description, important: important };
     if (date) body.date = date;
     if (time) body.time = time;
     
@@ -458,6 +463,7 @@ function showEditEventDialog(key) {
     document.getElementById('editEventTime').value = event.time || '';
     document.getElementById('editEventSubject').value = event.subject || '';
     document.getElementById('editEventDescription').value = event.description || '';
+    document.getElementById('editEventImportant').checked = event.important || false;
     
     var modal = new bootstrap.Modal(document.getElementById('editEventModal'));
     modal.show();
@@ -477,7 +483,8 @@ function saveEditedEvent() {
         return;
     }
     
-    var body = { key: key, subject: subject, description: description };
+    var important = document.getElementById('editEventImportant').checked;
+    var body = { key: key, subject: subject, description: description, important: important };
     if (date) body.date = date;
     if (time) body.time = time;
     

@@ -166,7 +166,8 @@ public class ApiController : Controller
                     date = e.Date.ToString("yyyy-MM-dd"),
                     time = e.Time?.ToString("HH:mm"),
                     subject = e.Subject,
-                    description = e.Description
+                    description = e.Description,
+                    important = e.IsImportant
                 });
             
             return Json(new
@@ -232,7 +233,7 @@ public class ApiController : Controller
             
             var date = request.GetDateAsDateOnly() ?? DateOnly.FromDateTime(DateTime.Today);
             var time = request.GetTimeAsTimeOnly();
-            var result = await _eventWriter.AddEventAsync(date, request.Subject, request.Description, time);
+            var result = await _eventWriter.AddEventAsync(date, request.Subject, request.Description, time, request.Important);
             
             if (result.Success)
             {
@@ -265,7 +266,7 @@ public class ApiController : Controller
             
             var date = request.GetDateAsDateOnly();
             var time = request.GetTimeAsTimeOnly();
-            var result = await _eventWriter.UpdateEventAsync(request.Key, date, request.Subject, request.Description, time);
+            var result = await _eventWriter.UpdateEventAsync(request.Key, date, request.Subject, request.Description, time, request.Important);
             
             if (result.Success)
             {

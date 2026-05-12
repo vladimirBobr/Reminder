@@ -6,9 +6,9 @@ public record EventWriteResult(bool Success, string? ErrorMessage = null, string
 
 public interface IEventWriter
 {
-    Task<EventWriteResult> AddEventAsync(DateOnly date, string subject, string? description, TimeOnly? time = null);
+    Task<EventWriteResult> AddEventAsync(DateOnly date, string subject, string? description, TimeOnly? time = null, bool important = false);
     Task<EventWriteResult> AddEventsAsync(List<EventData> events);
-    Task<EventWriteResult> UpdateEventAsync(string key, DateOnly? date, string? subject, string? description, TimeOnly? time = null);
+    Task<EventWriteResult> UpdateEventAsync(string key, DateOnly? date, string? subject, string? description, TimeOnly? time = null, bool important = false);
     Task<EventWriteResult> DeleteEventAsync(string key);
     Task<EventWriteResult> AddShoppingItemAsync(string item);
     Task<EventWriteResult> DeleteShoppingItemAsync(string item);

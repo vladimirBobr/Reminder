@@ -73,7 +73,8 @@ public class GitHubEventWriter : IEventWriter
                     date = e.Date.ToString("yyyy-MM-dd"),
                     time = e.Time?.ToString("HH:mm"),
                     subject = e.Subject,
-                    description = e.Description
+                    description = e.Description,
+                    important = e.IsImportant
                 }),
                 shopping = parsedData.ShoppingItems.Select(s => s.Subject)
             });
@@ -101,7 +102,7 @@ public class GitHubEventWriter : IEventWriter
         }
     }
 
-    public async Task<EventWriteResult> AddEventAsync(DateOnly date, string subject, string? description, TimeOnly? time = null)
+    public async Task<EventWriteResult> AddEventAsync(DateOnly date, string subject, string? description, TimeOnly? time = null, bool important = false)
     {
         try
         {
@@ -137,7 +138,8 @@ public class GitHubEventWriter : IEventWriter
                 Date = date,
                 Time = time,
                 Subject = subject,
-                Description = description
+                Description = description,
+                IsImportant = important
             };
             
             parsedData.Events.Add(newEvent);
@@ -158,7 +160,8 @@ public class GitHubEventWriter : IEventWriter
                     date = e.Date.ToString("yyyy-MM-dd"),
                     time = e.Time?.ToString("HH:mm"),
                     subject = e.Subject,
-                    description = e.Description
+                    description = e.Description,
+                    important = e.IsImportant
                 }),
                 shopping = parsedData.ShoppingItems.Select(s => s.Subject)
             });
@@ -186,7 +189,7 @@ public class GitHubEventWriter : IEventWriter
         }
     }
 
-    public async Task<EventWriteResult> UpdateEventAsync(string key, DateOnly? date, string? subject, string? description, TimeOnly? time = null)
+    public async Task<EventWriteResult> UpdateEventAsync(string key, DateOnly? date, string? subject, string? description, TimeOnly? time = null, bool important = false)
     {
         try
         {
@@ -227,6 +230,7 @@ public class GitHubEventWriter : IEventWriter
                     evt.Subject = subject;
                     evt.Description = description;
                     if (time.HasValue) evt.Time = time;
+                    evt.IsImportant = important;
                     eventFound = true;
                     newKey = evt.GetKey();
                     _log.Information("✏️ Updated event {Key}: date={Date}, subject={Subject}, desc={Desc}, time={Time}, new key: {NewKey}", key, date, subject, description, time, newKey);
@@ -252,7 +256,8 @@ public class GitHubEventWriter : IEventWriter
                     date = e.Date.ToString("yyyy-MM-dd"),
                     time = e.Time?.ToString("HH:mm"),
                     subject = e.Subject,
-                    description = e.Description
+                    description = e.Description,
+                    important = e.IsImportant
                 }),
                 shopping = parsedData.ShoppingItems.Select(s => s.Subject)
             });
@@ -339,7 +344,8 @@ public class GitHubEventWriter : IEventWriter
                     date = e.Date.ToString("yyyy-MM-dd"),
                     time = e.Time?.ToString("HH:mm"),
                     subject = e.Subject,
-                    description = e.Description
+                    description = e.Description,
+                    important = e.IsImportant
                 }),
                 shopping = parsedData.ShoppingItems.Select(s => s.Subject)
             });
@@ -414,7 +420,8 @@ public class GitHubEventWriter : IEventWriter
                     date = e.Date.ToString("yyyy-MM-dd"),
                     time = e.Time?.ToString("HH:mm"),
                     subject = e.Subject,
-                    description = e.Description
+                    description = e.Description,
+                    important = e.IsImportant
                 }),
                 shopping = parsedData.ShoppingItems.Select(s => s.Subject)
             });
@@ -501,7 +508,8 @@ public class GitHubEventWriter : IEventWriter
                     date = e.Date.ToString("yyyy-MM-dd"),
                     time = e.Time?.ToString("HH:mm"),
                     subject = e.Subject,
-                    description = e.Description
+                    description = e.Description,
+                    important = e.IsImportant
                 }),
                 shopping = parsedData.ShoppingItems.Select(s => s.Subject)
             });

@@ -46,6 +46,10 @@
                         <div class="mb-2">
                             <textarea class="form-control" rows="5" id="newEventDescription" placeholder="Описание"></textarea>
                         </div>
+                        <div class="mb-2 form-check">
+                            <input type="checkbox" class="form-check-input" id="newEventImportant">
+                            <label class="form-check-label" for="newEventImportant">⭐ Важное</label>
+                        </div>
                         <div class="d-flex gap-2 mt-3">
                             <button type="button" class="btn btn-secondary flex-grow-1" data-bs-dismiss="modal">Отмена</button>
                             <button type="button" class="btn btn-primary flex-grow-1" onclick="saveNewEvent()">Сохранить</button>
@@ -75,6 +79,10 @@
                         </div>
                         <div class="mb-2">
                             <textarea class="form-control" rows="5" id="editEventDescription" placeholder="Описание"></textarea>
+                        </div>
+                        <div class="mb-2 form-check">
+                            <input type="checkbox" class="form-check-input" id="editEventImportant">
+                            <label class="form-check-label" for="editEventImportant">⭐ Важное</label>
                         </div>
                         <div class="d-flex gap-2 mt-3">
                             <button type="button" class="btn btn-outline-danger" onclick="deleteEventFromEditModal()">Удалить</button>

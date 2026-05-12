@@ -9,6 +9,7 @@ public class UpdateEventRequest
     public string? Time { get; set; }
     public string? Subject { get; set; }
     public string? Description { get; set; }
+    public bool Important { get; set; }
     
     public TimeOnly? GetTimeAsTimeOnly()
     {

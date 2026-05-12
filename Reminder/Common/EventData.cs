@@ -6,6 +6,7 @@ public class EventData
     public TimeOnly? Time { get; set; }
     public string? Subject { get; set; }
     public string? Description { get; set; }
+    public bool IsImportant { get; set; }
     
     public string GetKey()
     {

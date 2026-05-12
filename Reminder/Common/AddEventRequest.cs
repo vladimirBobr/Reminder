@@ -15,6 +15,9 @@ public class AddEventRequest
     
     [JsonPropertyName("description")]
     public string? Description { get; set; }
+
+    [JsonPropertyName("important")]
+    public bool Important { get; set; }
     
     public DateOnly? GetDateAsDateOnly()
     {
